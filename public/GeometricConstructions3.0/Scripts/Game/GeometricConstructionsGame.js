@@ -19,6 +19,9 @@ function GeometricConstructionsGame(canvasElem) {
     self.undo = () => activeBoard.undo();
     self.redo = () => activeBoard.redo();
     self.getActiveLevel = () => activeLevel;
+    self.getActiveLevelIndex = () => levels ? levels.indexOf(activeLevel) : 0;
+    self.getLevels = () => levels ? levels.slice() : [];
+    self.loadLevel = loadLevel;
     self.repaint = () => activeBoard && activeBoard.repaint();
     self.isSolved = isSolved;
     self.setOnSolved = (cb) => { onSolvedCallback = cb; };
@@ -35,13 +38,7 @@ function GeometricConstructionsGame(canvasElem) {
 
         startLevel(activeLevel, activeBoard);
 
-        activeBoard.setOnElementAdded(() => {
-            if (!levelSolved && isSolved()) {
-                levelSolved = true;
-                revealSolution();
-                if (onSolvedCallback) onSolvedCallback(activeLevel);
-            }
-        });
+        registerSolveWatcher();
     }
 
     function revealSolution() {
@@ -88,8 +85,27 @@ function GeometricConstructionsGame(canvasElem) {
         board.repaint();
     }
 
+    function registerSolveWatcher() {
+        activeBoard.setOnElementAdded(() => {
+            if (!levelSolved && isSolved()) {
+                levelSolved = true;
+                revealSolution();
+                if (onSolvedCallback) onSolvedCallback(activeLevel);
+            }
+        });
+    }
+
     function getLevels() {
         return [gcLevel1, gcLevel2];
+    }
+
+    function loadLevel(index) {
+        if (!levels || index < 0 || index >= levels.length) return;
+        activeLevel = levels[index];
+        levelSolved = false;
+        activeBoard.clear();
+        startLevel(activeLevel, activeBoard);
+        registerSolveWatcher();
     }
 
     function isSolved() {

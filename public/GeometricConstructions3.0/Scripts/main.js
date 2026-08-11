@@ -133,11 +133,25 @@ function showLevelModal(name, description, imageSrc, solved) {
 
     const startBtn = document.getElementById('modal-start-btn');
     if (solved) {
-        startBtn.textContent = '🎉 Continue';
+        const levels = gcGame ? gcGame.getLevels() : [];
+        const idx = gcGame ? gcGame.getActiveLevelIndex() : 0;
+        const hasNext = idx < levels.length - 1;
+        startBtn.textContent = hasNext ? '🎉 Next Level →' : '🎉 Continue';
+        startBtn.onclick = hasNext ? goToNextLevel : closeModal;
         document.getElementById('modal-solved-banner').style.display = 'block';
     } else {
         startBtn.textContent = 'Start';
+        startBtn.onclick = closeModal;
         document.getElementById('modal-solved-banner').style.display = 'none';
+    }
+
+    // update level counter and nav buttons
+    if (gcGame) {
+        const levels = gcGame.getLevels();
+        const idx = gcGame.getActiveLevelIndex();
+        document.getElementById('modal-level-counter').textContent = `Level ${idx + 1} of ${levels.length}`;
+        document.getElementById('modal-prev-btn').disabled = idx <= 0;
+        document.getElementById('modal-next-btn').disabled = idx >= levels.length - 1;
     }
 
     document.getElementById('modal-overlay').classList.remove('hidden');
@@ -154,4 +168,23 @@ function closeModal() {
 
 function handleOverlayClick(event) {
     if (event.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+function goToPrevLevel() {
+    if (!gcGame) return;
+    const idx = gcGame.getActiveLevelIndex();
+    if (idx <= 0) return;
+    gcGame.loadLevel(idx - 1);
+    const level = gcGame.getActiveLevel();
+    showLevelModal(level.Name, level.Description, level.Image, false);
+}
+
+function goToNextLevel() {
+    if (!gcGame) return;
+    const levels = gcGame.getLevels();
+    const idx = gcGame.getActiveLevelIndex();
+    if (idx >= levels.length - 1) return;
+    gcGame.loadLevel(idx + 1);
+    const level = gcGame.getActiveLevel();
+    showLevelModal(level.Name, level.Description, level.Image, false);
 }

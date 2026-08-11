@@ -267,6 +267,38 @@
             font-weight: 600;
             text-align: center;
         }
+
+        #modal-level-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 18px;
+            gap: 8px;
+        }
+
+        #modal-level-counter {
+            font-size: 13px;
+            color: #888;
+            flex: 1;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .modal-nav-btn {
+            height: 36px;
+            padding: 0 14px;
+            background: #f0f0f0;
+            color: #444;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.12s, color 0.12s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .modal-nav-btn:hover { background: #e0e0e0; color: #222; }
+        .modal-nav-btn:disabled { opacity: 0.35; cursor: default; }
     </style>
 </head>
 
@@ -309,7 +341,7 @@
         </button>
     </div>
 
-    <!-- Level info modal -->
+        <!-- Level info modal -->
     <div id="modal-overlay" class="hidden" onclick="handleOverlayClick(event)">
         <div id="modal">
             <button id="modal-close" onclick="closeModal()" aria-label="Close">✕</button>
@@ -317,7 +349,12 @@
             <div id="modal-img-wrap">Image coming soon</div>
             <h2 id="modal-title"></h2>
             <p id="modal-desc"></p>
-            <button id="modal-start-btn" onclick="closeModal()">Start</button>
+            <div id="modal-level-nav">
+                <button id="modal-prev-btn" class="modal-nav-btn" onclick="goToPrevLevel()" aria-label="Previous level">&#8592; Prev</button>
+                <span id="modal-level-counter"></span>
+                <button id="modal-next-btn" class="modal-nav-btn" onclick="goToNextLevel()" aria-label="Next level">Next &#8594;</button>
+            </div>
+            <button id="modal-start-btn">Start</button>
         </div>
     </div>
 

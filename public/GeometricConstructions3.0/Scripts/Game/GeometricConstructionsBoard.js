@@ -32,6 +32,7 @@ function GeometricConstructionsBoard(boardPainter) {
     self.updatePositions = updateSnappedElements;
     self.repaint = repaint;
     self.setOnElementAdded = (cb) => { onElementAddedCallback = cb; };
+    self.clear = clear;
 
     // player interactions
     function click(x, y) {
@@ -442,9 +443,17 @@ function GeometricConstructionsBoard(boardPainter) {
 
 
 
+    function clear() {
+        elements = [];
+        history.length = 0;
+        redoStack.length = 0;
+        draggedPoint = null;
+        isDragging = false;
+        boardPainter.clear();
+    }
+
     function repaint() {
         boardPainter.clear();
-
         // draw lines & then line segments and circles & then points, duplicate elements array
         elements.slice().sort((a, b) => {
             const order = { 'line': 1, 'segment': 2, 'circle': 3, 'point': 4 };
