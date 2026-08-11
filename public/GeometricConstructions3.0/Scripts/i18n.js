@@ -5,45 +5,45 @@ const i18n = (() => {
     const translations = {
         he: {
             // toolbar
-            'Line':   'קו',
-            'Circle': 'מעגל',
+            'Line':   'סרגל',
+            'Circle': 'מחוגה',
             'Move':   'הזזה',
             'Undo':   'בטל',
             'Redo':   'חזור',
 
             // modal fixed strings
-            'Level Solved!':    'פתרת את הרמה!',
+            'Level Solved!':    'שלב נפתר!',
             'Image coming soon': 'תמונה בקרוב',
             'Start':             'התחל',
             'Close':             'סגור',
             '← Prev':            '→ הקודם',
             'Next →':            'הבא ←',
-            '🎉 Next Level →':   '🎉 לרמה הבאה ←',
+            '🎉 Next Level →':   '🎉 לשלב הבא ←',
             '🎉 Continue':       '🎉 המשך',
-            '🎉 Level Solved!':  '!🎉 פתרת את הרמה',
-            'Level info':        'מידע על הרמה',
+            '🎉 Level Solved!':  '!🎉 שלב נפתר',
+            'Level info':        'פרטים',
 
             // level counter (use template: levelCounter(idx, total))
-            'levelCounter': (idx, total) => `רמה ${idx} מתוך ${total}`,
+            'levelCounter': (idx, total) => `שלב ${idx} מתוך ${total}`,
 
             // level names and descriptions (keyed by English name)
             'Level 1: Equilateral Triangle':
-                'רמה 1: משולש שווה-צלעות',
+                'שלב 1: משולש שווה-צלעות',
             'Construct an equilateral triangle on the given segment':
                 'בנה משולש שווה-צלעות על הקטע הנתון',
 
             'Level 2: Square':
-                'רמה 2: ריבוע',
+                'שלב 2: ריבוע',
             'Construct a square on the given segment':
                 'בנה ריבוע על הקטע הנתון',
 
             'Level 3: Star of David':
-                'רמה 3: מגן דוד',
+                'שלב 3: מגן דוד',
             'Construct a Star of David (hexagram). The six-pointed star is formed by two equilateral triangles built on the given segment.':
                 'בנה מגן דוד (כוכב שש-קצוות). הכוכב מורכב משני משולשים שווי-צלעות על הקטע הנתון.',
 
             'Level 4: Cut a Segment (Euclid III)':
-                'רמה 4: חיתוך קטע (אוקלידס, פרק א\' משפט ג\')',
+                'שלב 4: חיתוך קטע (אוקלידס, פרק א\' משפט ג\')',
             "Cut from segment AB a piece equal to segment AD. Find point E on AB such that AE = AD. (Euclid's Elements, Book I, Proposition 3.)":
                 'גזור מהקטע AB חתיכה השווה לקטע AD. מצא נקודה E על AB כך ש-AE = AD. (יסודות אוקלידס, ספר א\', משפט 3.)',
         },
