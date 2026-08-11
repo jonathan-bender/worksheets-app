@@ -4,7 +4,9 @@ function GeometricConstructionsGame(canvasElem) {
     let levels,
         activeLevel,
         activeBoard,
-        activeTool;
+        activeTool,
+        onSolvedCallback = null,
+        levelSolved = false;
 
     // public functions
     self.start = start;
@@ -16,7 +18,14 @@ function GeometricConstructionsGame(canvasElem) {
     self.switchMode = (mode) => activeBoard.switchMode(mode);
     self.undo = () => activeBoard.undo();
     self.redo = () => activeBoard.redo();
+    self.getActiveLevel = () => activeLevel;
+    self.getActiveLevelIndex = () => levels ? levels.indexOf(activeLevel) : 0;
+    self.getLevels = () => levels ? levels.slice() : [];
+    self.loadLevel = loadLevel;
+    self.pan = (dx, dy) => activeBoard && activeBoard.pan(dx, dy);
+    self.repaint = () => activeBoard && activeBoard.repaint();
     self.isSolved = isSolved;
+    self.setOnSolved = (cb) => { onSolvedCallback = cb; };
 
     // start
 
@@ -26,8 +35,23 @@ function GeometricConstructionsGame(canvasElem) {
 
         levels = getLevels();
         activeLevel = levels[0];
+        levelSolved = false;
 
         startLevel(activeLevel, activeBoard);
+
+        registerSolveWatcher();
+    }
+
+    function revealSolution() {
+        activeBoard.getElements().forEach(el => {
+            if (el.classList.includes('shown-solution')) {
+                el.classList = el.classList.filter(c => c !== 'shown-solution');
+                if (!el.classList.includes('shown-solution-revealed')) {
+                    el.classList.push('shown-solution-revealed');
+                }
+            }
+        });
+        activeBoard.repaint();
     }
 
     function startLevel(level, board) {
@@ -56,14 +80,44 @@ function GeometricConstructionsGame(canvasElem) {
                 result = board.createCircle(results[e.p1], results[e.p2], e.classList);
             }
             results.push(result);
-
         });
+
+        // Center the given elements on the canvas
+        const givenPoints = board.getElements().filter(el => el.type === 'point' && el.classList.includes('given'));
+        if (givenPoints.length > 0) {
+            const xs = givenPoints.map(p => p.x);
+            const ys = givenPoints.map(p => p.y);
+            const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+            const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+            const targetX = canvasElem.width / 2;
+            const targetY = canvasElem.height / 2;
+            board.pan(targetX - cx, targetY - cy);
+        }
 
         board.repaint();
     }
 
+    function registerSolveWatcher() {
+        activeBoard.setOnElementAdded(() => {
+            if (!levelSolved && isSolved()) {
+                levelSolved = true;
+                revealSolution();
+                if (onSolvedCallback) onSolvedCallback(activeLevel);
+            }
+        });
+    }
+
     function getLevels() {
-        return [gcLevel1];
+        return [gcLevel1, gcLevel2, gcLevel3, gcLevel4];
+    }
+
+    function loadLevel(index) {
+        if (!levels || index < 0 || index >= levels.length) return;
+        activeLevel = levels[index];
+        levelSolved = false;
+        activeBoard.clear();
+        startLevel(activeLevel, activeBoard);
+        registerSolveWatcher();
     }
 
     function isSolved() {
@@ -73,15 +127,19 @@ function GeometricConstructionsGame(canvasElem) {
         if (playerSolution.some(c => c.playerSolution === undefined))
             return false;
 
+        // Perturb movable points to verify the construction is geometrically dependent,
+        // not just coincidentally correct. Use try/finally to guarantee state is always restored.
         const moveablePoints = activeBoard.getElements().filter(el => el.type === 'point' && el.classList.includes('movable'));
-        moveablePoints.forEach(c => { c.x += 1; c.y += 1; });
-        activeBoard.updatePositions();
-        const result = !playerSolution.some(c => !compareElements(c.solution, c.playerSolution));
+        const savedCoords = moveablePoints.map(c => ({ point: c, x: c.x, y: c.y }));
 
-        moveablePoints.forEach(c => { c.x -= 1; c.y -= 1; });
-        activeBoard.updatePositions();
-
-        return result;
+        try {
+            moveablePoints.forEach(c => { c.x += 1; c.y += 1; });
+            activeBoard.updatePositions();
+            return !playerSolution.some(c => !compareElements(c.solution, c.playerSolution));
+        } finally {
+            savedCoords.forEach(({ point, x, y }) => { point.x = x; point.y = y; });
+            activeBoard.updatePositions();
+        }
     }
 
     function compareElements(e1, e2) {
@@ -93,7 +151,9 @@ function GeometricConstructionsGame(canvasElem) {
     }
 
     function compareLines(line1, line2) {
-        return ((line1.p1.x === line2.p1.x && line1.p1.y === line2.p1.y && line1.p2.x === line2.p2.x && line1.p2.y === line2.p2.y) ||
-            (line1.p1.x === line2.p2.x && line1.p1.y === line2.p2.y && line1.p2.x === line2.p1.x && line1.p2.y === line2.p1.y));
+        const eps = 1e-6;
+        const eq = (a, b) => Math.abs(a - b) < eps;
+        return ((eq(line1.p1.x, line2.p1.x) && eq(line1.p1.y, line2.p1.y) && eq(line1.p2.x, line2.p2.x) && eq(line1.p2.y, line2.p2.y)) ||
+            (eq(line1.p1.x, line2.p2.x) && eq(line1.p1.y, line2.p2.y) && eq(line1.p2.x, line2.p1.x) && eq(line1.p2.y, line2.p1.y)));
     }
 }

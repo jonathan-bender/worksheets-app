@@ -1,28 +1,408 @@
 <!DOCTYPE html>
-<html>
+<html lang="he" dir="rtl">
 
 <head>
-    <title>Geometric constructions</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Geometric Constructions</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #f5f5f5;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        /* ── Canvas ── */
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+            cursor: crosshair;
+            background: #ffffff;
+        }
+
+        /* ── Language selector (top-right) ── */
+        #lang-bar {
+            position: fixed;
+            top: 10px;
+            right: 14px;
+            z-index: 30;
+        }
+        #lang-select {
+            height: 30px;
+            padding: 0 8px;
+            border-radius: 8px;
+            border: 1.5px solid #d0d0d0;
+            background: #ffffff;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            cursor: pointer;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.10);
+        }
+        #lang-select:hover { border-color: #aaa; }
+
+        /* ── RTL: reverse prev/next button order ── */
+        [dir="rtl"] #modal-level-nav { flex-direction: row-reverse; }
+
+
+        #level-thumb {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 20;
+            width: 72px;
+            height: 72px;
+            border-radius: 10px;
+            background: #ffffff;
+            border: 1.5px solid #d0d0d0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: box-shadow 0.15s, transform 0.1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #level-thumb:hover {
+            box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+            transform: scale(1.04);
+        }
+        #level-thumb:active { transform: scale(0.97); }
+        #level-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        #level-thumb .thumb-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            color: #aaa;
+            font-size: 10px;
+            text-align: center;
+            padding: 6px;
+            line-height: 1.3;
+        }
+        #level-thumb .thumb-placeholder span:first-child {
+            font-size: 22px;
+        }
+        #level-thumb .thumb-placeholder span:last-child {
+            font-size: 9px;
+        }
+
+        /* ── Bottom toolbar ── */
+        #toolbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            height: 56px;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 12px;
+        }
+
+        .toolbar-divider {
+            width: 1px;
+            height: 28px;
+            background: #ddd;
+            margin: 0 2px;
+        }
+
+        .tool-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            height: 36px;
+            padding: 0 12px;
+            background: #f0f0f0;
+            color: #444;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .tool-btn svg {
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
+        }
+        .tool-btn:hover {
+            background: #e4e4e4;
+            color: #222;
+        }
+        .tool-btn:active { transform: scale(0.93); }
+
+        .tool-btn.active {
+            background: #1a73e8;
+            color: #fff;
+            border-color: #1a73e8;
+        }
+        .tool-btn.check-btn {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-color: #a5d6a7;
+        }
+        .tool-btn.check-btn:hover {
+            background: #c8e6c9;
+        }
+
+        /* smaller on phones */
+        @media (max-width: 400px) {
+            #toolbar { gap: 5px; padding: 0 8px; }
+            .tool-btn { padding: 0 9px; font-size: 11px; height: 32px; }
+        }
+
+        /* ── Modal overlay ── */
+        #modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0,0,0,0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #modal-overlay.hidden { display: none; }
+
+        #modal {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+            max-width: 420px;
+            width: 100%;
+            padding: 28px 28px 24px;
+            position: relative;
+            animation: modal-in 0.2s ease;
+        }
+        @keyframes modal-in {
+            from { opacity: 0; transform: scale(0.93) translateY(10px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        #modal-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 30px;
+            text-align: center;
+            color: #666;
+            transition: background 0.12s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #modal-close:hover { background: #e0e0e0; }
+
+        #modal h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            padding-right: 30px;
+            line-height: 1.3;
+        }
+        #modal p {
+            font-size: 15px;
+            color: #444;
+            line-height: 1.6;
+        }
+
+        #modal-img-wrap {
+            width: 100%;
+            height: 160px;
+            border-radius: 10px;
+            background: #f5f5f5;
+            border: 1px solid #e8e8e8;
+            overflow: hidden;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #bbb;
+            font-size: 13px;
+        }
+        #modal-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        #modal-start-btn {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+            height: 42px;
+            background: #1a73e8;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.12s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #modal-start-btn:hover { background: #1558c0; }
+
+        #modal-solved-banner {
+            display: none;
+            background: #e8f5e9;
+            border: 1.5px solid #a5d6a7;
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            color: #2e7d32;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        #modal-level-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 18px;
+            gap: 8px;
+        }
+
+        #modal-level-counter {
+            font-size: 13px;
+            color: #888;
+            flex: 1;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .modal-nav-btn {
+            height: 36px;
+            padding: 0 14px;
+            background: #f0f0f0;
+            color: #444;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.12s, color 0.12s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .modal-nav-btn:hover { background: #e0e0e0; color: #222; }
+        .modal-nav-btn:disabled { opacity: 0.35; cursor: default; }
+    </style>
 </head>
 
 <body>
-    <div>
-        <canvas id="main-canvas" width="1000" height="1000" style="border: 1px solid black;">
-        </canvas>
+    <!-- Full-screen canvas -->
+    <canvas id="main-canvas"></canvas>
+
+    <!-- Language selector (top, opposite to thumbnail) -->
+    <div id="lang-bar">
+        <select id="lang-select" onchange="switchLang(this.value)" aria-label="Language">
+            <option value="he">עברית</option>
+            <option value="en">English</option>
+        </select>
     </div>
-    <div>
-        <button type="button" id="line" onclick="switchMode('line')">Line</button>
-        <button type="button" id="circle" onclick="switchMode('circle')">Circle</button>
-        <button type="button" id="move" onclick="switchMode('move')">Move</button>
-        <button type="button" id="undo" onclick="undo()">Undo</button>
-        <button type="button" id="redo" onclick="redo()">Redo</button>
-        <button type="button" id="is-solved" onclick="isSolved()">Check</button>
+
+    <!-- Level thumbnail (top-left) -->
+    <div id="level-thumb" onclick="openModal()" title="View level info">
+        <div class="thumb-placeholder">
+            <span>🔷</span><span data-i18n="Level info">Level info</span>
+        </div>
     </div>
+
+    <!-- Bottom toolbar -->
+    <div id="toolbar">
+        <button class="tool-btn active" id="line" type="button" onclick="switchMode('line')">
+            <!-- line icon -->
+            <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="13" x2="13" y2="2"/></svg>
+            <span data-i18n="Line">Line</span>
+        </button>
+        <button class="tool-btn" id="circle" type="button" onclick="switchMode('circle')">
+            <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="7.5" r="5"/></svg>
+            <span data-i18n="Circle">Circle</span>
+        </button>
+        <button class="tool-btn" id="move" type="button" onclick="switchMode('move')">
+            <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 1v13M1 7.5h13M4 4l-3 3.5 3 3M11 4l3 3.5-3 3"/></svg>
+            <span data-i18n="Move">Move</span>
+        </button>
+
+        <div class="toolbar-divider"></div>
+
+        <button class="tool-btn" id="undo" type="button" onclick="undo()">
+            <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a5 5 0 1 0 1.5-3.5L2 2"/><path d="M2 2v4h4"/></svg>
+            <span data-i18n="Undo">Undo</span>
+        </button>
+        <button class="tool-btn" id="redo" type="button" onclick="redo()">
+            <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7a5 5 0 1 1-1.5-3.5L13 2"/><path d="M13 2v4H9"/></svg>
+            <span data-i18n="Redo">Redo</span>
+        </button>
+        </button>
+    </div>
+
+        <!-- Level info modal -->
+    <div id="modal-overlay" class="hidden" onclick="handleOverlayClick(event)">
+        <div id="modal">
+            <button id="modal-close" onclick="closeModal()" aria-label="Close">✕</button>
+            <div id="modal-solved-banner"><span data-i18n="🎉 Level Solved!">🎉 Level Solved!</span></div>
+            <div id="modal-img-wrap">Image coming soon</div>
+            <h2 id="modal-title"></h2>
+            <p id="modal-desc"></p>
+            <div id="modal-level-nav">
+                <button id="modal-prev-btn" class="modal-nav-btn" onclick="goToPrevLevel()" aria-label="Previous level"></button>
+                <span id="modal-level-counter"></span>
+                <button id="modal-next-btn" class="modal-nav-btn" onclick="goToNextLevel()" aria-label="Next level"></button>
+            </div>
+            <button id="modal-start-btn">Start</button>
+        </div>
+    </div>
+
+    <script src="Scripts/i18n.js"></script>
     <script src="Scripts/Game/Levels/gcLevel1.js"></script>
+    <script src="Scripts/Game/Levels/gcLevel2.js"></script>
+    <script src="Scripts/Game/Levels/gcLevel3.js"></script>
+    <script src="Scripts/Game/Levels/gcLevel4.js"></script>
     <script src="Scripts/Game/drawingRules.js"></script>
     <script src="Scripts/Game/MathHelpers.js"></script>
     <script src="Scripts/Game/GeometricConstructionsCanvas.js"></script>
-    <script src="Scripts/Game/GoemetricConstructionsBoard.js"></script>
+    <script src="Scripts/Game/GeometricConstructionsBoard.js"></script>
     <script src="Scripts/Game/GeometricConstructionsGame.js"></script>
     <script src="Scripts/main.js"></script>
 </body>

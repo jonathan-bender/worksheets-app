@@ -3,12 +3,13 @@ function GeometricConstructionsBoard(boardPainter) {
         history = [],
         redoStack = [],
         mathHelpers = new MathHelpers(),
-        snappingThreshold = 10;
+        snappingThreshold = 20;
 
     let elements = [],
         currentMode = 'line',
         draggedPoint = null,
-        isDragging = false;
+        isDragging = false,
+        onElementAddedCallback = null;
 
     // public functions
 
@@ -30,13 +31,9 @@ function GeometricConstructionsBoard(boardPainter) {
     self.getPoint = GetPointByCoordinates;
     self.updatePositions = updateSnappedElements;
     self.repaint = repaint;
-    self.boardPainter = boardPainter;
-
-    Init();
-
-    function Init() {
-    }
-
+    self.setOnElementAdded = (cb) => { onElementAddedCallback = cb; };
+    self.clear = clear;
+    self.pan = (dx, dy) => { dragPlane(dx, dy); };
 
     // player interactions
     function click(x, y) {
@@ -49,9 +46,8 @@ function GeometricConstructionsBoard(boardPainter) {
                 if (newPoint !== tempPoint) {
                     const newElement = currentMode === 'line' ? getLine(tempPoint, newPoint) : getCircle(tempPoint, newPoint);
                     addToHistory([newElement, newPoint, tempPoint]);
+                    removeTempPoint();
                 }
-
-                removeTempPoint();
             }
         }
 
@@ -105,6 +101,7 @@ function GeometricConstructionsBoard(boardPainter) {
             const closestElements = findClosestElements(x, y, false);
             const closestPoint = closestElements.find(element => element.type === 'point');
 
+            // Only allow dragging points that are not fixed at a two-element intersection
             if (closestPoint !== undefined && closestPoint.intersect2 === -1) {
                 draggedPoint = closestPoint;
             }
@@ -170,11 +167,12 @@ function GeometricConstructionsBoard(boardPainter) {
         redoStack.length = 0;
         elements = elements.filter(element => !hasClass(element, 'undone'));
 
-        history.push({ type: elementsAdded[0].type, id: elements.length - 1, elements: newElements });
+        history.push({ type: elementsAdded[0].type, elements: newElements });
         newElements.forEach(element => {
             removeClass(element, 'temp');
         });
         repaint();
+        if (onElementAddedCallback) onElementAddedCallback();
     }
 
     function undo() {
@@ -334,13 +332,15 @@ function GeometricConstructionsBoard(boardPainter) {
 
         if (element1.type === 'segment') {
             points = points.filter(pt => {
-                return pt.x >= element1.p1.x && pt.x <= element1.p2.x && pt.y >= element1.p1.y && pt.y <= element1.p2.y;
+                return pt.x >= Math.min(element1.p1.x, element1.p2.x) && pt.x <= Math.max(element1.p1.x, element1.p2.x) &&
+                       pt.y >= Math.min(element1.p1.y, element1.p2.y) && pt.y <= Math.max(element1.p1.y, element1.p2.y);
             });
         }
 
         if (element2.type === 'segment') {
             points = points.filter(pt => {
-                return pt.x >= element2.p1.x && pt.x <= element2.p2.x && pt.y >= element2.p1.y && pt.y <= element2.p2.y;
+                return pt.x >= Math.min(element2.p1.x, element2.p2.x) && pt.x <= Math.max(element2.p1.x, element2.p2.x) &&
+                       pt.y >= Math.min(element2.p1.y, element2.p2.y) && pt.y <= Math.max(element2.p1.y, element2.p2.y);
             });
         }
         return points;
@@ -444,9 +444,17 @@ function GeometricConstructionsBoard(boardPainter) {
 
 
 
+    function clear() {
+        elements = [];
+        history.length = 0;
+        redoStack.length = 0;
+        draggedPoint = null;
+        isDragging = false;
+        boardPainter.clear();
+    }
+
     function repaint() {
         boardPainter.clear();
-
         // draw lines & then line segments and circles & then points, duplicate elements array
         elements.slice().sort((a, b) => {
             const order = { 'line': 1, 'segment': 2, 'circle': 3, 'point': 4 };
