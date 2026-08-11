@@ -89,7 +89,7 @@ function GeometricConstructionsGame(canvasElem) {
     }
 
     function getLevels() {
-        return [gcLevel1];
+        return [gcLevel1, gcLevel2];
     }
 
     function isSolved() {
