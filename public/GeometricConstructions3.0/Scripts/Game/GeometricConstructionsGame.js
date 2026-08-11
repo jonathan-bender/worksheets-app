@@ -17,6 +17,7 @@ function GeometricConstructionsGame(canvasElem) {
     self.undo = () => activeBoard.undo();
     self.redo = () => activeBoard.redo();
     self.getActiveLevel = () => activeLevel;
+    self.repaint = () => activeBoard && activeBoard.repaint();
 
     // start
 

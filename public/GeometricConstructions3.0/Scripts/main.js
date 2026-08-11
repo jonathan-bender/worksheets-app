@@ -15,6 +15,13 @@ function Init() {
 
     gcGame.start();
 
+    // Resize canvas to match window whenever the window is resized, then repaint.
+    window.addEventListener('resize', () => {
+        canvasElement.width = window.innerWidth;
+        canvasElement.height = window.innerHeight;
+        gcGame.repaint();
+    });
+
     // show level info modal on start
     const level = gcGame.getActiveLevel();
     if (level) showLevelModal(level.Name, level.Description, level.Image);
