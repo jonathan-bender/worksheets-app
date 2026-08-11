@@ -42,9 +42,8 @@ function GeometricConstructionsBoard(boardPainter) {
                 if (newPoint !== tempPoint) {
                     const newElement = currentMode === 'line' ? getLine(tempPoint, newPoint) : getCircle(tempPoint, newPoint);
                     addToHistory([newElement, newPoint, tempPoint]);
+                    removeTempPoint();
                 }
-
-                removeTempPoint();
             }
         }
 

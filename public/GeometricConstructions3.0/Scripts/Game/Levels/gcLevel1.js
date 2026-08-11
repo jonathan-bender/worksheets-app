@@ -5,7 +5,7 @@ const gcLevel1 = {
         // given
         { type: "point", x: 200, y: 400, classList: ['given'] },
         { type: "point", x: 400, y: 400, classList: ['given'] },
-        { type: "segment", p1: 0, p2: 1, classList: ['given', 'shown-solution'] },
+        { type: "segment", p1: 0, p2: 1, classList: ['given'] },
 
         // solution steps
         { type: "circle", p1: 0, p2: 1, classList: ['solution-step'] },
