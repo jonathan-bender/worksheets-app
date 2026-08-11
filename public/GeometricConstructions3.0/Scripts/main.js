@@ -5,6 +5,12 @@ Init();
 
 function Init() {
     canvasElement = document.getElementById("main-canvas");
+
+    // Match canvas resolution to the actual screen size so the drawing plane
+    // fills the screen by extending, not stretching.
+    canvasElement.width = window.innerWidth;
+    canvasElement.height = window.innerHeight;
+
     gcGame = new GeometricConstructionsGame(canvasElement);
 
     gcGame.start();
