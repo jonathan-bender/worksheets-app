@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 
 <head>
     <meta charset="UTF-8">
@@ -33,7 +33,32 @@
             background: #ffffff;
         }
 
-        /* ── Level thumbnail (top-left) ── */
+        /* ── Language selector (top-right) ── */
+        #lang-bar {
+            position: fixed;
+            top: 10px;
+            right: 14px;
+            z-index: 30;
+        }
+        #lang-select {
+            height: 30px;
+            padding: 0 8px;
+            border-radius: 8px;
+            border: 1.5px solid #d0d0d0;
+            background: #ffffff;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            cursor: pointer;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.10);
+        }
+        #lang-select:hover { border-color: #aaa; }
+
+        /* ── RTL: flip prev/next arrows ── */
+        [dir="rtl"] #modal-prev-btn,
+        [dir="rtl"] #modal-next-btn { direction: ltr; }
+
+
         #level-thumb {
             position: fixed;
             top: 12px;
@@ -306,10 +331,18 @@
     <!-- Full-screen canvas -->
     <canvas id="main-canvas"></canvas>
 
+    <!-- Language selector (top, opposite to thumbnail) -->
+    <div id="lang-bar">
+        <select id="lang-select" onchange="switchLang(this.value)" aria-label="Language">
+            <option value="he">עברית</option>
+            <option value="en">English</option>
+        </select>
+    </div>
+
     <!-- Level thumbnail (top-left) -->
     <div id="level-thumb" onclick="openModal()" title="View level info">
         <div class="thumb-placeholder">
-            <span>🔷</span>Level info
+            <span>🔷</span><span data-i18n="Level info">Level info</span>
         </div>
     </div>
 
@@ -318,26 +351,27 @@
         <button class="tool-btn active" id="line" type="button" onclick="switchMode('line')">
             <!-- line icon -->
             <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="13" x2="13" y2="2"/></svg>
-            Line
+            <span data-i18n="Line">Line</span>
         </button>
         <button class="tool-btn" id="circle" type="button" onclick="switchMode('circle')">
             <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="7.5" r="5"/></svg>
-            Circle
+            <span data-i18n="Circle">Circle</span>
         </button>
         <button class="tool-btn" id="move" type="button" onclick="switchMode('move')">
             <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 1v13M1 7.5h13M4 4l-3 3.5 3 3M11 4l3 3.5-3 3"/></svg>
-            Move
+            <span data-i18n="Move">Move</span>
         </button>
 
         <div class="toolbar-divider"></div>
 
         <button class="tool-btn" id="undo" type="button" onclick="undo()">
             <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a5 5 0 1 0 1.5-3.5L2 2"/><path d="M2 2v4h4"/></svg>
-            Undo
+            <span data-i18n="Undo">Undo</span>
         </button>
         <button class="tool-btn" id="redo" type="button" onclick="redo()">
             <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7a5 5 0 1 1-1.5-3.5L13 2"/><path d="M13 2v4H9"/></svg>
-            Redo
+            <span data-i18n="Redo">Redo</span>
+        </button>
         </button>
     </div>
 
@@ -345,21 +379,24 @@
     <div id="modal-overlay" class="hidden" onclick="handleOverlayClick(event)">
         <div id="modal">
             <button id="modal-close" onclick="closeModal()" aria-label="Close">✕</button>
-            <div id="modal-solved-banner">🎉 Level Solved!</div>
+            <div id="modal-solved-banner"><span data-i18n="🎉 Level Solved!">🎉 Level Solved!</span></div>
             <div id="modal-img-wrap">Image coming soon</div>
             <h2 id="modal-title"></h2>
             <p id="modal-desc"></p>
             <div id="modal-level-nav">
-                <button id="modal-prev-btn" class="modal-nav-btn" onclick="goToPrevLevel()" aria-label="Previous level">&#8592; Prev</button>
+                <button id="modal-prev-btn" class="modal-nav-btn" onclick="goToPrevLevel()" aria-label="Previous level"></button>
                 <span id="modal-level-counter"></span>
-                <button id="modal-next-btn" class="modal-nav-btn" onclick="goToNextLevel()" aria-label="Next level">Next &#8594;</button>
+                <button id="modal-next-btn" class="modal-nav-btn" onclick="goToNextLevel()" aria-label="Next level"></button>
             </div>
             <button id="modal-start-btn">Start</button>
         </div>
     </div>
 
+    <script src="Scripts/i18n.js"></script>
     <script src="Scripts/Game/Levels/gcLevel1.js"></script>
     <script src="Scripts/Game/Levels/gcLevel2.js"></script>
+    <script src="Scripts/Game/Levels/gcLevel3.js"></script>
+    <script src="Scripts/Game/Levels/gcLevel4.js"></script>
     <script src="Scripts/Game/drawingRules.js"></script>
     <script src="Scripts/Game/MathHelpers.js"></script>
     <script src="Scripts/Game/GeometricConstructionsCanvas.js"></script>

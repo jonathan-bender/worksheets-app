@@ -30,6 +30,9 @@ function Init() {
     const level = gcGame.getActiveLevel();
     if (level) showLevelModal(level.Name, level.Description, level.Image);
 
+    // Apply default language (Hebrew) to static DOM elements
+    i18n.applyTranslations();
+
     // mouse event listeners
     canvasElement.addEventListener('click', (event) => {
         const pos = clientToCanvas(event.clientX, event.clientY);
@@ -156,21 +159,32 @@ function redo() {
     gcGame.redo();
 }
 
+// ── Language switching ──
+
+function switchLang(lang) {
+    i18n.setLang(lang);
+    // Refresh the open modal if visible
+    const level = gcGame && gcGame.getActiveLevel();
+    if (level && !document.getElementById('modal-overlay').classList.contains('hidden')) {
+        showLevelModal(level.Name, level.Description, level.Image, gcGame.isSolved());
+    }
+}
+
 // ── Modal helpers ──
 
 function showLevelModal(name, description, imageSrc, solved) {
-    document.getElementById('modal-title').textContent = name || '';
-    document.getElementById('modal-desc').textContent = description || '';
+    document.getElementById('modal-title').textContent   = i18n.t(name) || '';
+    document.getElementById('modal-desc').textContent    = i18n.t(description) || '';
 
     const imgWrap = document.getElementById('modal-img-wrap');
     imgWrap.innerHTML = '';
     if (imageSrc) {
         const img = document.createElement('img');
         img.src = imageSrc;
-        img.alt = name || 'Level image';
+        img.alt = i18n.t(name) || 'Level image';
         imgWrap.appendChild(img);
     } else {
-        imgWrap.textContent = 'Image coming soon';
+        imgWrap.textContent = i18n.t('Image coming soon');
     }
 
     const startBtn = document.getElementById('modal-start-btn');
@@ -178,11 +192,11 @@ function showLevelModal(name, description, imageSrc, solved) {
         const levels = gcGame ? gcGame.getLevels() : [];
         const idx = gcGame ? gcGame.getActiveLevelIndex() : 0;
         const hasNext = idx < levels.length - 1;
-        startBtn.textContent = hasNext ? '🎉 Next Level →' : '🎉 Continue';
+        startBtn.textContent = hasNext ? i18n.t('🎉 Next Level →') : i18n.t('🎉 Continue');
         startBtn.onclick = hasNext ? goToNextLevel : closeModal;
         document.getElementById('modal-solved-banner').style.display = 'block';
     } else {
-        startBtn.textContent = 'Start';
+        startBtn.textContent = i18n.t('Start');
         startBtn.onclick = closeModal;
         document.getElementById('modal-solved-banner').style.display = 'none';
     }
@@ -191,9 +205,13 @@ function showLevelModal(name, description, imageSrc, solved) {
     if (gcGame) {
         const levels = gcGame.getLevels();
         const idx = gcGame.getActiveLevelIndex();
-        document.getElementById('modal-level-counter').textContent = `Level ${idx + 1} of ${levels.length}`;
-        document.getElementById('modal-prev-btn').disabled = idx <= 0;
-        document.getElementById('modal-next-btn').disabled = idx >= levels.length - 1;
+        document.getElementById('modal-level-counter').textContent = i18n.levelCounter(idx + 1, levels.length);
+        const prevBtn = document.getElementById('modal-prev-btn');
+        const nextBtn = document.getElementById('modal-next-btn');
+        prevBtn.disabled = idx <= 0;
+        nextBtn.disabled = idx >= levels.length - 1;
+        prevBtn.textContent = i18n.t('← Prev');
+        nextBtn.textContent = i18n.t('Next →');
     }
 
     document.getElementById('modal-overlay').classList.remove('hidden');

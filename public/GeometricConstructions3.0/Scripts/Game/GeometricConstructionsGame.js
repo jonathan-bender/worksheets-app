@@ -108,7 +108,7 @@ function GeometricConstructionsGame(canvasElem) {
     }
 
     function getLevels() {
-        return [gcLevel1, gcLevel2];
+        return [gcLevel1, gcLevel2, gcLevel3, gcLevel4];
     }
 
     function loadLevel(index) {
