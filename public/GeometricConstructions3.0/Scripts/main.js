@@ -15,6 +15,10 @@ function Init() {
 
     gcGame.start();
 
+    gcGame.setOnSolved((level) => {
+        showLevelModal(level.Name, level.Description, level.Image, true);
+    });
+
     // Resize canvas to match window whenever the window is resized, then repaint.
     window.addEventListener('resize', () => {
         canvasElement.width = window.innerWidth;
@@ -110,14 +114,9 @@ function redo() {
     gcGame.redo();
 }
 
-function isSolved(){
-    if (gcGame.isSolved()) console.log("solved");
-    else console.log("not solved");
-}
-
 // ── Modal helpers ──
 
-function showLevelModal(name, description, imageSrc) {
+function showLevelModal(name, description, imageSrc, solved) {
     document.getElementById('modal-title').textContent = name || '';
     document.getElementById('modal-desc').textContent = description || '';
 
@@ -132,12 +131,21 @@ function showLevelModal(name, description, imageSrc) {
         imgWrap.textContent = 'Image coming soon';
     }
 
+    const startBtn = document.getElementById('modal-start-btn');
+    if (solved) {
+        startBtn.textContent = '🎉 Continue';
+        document.getElementById('modal-solved-banner').style.display = 'block';
+    } else {
+        startBtn.textContent = 'Start';
+        document.getElementById('modal-solved-banner').style.display = 'none';
+    }
+
     document.getElementById('modal-overlay').classList.remove('hidden');
 }
 
 function openModal() {
     const level = gcGame && gcGame.getActiveLevel();
-    if (level) showLevelModal(level.Name, level.Description, level.Image);
+    if (level) showLevelModal(level.Name, level.Description, level.Image, gcGame.isSolved());
 }
 
 function closeModal() {

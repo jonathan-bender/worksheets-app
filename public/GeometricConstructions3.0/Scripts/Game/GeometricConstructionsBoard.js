@@ -8,7 +8,8 @@ function GeometricConstructionsBoard(boardPainter) {
     let elements = [],
         currentMode = 'line',
         draggedPoint = null,
-        isDragging = false;
+        isDragging = false,
+        onElementAddedCallback = null;
 
     // public functions
 
@@ -30,6 +31,7 @@ function GeometricConstructionsBoard(boardPainter) {
     self.getPoint = GetPointByCoordinates;
     self.updatePositions = updateSnappedElements;
     self.repaint = repaint;
+    self.setOnElementAdded = (cb) => { onElementAddedCallback = cb; };
 
     // player interactions
     function click(x, y) {
@@ -168,6 +170,7 @@ function GeometricConstructionsBoard(boardPainter) {
             removeClass(element, 'temp');
         });
         repaint();
+        if (onElementAddedCallback) onElementAddedCallback();
     }
 
     function undo() {

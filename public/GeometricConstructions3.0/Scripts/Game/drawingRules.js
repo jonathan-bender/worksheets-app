@@ -38,4 +38,10 @@
         { condition: { class: "solution-step" }, style: { visible: false } },
         { condition: { class: "solution" }, style: { visible: false } },
         { condition: { class: "shown-solution" }, style: { visible: false } },
+
+        // revealed solution (shown after level is solved) — green
+        { condition: { class: "shown-solution-revealed" }, style: { color: "#0fbe03", width: 3 } },
+        { condition: { type: "segment", class: "shown-solution-revealed" }, style: { type: "segment", color: "#0fbe03", width: 3 } },
+        { condition: { type: "line", class: "shown-solution-revealed" }, style: { type: "line", color: "#0fbe03", width: 3 } },
+        { condition: { type: "line", class: "shown-solution-revealed" }, style: { type: "segment", color: "#0fbe03", width: 3 } },
     ];
