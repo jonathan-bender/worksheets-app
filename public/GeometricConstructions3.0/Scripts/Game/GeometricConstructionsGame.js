@@ -16,7 +16,7 @@ function GeometricConstructionsGame(canvasElem) {
     self.switchMode = (mode) => activeBoard.switchMode(mode);
     self.undo = () => activeBoard.undo();
     self.redo = () => activeBoard.redo();
-    self.isSolved = isSolved;
+    self.getActiveLevel = () => activeLevel;
 
     // start
 

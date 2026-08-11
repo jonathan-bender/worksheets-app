@@ -9,6 +9,10 @@ function Init() {
 
     gcGame.start();
 
+    // show level info modal on start
+    const level = gcGame.getActiveLevel();
+    if (level) showLevelModal(level.Name, level.Description, level.Image);
+
     // mouse event listeners
     canvasElement.addEventListener('click', (event) => {
         const pos = clientToCanvas(event.clientX, event.clientY);
@@ -80,7 +84,6 @@ function clientToCanvas(clientX, clientY) {
 
 function switchMode(mode) {
     gcGame.switchMode(mode);
-    // update active button highlight
     document.querySelectorAll('#line, #circle, #move').forEach(btn => btn.classList.remove('active'));
     const activeBtn = document.getElementById(mode);
     if (activeBtn) activeBtn.classList.add('active');
@@ -97,4 +100,37 @@ function redo() {
 function isSolved(){
     if (gcGame.isSolved()) console.log("solved");
     else console.log("not solved");
+}
+
+// ── Modal helpers ──
+
+function showLevelModal(name, description, imageSrc) {
+    document.getElementById('modal-title').textContent = name || '';
+    document.getElementById('modal-desc').textContent = description || '';
+
+    const imgWrap = document.getElementById('modal-img-wrap');
+    imgWrap.innerHTML = '';
+    if (imageSrc) {
+        const img = document.createElement('img');
+        img.src = imageSrc;
+        img.alt = name || 'Level image';
+        imgWrap.appendChild(img);
+    } else {
+        imgWrap.textContent = 'Image coming soon';
+    }
+
+    document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function openModal() {
+    const level = gcGame && gcGame.getActiveLevel();
+    if (level) showLevelModal(level.Name, level.Description, level.Image);
+}
+
+function closeModal() {
+    document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+function handleOverlayClick(event) {
+    if (event.target === document.getElementById('modal-overlay')) closeModal();
 }
