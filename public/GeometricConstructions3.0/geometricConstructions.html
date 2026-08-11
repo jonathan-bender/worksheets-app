@@ -54,9 +54,8 @@
         }
         #lang-select:hover { border-color: #aaa; }
 
-        /* ── RTL: flip prev/next arrows ── */
-        [dir="rtl"] #modal-prev-btn,
-        [dir="rtl"] #modal-next-btn { direction: ltr; }
+        /* ── RTL: reverse prev/next button order ── */
+        [dir="rtl"] #modal-level-nav { flex-direction: row-reverse; }
 
 
         #level-thumb {
@@ -101,8 +100,11 @@
             padding: 6px;
             line-height: 1.3;
         }
-        #level-thumb .thumb-placeholder span {
-            font-size: 26px;
+        #level-thumb .thumb-placeholder span:first-child {
+            font-size: 22px;
+        }
+        #level-thumb .thumb-placeholder span:last-child {
+            font-size: 9px;
         }
 
         /* ── Bottom toolbar ── */
