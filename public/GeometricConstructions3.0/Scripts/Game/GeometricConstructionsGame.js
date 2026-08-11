@@ -22,6 +22,7 @@ function GeometricConstructionsGame(canvasElem) {
     self.getActiveLevelIndex = () => levels ? levels.indexOf(activeLevel) : 0;
     self.getLevels = () => levels ? levels.slice() : [];
     self.loadLevel = loadLevel;
+    self.pan = (dx, dy) => activeBoard && activeBoard.pan(dx, dy);
     self.repaint = () => activeBoard && activeBoard.repaint();
     self.isSolved = isSolved;
     self.setOnSolved = (cb) => { onSolvedCallback = cb; };
@@ -79,8 +80,19 @@ function GeometricConstructionsGame(canvasElem) {
                 result = board.createCircle(results[e.p1], results[e.p2], e.classList);
             }
             results.push(result);
-
         });
+
+        // Center the given elements on the canvas
+        const givenPoints = board.getElements().filter(el => el.type === 'point' && el.classList.includes('given'));
+        if (givenPoints.length > 0) {
+            const xs = givenPoints.map(p => p.x);
+            const ys = givenPoints.map(p => p.y);
+            const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+            const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+            const targetX = canvasElem.width / 2;
+            const targetY = canvasElem.height / 2;
+            board.pan(targetX - cx, targetY - cy);
+        }
 
         board.repaint();
     }
@@ -139,7 +151,9 @@ function GeometricConstructionsGame(canvasElem) {
     }
 
     function compareLines(line1, line2) {
-        return ((line1.p1.x === line2.p1.x && line1.p1.y === line2.p1.y && line1.p2.x === line2.p2.x && line1.p2.y === line2.p2.y) ||
-            (line1.p1.x === line2.p2.x && line1.p1.y === line2.p2.y && line1.p2.x === line2.p1.x && line1.p2.y === line2.p1.y));
+        const eps = 1e-6;
+        const eq = (a, b) => Math.abs(a - b) < eps;
+        return ((eq(line1.p1.x, line2.p1.x) && eq(line1.p1.y, line2.p1.y) && eq(line1.p2.x, line2.p2.x) && eq(line1.p2.y, line2.p2.y)) ||
+            (eq(line1.p1.x, line2.p2.x) && eq(line1.p1.y, line2.p2.y) && eq(line1.p2.x, line2.p1.x) && eq(line1.p2.y, line2.p1.y)));
     }
 }

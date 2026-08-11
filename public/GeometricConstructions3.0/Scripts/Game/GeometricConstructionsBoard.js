@@ -3,7 +3,7 @@ function GeometricConstructionsBoard(boardPainter) {
         history = [],
         redoStack = [],
         mathHelpers = new MathHelpers(),
-        snappingThreshold = 10;
+        snappingThreshold = 20;
 
     let elements = [],
         currentMode = 'line',
@@ -33,6 +33,7 @@ function GeometricConstructionsBoard(boardPainter) {
     self.repaint = repaint;
     self.setOnElementAdded = (cb) => { onElementAddedCallback = cb; };
     self.clear = clear;
+    self.pan = (dx, dy) => { dragPlane(dx, dy); };
 
     // player interactions
     function click(x, y) {

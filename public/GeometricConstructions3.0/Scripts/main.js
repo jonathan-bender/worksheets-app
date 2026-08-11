@@ -57,30 +57,72 @@ function Init() {
     }, { passive: false });
 
     // touch event listeners (mobile support)
+    let activeTouches = {};
+
     canvasElement.addEventListener('touchstart', (event) => {
         event.preventDefault();
-        const touch = event.changedTouches[0];
-        const pos = clientToCanvas(touch.clientX, touch.clientY);
-        gcGame.mouseDown(pos.x, pos.y);
-        canvasElement.lastX = pos.x;
-        canvasElement.lastY = pos.y;
-        canvasElement.touchMoved = false;
+        Array.from(event.changedTouches).forEach(t => {
+            activeTouches[t.identifier] = clientToCanvas(t.clientX, t.clientY);
+        });
+
+        const ids = Object.keys(activeTouches);
+        if (ids.length === 1) {
+            const pos = activeTouches[ids[0]];
+            gcGame.mouseDown(pos.x, pos.y);
+            canvasElement.lastX = pos.x;
+            canvasElement.lastY = pos.y;
+            canvasElement.touchMoved = false;
+        }
     }, { passive: false });
+
     canvasElement.addEventListener('touchmove', (event) => {
         event.preventDefault();
-        const touch = event.changedTouches[0];
-        const pos = clientToCanvas(touch.clientX, touch.clientY);
-        const dx = pos.x - (canvasElement.lastX || pos.x);
-        const dy = pos.y - (canvasElement.lastY || pos.y);
-        gcGame.mouseMove(pos.x, pos.y, dx, dy);
-        canvasElement.lastX = pos.x;
-        canvasElement.lastY = pos.y;
-        canvasElement.touchMoved = true;
+        const prevTouches = Object.assign({}, activeTouches);
+        Array.from(event.changedTouches).forEach(t => {
+            activeTouches[t.identifier] = clientToCanvas(t.clientX, t.clientY);
+        });
+
+        const ids = Object.keys(activeTouches);
+        if (ids.length >= 2) {
+            // Two-finger: pinch-zoom + pan regardless of active tool
+            const [id0, id1] = ids;
+            const cur0 = activeTouches[id0], cur1 = activeTouches[id1];
+            const prev0 = prevTouches[id0] || cur0, prev1 = prevTouches[id1] || cur1;
+
+            const prevDist = Math.hypot(prev1.x - prev0.x, prev1.y - prev0.y);
+            const curDist  = Math.hypot(cur1.x  - cur0.x,  cur1.y  - cur0.y);
+            const midX = (cur0.x + cur1.x) / 2;
+            const midY = (cur0.y + cur1.y) / 2;
+            const prevMidX = (prev0.x + prev1.x) / 2;
+            const prevMidY = (prev0.y + prev1.y) / 2;
+
+            // zoom (positive deltaY = zoom out in the board's zoom handler)
+            if (prevDist > 0) {
+                const deltaY = (prevDist - curDist);
+                gcGame.zoom(midX, midY, deltaY);
+            }
+            // pan
+            gcGame.pan(midX - prevMidX, midY - prevMidY);
+            canvasElement.touchMoved = true;
+        } else if (ids.length === 1) {
+            const pos = activeTouches[ids[0]];
+            const dx = pos.x - (canvasElement.lastX || pos.x);
+            const dy = pos.y - (canvasElement.lastY || pos.y);
+            gcGame.mouseMove(pos.x, pos.y, dx, dy);
+            canvasElement.lastX = pos.x;
+            canvasElement.lastY = pos.y;
+            canvasElement.touchMoved = true;
+        }
     }, { passive: false });
+
     canvasElement.addEventListener('touchend', (event) => {
         event.preventDefault();
+        Array.from(event.changedTouches).forEach(t => {
+            delete activeTouches[t.identifier];
+        });
         gcGame.mouseUp();
-        if (!canvasElement.touchMoved) {
+        const ids = Object.keys(activeTouches);
+        if (ids.length === 0 && !canvasElement.touchMoved) {
             const touch = event.changedTouches[0];
             const pos = clientToCanvas(touch.clientX, touch.clientY);
             gcGame.click(pos.x, pos.y);
