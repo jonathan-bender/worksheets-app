@@ -1,12 +1,9 @@
 function GeometricConstructionsCanvas(canvasElement) {
-    const ctx = canvasElement.getContext("2d"),
-        canvasWidth = canvasElement.width,
-        canvasHeight = canvasElement.height
-        mathHelpers = new MathHelpers();
-
+    const ctx = canvasElement.getContext("2d");
+    const mathHelpers = new MathHelpers();
 
     this.DrawLine = function (element, style) {
-        let intersectionWithCanvasEdge = mathHelpers.getIntersectionWithBoardEdge(element.p1, element.p2, canvasWidth, canvasHeight);
+        let intersectionWithCanvasEdge = mathHelpers.getIntersectionWithBoardEdge(element.p1, element.p2, canvasElement.width, canvasElement.height);
         if (intersectionWithCanvasEdge) {
             ctx.strokeStyle = style.color || "#7d7d7d";
             ctx.lineWidth = style.width || 2;
@@ -51,6 +48,6 @@ function GeometricConstructionsCanvas(canvasElement) {
     }
 
     this.clear = function () {
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     }
 }

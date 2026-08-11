@@ -92,28 +92,35 @@ function MathHelpers() {
 
         let points = [];
 
+        const addPoint = (pt) => {
+            // deduplicate: skip if a point with the same coordinates already exists
+            if (!points.some(p => Math.abs(p.x - pt.x) < 1e-9 && Math.abs(p.y - pt.y) < 1e-9)) {
+                points.push(pt);
+            }
+        };
+
         // Check intersection with left edge (x=0)
         let yAtLeftEdge = intercept;
         if (yAtLeftEdge >= 0 && yAtLeftEdge <= boardHeight) {
-            points.push({ x: 0, y: yAtLeftEdge });
+            addPoint({ x: 0, y: yAtLeftEdge });
         }
 
         // Check intersection with right edge (x=boardWidth)
         let yAtRightEdge = slope * boardWidth + intercept;
         if (yAtRightEdge >= 0 && yAtRightEdge <= boardHeight) {
-            points.push({ x: boardWidth, y: yAtRightEdge });
+            addPoint({ x: boardWidth, y: yAtRightEdge });
         }
 
         // Check intersection with top edge (y=0)
         let xAtTopEdge = -intercept / slope;
         if (xAtTopEdge >= 0 && xAtTopEdge <= boardWidth) {
-            points.push({ x: xAtTopEdge, y: 0 });
+            addPoint({ x: xAtTopEdge, y: 0 });
         }
 
         // Check intersection with bottom edge (y=boardHeight)
         let xAtBottomEdge = (boardHeight - intercept) / slope;
         if (xAtBottomEdge >= 0 && xAtBottomEdge <= boardWidth) {
-            points.push({ x: xAtBottomEdge, y: boardHeight });
+            addPoint({ x: xAtBottomEdge, y: boardHeight });
         }
 
         if (points.length < 2) {

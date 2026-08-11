@@ -74,15 +74,19 @@ function GeometricConstructionsGame(canvasElem) {
         if (playerSolution.some(c => c.playerSolution === undefined))
             return false;
 
+        // Perturb movable points to verify the construction is geometrically dependent,
+        // not just coincidentally correct. Use try/finally to guarantee state is always restored.
         const moveablePoints = activeBoard.getElements().filter(el => el.type === 'point' && el.classList.includes('movable'));
-        moveablePoints.forEach(c => { c.x += 1; c.y += 1; });
-        activeBoard.updatePositions();
-        const result = !playerSolution.some(c => !compareElements(c.solution, c.playerSolution));
+        const savedCoords = moveablePoints.map(c => ({ point: c, x: c.x, y: c.y }));
 
-        moveablePoints.forEach(c => { c.x -= 1; c.y -= 1; });
-        activeBoard.updatePositions();
-
-        return result;
+        try {
+            moveablePoints.forEach(c => { c.x += 1; c.y += 1; });
+            activeBoard.updatePositions();
+            return !playerSolution.some(c => !compareElements(c.solution, c.playerSolution));
+        } finally {
+            savedCoords.forEach(({ point, x, y }) => { point.x = x; point.y = y; });
+            activeBoard.updatePositions();
+        }
     }
 
     function compareElements(e1, e2) {
