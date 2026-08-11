@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Patterns and algebraic expressions</title>
+</head>
+
+<body>
+    <div>
+        <h1>Patterns and algebraic expressions</h1>
+        <p>complete the pattern</p>
+        <div>
+            <p>structure 1</p>
+            <canvas id="structure-1" height="1000" width="1000" style="border:1px solid black"></canvas>
+        </div>
+        <div>
+            <p>structure 2</p>
+            <canvas id="structure-2" height="1000" width="1000" style="border:1px solid black"></canvas>
+        </div>
+        <div>
+            <p>structure 3</p>
+            <canvas id="structure-3" height="1000" width="1000" style="border:1px solid black"></canvas>
+        </div>
+
+        <div>
+            <p>structure 4: complete</p>
+            <canvas id="main-canvas" height="1000" width="1000" style="border:1px solid black"></canvas>
+        </div>
+
+        <div>
+            <p>how many squares are added in each structure?</p>
+            <input type="text" id="num-of-squares" />
+        </div>
+        <div>
+            <p>what is the algebraic expression describing the number of squares in the n-th structure?</p>
+            <input type="text" id="algebraic-expression" />
+        </div>
+        <div>
+            <button type="submit" id="submit-btn" onclick="submit()">submit</button>
+            <div id="feedback"></div>
+        </div>
+    </div>
+    <script>
+        const canvasElm = document.getElementById("main-canvas"),
+            feedbackElm = document.getElementById("feedback"),
+            mainCtx = canvasElm.getContext("2d"),
+            sideLength = 30, sideMargin = 2, gridWidth = 5, gridHeight = 5;
+
+        canvasElm.setAttribute("width", sideLength * gridWidth);
+        canvasElm.setAttribute("height", sideLength * gridWidth);
+        mainCtx.fillStyle = "black";
+
+
+        const appGrid = Array.from({ length: gridHeight }, () => new Array(gridWidth).fill(false));
+        const targetGrid = [
+            [
+                false,
+                false,
+                false,
+                false,
+                false,
+                true
+            ],
+            [
+                false,
+                false,
+                false,
+                false,
+                false
+            ],
+            [
+                false,
+                false,
+                true,
+                true,
+                true
+            ],
+            [
+                false,
+                true,
+                true,
+                true,
+                true
+            ],
+            [
+                false,
+                false,
+                false,
+                false,
+                false
+            ]
+        ]
+
+        const givenGrids = [
+            [
+                [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                ],
+                [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                ],
+                [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                ],
+                [
+                    false,
+                    false,
+                    false,
+                    false,
+                    true
+                ],
+                [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                ]
+            ],
+            [
+                [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                ],
+                [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                ],
+                [
+                    false,
+                    false,
+                    false,
+                    false,
+                    true
+                ],
+                [
+                    false,
+                    false,
+                    false,
+                    true,
+                    true
+                ],
+                [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                ]
+            ],
+            [
+                [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                ],
+                [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                ],
+                [
+                    false,
+                    false,
+                    false,
+                    true,
+                    true
+                ],
+                [
+                    false,
+                    false,
+                    true,
+                    true,
+                    true
+                ],
+                [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                ]
+            ]
+        ];
+        repaint(mainCtx, appGrid);
+        function repaint(ctx, currentGrid) {
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, 1000, 1000);
+            ctx.fillStyle = "black";
+            for (i = 0; i < gridWidth; i++)
+                for (j = 0; j < gridHeight; j++) {
+                    ctx.strokeRect(i * (sideLength), j * (sideLength), sideLength - sideMargin, sideLength - sideMargin);
+                    if (currentGrid[i][j])
+                        ctx.fillRect(i * (sideLength), j * (sideLength), sideLength - sideMargin, sideLength - sideMargin);
+                }
+        }
+
+        function isSolved() {
+            for (i = 0; i < gridWidth; i++)
+                for (j = 0; j < gridHeight; j++)
+                    if (appGrid[i][j] != targetGrid[i][j])
+                        return false;
+
+
+            if (document.getElementById("num-of-squares").value != "2")
+                return false;
+
+            if (document.getElementById("algebraic-expression").value != "2n+1")
+                return false;
+
+            return true;
+        }
+
+        function submit() {
+            if (isSolved())
+                feedbackElm.innerHTML = "Correct!";
+            else
+                feedbackElm.innerHTML = "Try again..";
+        }
+
+        canvasElm.addEventListener('click', function (event) {
+            const eX = event.offsetX,
+                eY = event.offsetY,
+                gridX = Math.floor(eX / sideLength),
+                gridY = Math.floor(eY / sideLength);
+
+            appGrid[gridX][gridY] = !appGrid[gridX][gridY];
+            repaint(mainCtx, appGrid);
+
+        });
+
+        for (let i = 0; i < 3; i++) {
+            var currentCanvasElm = document.getElementById("structure-" + (i + 1).toString()),
+                currentCtx = currentCanvasElm.getContext("2d");
+            currentCanvasElm.setAttribute("width", sideLength * gridWidth);
+            currentCanvasElm.setAttribute("height", sideLength * gridWidth);
+            repaint(currentCtx, givenGrids[i]);
+
+        }
+    </script>
+</body>
+
+</html>

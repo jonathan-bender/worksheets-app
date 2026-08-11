@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Geometric constructions</title>
+</head>
+
+<body>
+    <div>
+        <canvas id="main-canvas" width="1000" height="1000" style="border: 1px solid black;">
+        </canvas>
+    </div>
+    <div>
+        <button type="button" id="line" onclick="switchMode('line')">Line</button>
+        <button type="button" id="circle" onclick="switchMode('circle')">Circle</button>
+        <button type="button" id="move" onclick="switchMode('move')">Move</button>
+        <button type="button" id="undo" onclick="undo()">Undo</button>
+        <button type="button" id="redo" onclick="redo()">Redo</button>
+        <button type="button" id="is-solved" onclick="isSolved()">Check</button>
+    </div>
+    <script src="Scripts/Game/Levels/gcLevel1.js"></script>
+    <script src="Scripts/Game/drawingRules.js"></script>
+    <script src="Scripts/Game/MathHelpers.js"></script>
+    <script src="Scripts/Game/GeometricConstructionsCanvas.js"></script>
+    <script src="Scripts/Game/GoemetricConstructionsBoard.js"></script>
+    <script src="Scripts/Game/GeometricConstructionsGame.js"></script>
+    <script src="Scripts/main.js"></script>
+</body>
+
+</html>

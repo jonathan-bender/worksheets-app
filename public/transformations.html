@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>טרנספורמציות של פונקציות — דף עבודה</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.2/math.min.js"></script>
+<style>
+  /* ── Design tokens ── */
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --border: #e2e0d8;
+    --border-strong: #c8c5bc;
+    --text: #1a1917;
+    --text-muted: #6b6960;
+    --text-hint: #9e9b93;
+    --accent: #2d5fa6;
+    --accent-light: #e8eef8;
+    --accent-border: #b3c6e8;
+    --success: #1e6b45;
+    --success-bg: #eaf5ee;
+    --success-border: #a3d4b5;
+    --error: #8b2020;
+    --error-bg: #fceaea;
+    --error-border: #e8aaaa;
+    --given-color: #2d5fa6;
+    --student-color: #d4520f;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --font: 'Georgia', serif;
+    --font-ui: system-ui, -apple-system, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    min-height: 100vh;
+    padding: 0 0 4rem;
+  }
+
+  /* ── Header ── */
+  .worksheet-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1.75rem 2rem 1.5rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .worksheet-title {
+    font-family: var(--font);
+    font-size: 1.5rem;
+    font-weight: normal;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .worksheet-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .progress-pill {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 12px;
+    white-space: nowrap;
+  }
+
+  /* ── Question card ── */
+  .questions { max-width: 820px; margin: 2rem auto; padding: 0 1.25rem; display: flex; flex-direction: column; gap: 2rem; }
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .q-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .q-number {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--text);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .q-number.correct { background: var(--success); }
+  .q-number.incorrect { background: var(--error); }
+  .q-prompt {
+    font-family: var(--font);
+    font-size: 1rem;
+    line-height: 1.55;
+    color: var(--text);
+  }
+  .q-prompt code {
+    font-family: 'Courier New', monospace;
+    background: var(--border);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
+  .q-body { padding: 1.25rem 1.5rem; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+
+  /* ── Plot ── */
+  .plot-wrap { flex: 0 0 auto; }
+  canvas.plot { display: block; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #fff; }
+  .plot-legend {
+    display: flex; gap: 1rem; margin-top: 6px;
+    font-size: 0.72rem; color: var(--text-muted);
+  }
+  .legend-dot { width: 10px; height: 3px; border-radius: 2px; display: inline-block; margin-right: 4px; vertical-align: middle; }
+
+  /* ── Input area ── */
+  .input-area { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 0.75rem; }
+  .input-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .math-input-wrap { position: relative; }
+  .math-display {
+    min-height: 44px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 10px 44px 10px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 1rem;
+    color: var(--text);
+    background: var(--surface);
+    outline: none;
+    cursor: text;
+    word-break: break-all;
+    transition: border-color 0.15s;
+    user-select: text;
+    direction: ltr;
+    text-align: left;
+  }
+  .math-display:focus-within,
+  .math-display.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+  .math-display .cursor {
+    display: inline-block;
+    width: 2px; height: 1.1em;
+    background: var(--accent);
+    vertical-align: text-bottom;
+    animation: blink 1s steps(1) infinite;
+    margin-left: 1px;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .clear-btn {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: var(--text-hint); font-size: 1.1rem; line-height: 1;
+    padding: 4px; border-radius: 4px;
+  }
+  .clear-btn:hover { color: var(--text); background: var(--bg); }
+
+  /* ── Math keyboard ── */
+  .math-kb {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px;
+  }
+  .math-kb.visible { display: flex; }
+  .kb-row { display: flex; gap: 4px; flex-wrap: wrap; }
+  .kb-btn {
+    height: 36px;
+    min-width: 36px;
+    padding: 0 8px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+    font-size: 0.82rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.1s, transform 0.08s;
+    user-select: none;
+  }
+  .kb-btn:hover { background: var(--accent-light); border-color: var(--accent-border); }
+  .kb-btn:active { transform: scale(0.93); }
+  .kb-btn.wide { min-width: 58px; }
+  .kb-btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .kb-btn.accent:hover { opacity: 0.88; }
+  .kb-section-label {
+    font-size: 0.65rem;
+    color: var(--text-hint);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 2px 0 0 2px;
+  }
+
+  /* ── Submit / feedback ── */
+  .submit-row { display: flex; align-items: center; gap: 0.75rem; }
+  .submit-btn {
+    height: 38px;
+    padding: 0 1.25rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    transition: opacity 0.15s;
+  }
+  .submit-btn:hover { opacity: 0.88; }
+  .submit-btn:disabled { opacity: 0.45; cursor: default; }
+
+  .feedback {
+    font-size: 0.82rem;
+    padding: 7px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    display: none;
+    line-height: 1.45;
+  }
+  .feedback.correct {
+    display: block;
+    background: var(--success-bg);
+    border-color: var(--success-border);
+    color: var(--success);
+  }
+  .feedback.incorrect {
+    display: block;
+    background: var(--error-bg);
+    border-color: var(--error-border);
+    color: var(--error);
+  }
+
+  /* ── Score bar ── */
+  .score-bar {
+    max-width: 820px; margin: 0 auto 0.5rem; padding: 0 1.25rem;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .score-track { flex: 1; height: 4px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .score-fill { height: 100%; background: var(--success); border-radius: 99px; transition: width 0.4s ease; }
+  .score-label { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
+
+  .math-kb { direction: ltr; }
+  .kb-btn { font-family: 'Courier New', monospace; }
+  .q-prompt code { direction: ltr; display: inline-block; }
+
+  @media (max-width: 560px) {
+    .q-body { flex-direction: column; }
+    .worksheet-header { padding: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="worksheet-header">
+  <div>
+    <div class="worksheet-title">טרנספורמציות של פונקציות</div>
+    <div class="worksheet-subtitle">דף עבודה 1 &nbsp;·&nbsp; הזזות והשתקפויות</div>
+  </div>
+  <div class="progress-pill" id="progress-pill">0 / 15 נכון</div>
+</header>
+
+<div class="score-bar">
+  <div class="score-track"><div class="score-fill" id="score-fill" style="width:0%"></div></div>
+  <div class="score-label" id="score-label">0%</div>
+</div>
+
+<div class="questions" id="questions-root"></div>
+
+<script>
+// ════════════════════════════════════════════════════
+// WORKSHEET CONFIG — edit this to create new worksheets
+// Each question: { id, prompt, givenExpr, answerExpr, hint, xRange, yRange }
+// givenExpr: the definition of f(x), e.g. "x^2"
+// answerExpr: expected answer written in terms of f(x), e.g. "f(x) + 2"
+//   f(x) will be substituted with givenExpr before evaluation.
+//   For horizontal shifts, write f(x-3) — the argument shift is applied inside.
+// ════════════════════════════════════════════════════
+const WORKSHEET = {
+  title: "טרנספורמציות של פונקציות — דף עבודה 1",
+  subject: "הזזות והשתקפויות",
+  questions: [
+    {
+      id: 1,
+      prompt: "גרף של <code>f(x)</code> מוצג. כתוב/י ביטוי שמזיז אותו <strong>3 יחידות כלפי מעלה</strong>.",
+      givenExpr: "x^2",
+      answerExpr: "f(x) + 3",
+      hint: "כדי להזיז גרף k יחידות כלפי מעלה, מוסיפים k לפונקציה: f(x) + k",
+      xRange: [-4, 4],
+      yRange: [-2, 10]
+    },
+    {
+      id: 2,
+      prompt: "כתוב/י ביטוי שמזיז את <code>f(x)</code> <strong>2 יחידות כלפי מטה</strong>.",
+      givenExpr: "x^2 + 1",
+      answerExpr: "f(x) - 2",
+      hint: "כדי להזיז גרף k יחידות כלפי מטה, מחסירים k מהפונקציה: f(x) − k",
+      xRange: [-4, 4],
+      yRange: [-4, 8]
+    },
+    {
+      id: 3,
+      prompt: "כתוב/י ביטוי שמזיז את <code>f(x)</code> <strong>3 יחידות ימינה</strong>.",
+      givenExpr: "x^2",
+      answerExpr: "f(x - 3)",
+      hint: "כדי להזיז ימינה h יחידות, מחליפים x ב-(x − h): f(x − h)",
+      xRange: [-2, 6],
+      yRange: [-1, 10]
+    },
+    {
+      id: 4,
+      prompt: "כתוב/י ביטוי שמזיז את <code>f(x)</code> <strong>2 יחידות שמאלה</strong>.",
+      givenExpr: "x^2 - 2",
+      answerExpr: "f(x + 2)",
+      hint: "כדי להזיז שמאלה h יחידות, מחליפים x ב-(x + h): f(x + h)",
+      xRange: [-5, 3],
+      yRange: [-4, 8]
+    },
+    {
+      id: 5,
+      prompt: "כתוב/י ביטוי שמשקף את <code>f(x)</code> <strong>סביב ציר ה-x</strong>.",
+      givenExpr: "x^2 - 2",
+      answerExpr: "-f(x)",
+      hint: "השתקפות סביב ציר ה-x הופכת את סימן ערכי y: −f(x)",
+      xRange: [-4, 4],
+      yRange: [-6, 4]
+    },
+    {
+      id: 6,
+      prompt: "כתוב/י ביטוי שמשקף את <code>f(x)</code> <strong>סביב ציר ה-y</strong>.",
+      givenExpr: "x^3 - 2*x^2",
+      answerExpr: "f(-x)",
+      hint: "השתקפות סביב ציר ה-y מחליפה x ב-(-x): f(−x)",
+      xRange: [-4, 4],
+      yRange: [-6, 6]
+    },
+    {
+      id: 7,
+      prompt: "כתוב/י ביטוי שמזיז את <code>f(x)</code> <strong>1 יחידה שמאלה ו-4 יחידות כלפי מעלה</strong>.",
+      givenExpr: "x^2",
+      answerExpr: "f(x + 1) + 4",
+      hint: "משלבים הזזה אופקית ואנכית: f(x + 1) + 4",
+      xRange: [-5, 3],
+      yRange: [-1, 12]
+    },
+    {
+      id: 8,
+      prompt: "כתוב/י ביטוי שמזיז את <code>f(x)</code> <strong>2 יחידות ימינה ו-3 יחידות כלפי מטה</strong>.",
+      givenExpr: "x^2 + x",
+      answerExpr: "f(x - 2) - 3",
+      hint: "משלבים הזזה ימינה והזזה כלפי מטה: f(x − 2) − 3",
+      xRange: [-3, 5],
+      yRange: [-6, 8]
+    },
+    {
+      id: 9,
+      prompt: "כתוב/י ביטוי שמשקף את <code>f(x)</code> <strong>סביב ציר ה-x</strong> ואז מזיז אותו <strong>2 יחידות כלפי מעלה</strong>.",
+      givenExpr: "x^2 - 1",
+      answerExpr: "-f(x) + 2",
+      hint: "קודם משקפים: −f(x), ואז מוסיפים 2: −f(x) + 2",
+      xRange: [-4, 4],
+      yRange: [-4, 6]
+    },
+    {
+      id: 10,
+      prompt: "כתוב/י ביטוי שמכפיל את <code>f(x)</code> <strong>פי 2 (מתיחה אנכית)</strong>.",
+      givenExpr: "x^2 - x",
+      answerExpr: "2*f(x)",
+      hint: "כפל של הפונקציה בסקלר גורם למתיחה אנכית: k·f(x)",
+      xRange: [-3, 4],
+      yRange: [-4, 10]
+    },
+    {
+      id: 11,
+      prompt: "כתוב/י ביטוי שדוחס את <code>f(x)</code> <strong>אנכית פי 1/2</strong>.",
+      givenExpr: "x^2 + 2",
+      answerExpr: "0.5*f(x)",
+      hint: "דחיסה אנכית: מכפילים ב-½: ½·f(x)",
+      xRange: [-4, 4],
+      yRange: [-1, 8]
+    },
+    {
+      id: 12,
+      prompt: "כתוב/י ביטוי שמשקף את <code>f(x)</code> <strong>סביב ציר ה-y</strong> ואז מזיז <strong>1 יחידה כלפי מטה</strong>.",
+      givenExpr: "x^3 - x",
+      answerExpr: "f(-x) - 1",
+      hint: "משקפים סביב ציר ה-y ומחסירים 1: f(−x) − 1",
+      xRange: [-4, 4],
+      yRange: [-5, 5]
+    },
+    {
+      id: 13,
+      prompt: "כתוב/י ביטוי שמזיז את <code>f(x)</code> <strong>4 יחידות ימינה ומשקף סביב ציר ה-x</strong>.",
+      givenExpr: "x^2 - 3",
+      answerExpr: "-f(x - 4)",
+      hint: "קודם מזיזים ימינה: f(x−4), ואז משקפים: −f(x−4)",
+      xRange: [-1, 8],
+      yRange: [-5, 5]
+    },
+    {
+      id: 14,
+      prompt: "כתוב/י ביטוי שמכפיל את <code>f(x)</code> <strong>פי 2 ומזיז 1 יחידה שמאלה</strong>.",
+      givenExpr: "x^2 - 2*x",
+      answerExpr: "2*f(x + 1)",
+      hint: "מזיזים שמאלה ואז מותחים אנכית: 2·f(x + 1)",
+      xRange: [-4, 4],
+      yRange: [-4, 12]
+    },
+    {
+      id: 15,
+      prompt: "כתוב/י ביטוי שמשקף את <code>f(x)</code> <strong>סביב שני הצירים</strong> (ציר x וציר y).",
+      givenExpr: "x^3 - 2*x",
+      answerExpr: "-f(-x)",
+      hint: "השתקפות סביב שני הצירים: −f(−x)",
+      xRange: [-4, 4],
+      yRange: [-5, 5]
+    }
+  ]
+};
+
+// ════════════════════════════════════════════════════
+// RENDERING ENGINE — don't edit below for new worksheets
+// ════════════════════════════════════════════════════
+
+const PLOT_W = 300, PLOT_H = 260;
+const SAMPLES = 300;
+
+// Substitute f(arg) in an expression string with the givenExpr evaluated at arg.
+// Handles: f(x), f(-x), f(x+1), f(x-3), f(2*x), etc.
+// Strategy: replace all f(...) tokens with (givenExpr with x replaced by the inner arg).
+function resolveFn(exprStr, givenExpr) {
+  // Repeatedly replace f(...) — handles nesting if ever needed
+  let result = exprStr;
+  const MAX_PASSES = 5;
+  for (let pass = 0; pass < MAX_PASSES; pass++) {
+    // Find f( ... ) — match balanced parens
+    const re = /f\(/g;
+    let match;
+    let changed = false;
+    let out = '';
+    let lastIndex = 0;
+    while ((match = re.exec(result)) !== null) {
+      const start = match.index;
+      // find matching closing paren
+      let depth = 1, i = start + 2;
+      while (i < result.length && depth > 0) {
+        if (result[i] === '(') depth++;
+        else if (result[i] === ')') depth--;
+        i++;
+      }
+      const inner = result.slice(start + 2, i - 1); // the argument inside f(...)
+      // Replace x in givenExpr with (inner)
+      const substituted = '(' + givenExpr.replace(/\bx\b/g, `(${inner})`) + ')';
+      out += result.slice(lastIndex, start) + substituted;
+      lastIndex = i;
+      re.lastIndex = i;
+      changed = true;
+    }
+    out += result.slice(lastIndex);
+    result = out;
+    if (!changed) break;
+  }
+  return result;
+}
+
+function evalExpr(exprStr, x, givenExpr) {
+  try {
+    const resolved = givenExpr ? resolveFn(exprStr, givenExpr) : exprStr;
+    return math.evaluate(resolved, { x });
+  } catch { return NaN; }
+}
+
+// Algebraic equivalence: sample at N points, compare
+// Both expressions are resolved against givenExpr before comparison.
+function isEquivalent(exprA, exprB, xRange, givenExpr, tolerance = 0.001) {
+  const xs = [];
+  for (let i = 0; i <= 20; i++) xs.push(xRange[0] + (xRange[1] - xRange[0]) * i / 20);
+  for (const x of xs) {
+    const a = evalExpr(exprA, x, givenExpr);
+    const b = evalExpr(exprB, x, givenExpr);
+    if (isNaN(a) || isNaN(b)) return false;
+    if (Math.abs(a - b) > tolerance) return false;
+  }
+  return true;
+}
+
+function makeScale(range, pixels, padding = 28) {
+  const span = range[1] - range[0];
+  return (v) => padding + (v - range[0]) / span * (pixels - padding * 2);
+}
+
+function drawPlot(canvas, q, studentExpr) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const scX = makeScale(q.xRange, W);
+  const scY = (v) => H - makeScale(q.yRange, H)(v);
+
+  // Grid
+  ctx.strokeStyle = '#ebebeb';
+  ctx.lineWidth = 1;
+  for (let gx = Math.ceil(q.xRange[0]); gx <= q.xRange[1]; gx++) {
+    ctx.beginPath(); ctx.moveTo(scX(gx), 10); ctx.lineTo(scX(gx), H - 10); ctx.stroke();
+  }
+  for (let gy = Math.ceil(q.yRange[0]); gy <= q.yRange[1]; gy++) {
+    ctx.beginPath(); ctx.moveTo(10, scY(gy)); ctx.lineTo(W - 10, scY(gy)); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = '#b0b0b0';
+  ctx.lineWidth = 1.5;
+  if (q.xRange[0] <= 0 && q.xRange[1] >= 0) {
+    ctx.beginPath(); ctx.moveTo(scX(0), 8); ctx.lineTo(scX(0), H - 8); ctx.stroke();
+  }
+  if (q.yRange[0] <= 0 && q.yRange[1] >= 0) {
+    ctx.beginPath(); ctx.moveTo(8, scY(0)); ctx.lineTo(W - 8, scY(0)); ctx.stroke();
+  }
+
+  // Tick labels
+  ctx.fillStyle = '#aaa';
+  ctx.font = '9px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  for (let gx = Math.ceil(q.xRange[0]); gx <= q.xRange[1]; gx++) {
+    if (gx !== 0) ctx.fillText(gx, scX(gx), scY(0) + 11 < H - 6 ? scY(0) + 11 : H - 6);
+  }
+  ctx.textAlign = 'right';
+  for (let gy = Math.ceil(q.yRange[0]); gy <= q.yRange[1]; gy++) {
+    if (gy !== 0) ctx.fillText(gy, scX(0) - 4 > 14 ? scX(0) - 4 : 14, scY(gy) + 3);
+  }
+
+  // Given function f(x)
+  drawCurve(ctx, q.givenExpr, q.xRange, scX, scY, '#2d5fa6', 2.5, [], null);
+
+  // Student expression (live) — resolve f(x) against givenExpr
+  if (studentExpr && studentExpr.trim()) {
+    drawCurve(ctx, studentExpr, q.xRange, scX, scY, '#d4520f', 2.2, [6, 3], q.givenExpr);
+  }
+}
+
+function drawCurve(ctx, expr, xRange, scX, scY, color, lw, dash = [], givenExpr) {
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lw;
+  ctx.setLineDash(dash);
+  let first = true;
+  const steps = SAMPLES;
+  for (let i = 0; i <= steps; i++) {
+    const x = xRange[0] + (xRange[1] - xRange[0]) * i / steps;
+    const y = evalExpr(expr, x, givenExpr);
+    if (isNaN(y) || !isFinite(y)) { first = true; continue; }
+    const px = scX(x), py = scY(y);
+    if (first) { ctx.moveTo(px, py); first = false; }
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// ── State ──
+const state = {}; // keyed by question id: { value, answered, correct }
+WORKSHEET.questions.forEach(q => { state[q.id] = { value: '', answered: false, correct: false }; });
+
+function updateProgress() {
+  const total = WORKSHEET.questions.length;
+  const correct = Object.values(state).filter(s => s.correct).length;
+  document.getElementById('progress-pill').textContent = `${correct} / ${total} נכון`;
+  document.getElementById('score-fill').style.width = `${Math.round(correct / total * 100)}%`;
+  document.getElementById('score-label').textContent = `${Math.round(correct / total * 100)}%`;
+}
+
+// ── Build UI ──
+const root = document.getElementById('questions-root');
+
+WORKSHEET.questions.forEach((q, qi) => {
+  const card = document.createElement('div');
+  card.className = 'q-card';
+  card.id = `qcard-${q.id}`;
+
+  card.innerHTML = `
+    <div class="q-header">
+      <div class="q-number" id="qnum-${q.id}">${q.id}</div>
+      <div class="q-prompt">${q.prompt}</div>
+    </div>
+    <div class="q-body">
+      <div class="plot-wrap">
+        <canvas class="plot" id="plot-${q.id}" width="${PLOT_W}" height="${PLOT_H}"></canvas>
+        <div class="plot-legend">
+          <span><span class="legend-dot" style="background:#2d5fa6"></span>f(x)</span>
+          <span><span class="legend-dot" style="background:#d4520f; height:2px; border-top:2px dashed #d4520f; background:none; width:12px"></span>הביטוי שלך</span>
+        </div>
+      </div>
+      <div class="input-area">
+        <div class="input-label">התשובה שלך</div>
+        <div class="math-input-wrap">
+          <div class="math-display" id="disp-${q.id}" tabindex="0" role="textbox" aria-label="הכנסת ביטוי מתמטי" aria-multiline="false">
+            <span class="cursor" id="cursor-${q.id}"></span>
+          </div>
+          <button class="clear-btn" aria-label="Clear input" data-qid="${q.id}" title="Clear">×</button>
+        </div>
+        <div class="math-kb" id="kb-${q.id}">
+          <div class="kb-section-label">ספרות ואופרטורים</div>
+          <div class="kb-row">
+            ${['7','8','9','×','÷'].map(k => `<button class="kb-btn" data-insert="${k === '×' ? '*' : k === '÷' ? '/' : k}" data-qid="${q.id}">${k}</button>`).join('')}
+          </div>
+          <div class="kb-row">
+            ${['4','5','6','+','-'].map(k => `<button class="kb-btn" data-insert="${k}" data-qid="${q.id}">${k}</button>`).join('')}
+          </div>
+          <div class="kb-row">
+            ${['1','2','3','(',')'].map(k => `<button class="kb-btn" data-insert="${k}" data-qid="${q.id}">${k}</button>`).join('')}
+          </div>
+          <div class="kb-row">
+            <button class="kb-btn wide" data-insert="0" data-qid="${q.id}">0</button>
+            <button class="kb-btn wide" data-insert="." data-qid="${q.id}">.</button>
+            <button class="kb-btn" data-insert="^" data-qid="${q.id}">xⁿ</button>
+          </div>
+          <div class="kb-section-label" style="margin-top:4px">משתנים ופונקציות</div>
+          <div class="kb-row">
+            <button class="kb-btn" data-insert="x" data-qid="${q.id}">x</button>
+            <button class="kb-btn wide" style="font-family:var(--font-ui);font-style:italic" data-insert="f(x)" data-qid="${q.id}">f(x)</button>
+            <button class="kb-btn wide" data-insert="sqrt(" data-qid="${q.id}">√(</button>
+            <button class="kb-btn wide" data-insert="abs(" data-qid="${q.id}">|x|</button>
+          </div>
+          <div class="kb-row">
+            <button class="kb-btn wide" data-insert="sin(" data-qid="${q.id}">sin(</button>
+            <button class="kb-btn wide" data-insert="cos(" data-qid="${q.id}">cos(</button>
+            <button class="kb-btn wide" data-insert="tan(" data-qid="${q.id}">tan(</button>
+            <button class="kb-btn wide" data-insert="log(" data-qid="${q.id}">log(</button>
+            <button class="kb-btn wide" data-insert="pi" data-qid="${q.id}">π</button>
+            <button class="kb-btn wide" data-insert="e" data-qid="${q.id}">e</button>
+          </div>
+          <div class="kb-section-label" style="margin-top:4px">עריכה</div>
+          <div class="kb-row">
+            <button class="kb-btn wide" id="kb-back-${q.id}" data-qid="${q.id}">⌫ מחק</button>
+            <button class="kb-btn wide" id="kb-clear-${q.id}" data-qid="${q.id}">נקה</button>
+          </div>
+        </div>
+        <div class="submit-row">
+          <button class="submit-btn" id="sub-${q.id}" data-qid="${q.id}">בדוק תשובה</button>
+        </div>
+        <div class="feedback" id="fb-${q.id}"></div>
+      </div>
+    </div>
+  `;
+
+  root.appendChild(card);
+
+  // Draw initial plot
+  const canvas = document.getElementById(`plot-${q.id}`);
+  drawPlot(canvas, q, '');
+
+  // ── Input focus / blur → show/hide keyboard ──
+  const disp = document.getElementById(`disp-${q.id}`);
+  const kb = document.getElementById(`kb-${q.id}`);
+
+  disp.addEventListener('focus', () => {
+    disp.classList.add('active');
+    kb.classList.add('visible');
+  });
+  disp.addEventListener('blur', (e) => {
+    // Keep keyboard open if clicking inside it
+    setTimeout(() => {
+      if (!kb.contains(document.activeElement) && document.activeElement !== disp) {
+        disp.classList.remove('active');
+        kb.classList.remove('visible');
+      }
+    }, 120);
+  });
+
+  // Physical keyboard input
+  disp.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      deleteChar(q.id);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      submitAnswer(q.id, q);
+    } else if (e.key.length === 1) {
+      e.preventDefault();
+      insertChar(q.id, e.key, q);
+    }
+  });
+
+  // On-screen keyboard buttons
+  card.querySelectorAll('.kb-btn[data-insert]').forEach(btn => {
+    btn.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      disp.focus();
+      insertChar(q.id, btn.dataset.insert, q);
+    });
+  });
+
+  document.getElementById(`kb-back-${q.id}`)?.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    disp.focus();
+    deleteChar(q.id);
+    redrawPlot(q);
+  });
+  document.getElementById(`kb-clear-${q.id}`)?.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    disp.focus();
+    clearInput(q.id, q);
+  });
+
+  card.querySelectorAll('.clear-btn').forEach(btn => {
+    btn.addEventListener('click', () => clearInput(q.id, q));
+  });
+
+  document.getElementById(`sub-${q.id}`).addEventListener('click', () => submitAnswer(q.id, q));
+});
+
+// ── Input helpers ──
+function getValueText(qid) { return state[qid].value; }
+
+function renderDisplay(qid) {
+  const disp = document.getElementById(`disp-${qid}`);
+  const val = state[qid].value;
+  // Pretty-print some tokens
+  const pretty = val
+    .replace(/\*/g, '·')
+    .replace(/sqrt\(/g, '√(')
+    .replace(/\^/g, '^');
+  disp.innerHTML = `<span>${escHtml(pretty)}</span><span class="cursor" id="cursor-${qid}"></span>`;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function insertChar(qid, char, q) {
+  if (state[qid].answered) return;
+  state[qid].value += char;
+  renderDisplay(qid);
+  redrawPlot(q);
+}
+
+function deleteChar(qid) {
+  if (state[qid].answered) return;
+  state[qid].value = state[qid].value.slice(0, -1);
+  renderDisplay(qid);
+}
+
+function clearInput(qid, q) {
+  if (state[qid].answered) return;
+  state[qid].value = '';
+  renderDisplay(qid);
+  redrawPlot(q);
+  document.getElementById(`fb-${qid}`).className = 'feedback';
+  document.getElementById(`fb-${qid}`).textContent = '';
+}
+
+function redrawPlot(q) {
+  const canvas = document.getElementById(`plot-${q.id}`);
+  drawPlot(canvas, q, state[q.id].value);
+}
+
+// ── Answer checking ──
+function submitAnswer(qid, q) {
+  const studentExpr = state[qid].value.trim();
+  const fb = document.getElementById(`fb-${qid}`);
+  const numEl = document.getElementById(`qnum-${qid}`);
+
+  if (!studentExpr) {
+    fb.className = 'feedback incorrect';
+    fb.textContent = 'אנא הכנס/י ביטוי לפני הבדיקה.';
+    return;
+  }
+
+  // Validate student expression is parseable (resolve f() first so math.js doesn't choke on it)
+  try {
+    const resolved = resolveFn(studentExpr, q.givenExpr);
+    math.parse(resolved);
+  } catch {
+    fb.className = 'feedback incorrect';
+    fb.textContent = `הביטוי לא תקין. בדוק/י את התחביר — השתמש/י ב-* לכפל וב-^ לחזקה.`;
+    return;
+  }
+
+  const correct = isEquivalent(studentExpr, q.answerExpr, q.xRange, q.givenExpr);
+
+  state[qid].answered = correct;
+  state[qid].correct = correct;
+
+  if (correct) {
+    fb.className = 'feedback correct';
+    fb.innerHTML = `✓ נכון! <strong>${escHtml(studentExpr)}</strong> מבצע את הטרנספורמציה הנכונה.`;
+    numEl.className = 'q-number correct';
+    document.getElementById(`sub-${qid}`).disabled = true;
+  } else {
+    fb.className = 'feedback incorrect';
+    fb.innerHTML = `לא מדויק. <em>רמז:</em> ${q.hint}`;
+    numEl.className = 'q-number incorrect';
+    // Keep keyboard open for retry
+  }
+
+  updateProgress();
+}
+
+updateProgress();
+</script>
+</body>
+</html>
