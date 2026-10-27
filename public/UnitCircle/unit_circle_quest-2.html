@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unit Circle Quest |  מעגל היחידה</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- KaTeX for beautiful math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rubik:wght@400;500;600;700&family=Fira+Code:wght@500;600&display=swap');
+    
+    body {
+      font-family: 'Inter', 'Rubik', sans-serif;
+      /* REMOVED touch-action: none and overflow: hidden so mobile scrolling works globally */
+      background-color: #0f172a;
+      color: #f8fafc;
+      overflow-x: hidden; /* Only prevent horizontal scroll */
+    }
+
+    .font-mono-math {
+      font-family: 'Fira Code', monospace;
+    }
+
+    canvas {
+      /* APPLIED touch-action: none ONLY to canvas so drawing works without scrolling the page */
+      touch-action: none; 
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+    }
+
+    /* Modal & Transition Animations */
+    .modal-enter {
+      opacity: 0;
+      transform: scale(0.95);
+      transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+    }
+    .modal-enter-active {
+      opacity: 1;
+      transform: scale(1);
+    }
+    
+    .tab-btn {
+      transition: all 0.2s ease;
+    }
+    .tab-active {
+      background-color: #4f46e5;
+      color: white;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .tab-inactive {
+      color: #94a3b8;
+    }
+    .tab-inactive:hover {
+      color: #f1f5f9;
+      background-color: #1e293b;
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* KaTeX customizations */
+    .katex { font-size: 1.15em; }
+    .katex-display { margin: 0.5em 0; }
+    
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    
+    /* Ensure math blocks stay LTR even in RTL layout */
+    .math-ltr {
+      direction: ltr;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-30 px-4 py-3 shadow-md">
+    <div class="max-w-6xl mx-auto flex flex-col xl:flex-row items-center justify-between gap-4">
+      
+      <div class="flex items-center justify-between w-full xl:w-auto gap-4">
+        <div class="flex items-center space-x-3 rtl:space-x-reverse justify-center xl:justify-start">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+            <i class="fa-solid fa-circle-notch"></i>
+          </div>
+          <div>
+            <h1 id="t-title" class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+               מעגל היחידה
+            </h1>
+            <p id="t-subtitle" class="text-xs text-slate-400">מתמטיקה לכיתה י'א</p>
+          </div>
+        </div>
+        
+        <!-- Language Selector -->
+        <select id="lang-select" onchange="setLanguage(this.value)" class="bg-slate-900 border border-slate-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2 cursor-pointer">
+          <option value="he" selected>עברית</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+
+      <!-- Mode Selector Tabs -->
+      <nav class="flex items-center bg-slate-900 p-1.5 rounded-xl border border-slate-700 text-sm font-medium w-full xl:w-auto overflow-x-auto snap-x hide-scrollbar">
+        <button id="tab-free" onclick="setMode('free')" class="tab-btn tab-active snap-center flex-none px-4 py-2 rounded-lg font-semibold flex items-center justify-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-compass text-amber-400"></i> <span id="t-tab-free">אימון חופשי</span>
+        </button>
+        <button id="tab-lvl1" onclick="setMode('lvl1')" class="tab-btn tab-inactive snap-center flex-none px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-1"></i> <span id="t-tab-lvl1">שלב 1</span>
+        </button>
+        <button id="tab-lvl2" onclick="setMode('lvl2')" class="tab-btn tab-inactive snap-center flex-none px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-2"></i> <span id="t-tab-lvl2">שלב 2</span>
+        </button>
+        <button id="tab-lvl3" onclick="setMode('lvl3')" class="tab-btn tab-inactive snap-center flex-none px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-3"></i> <span id="t-tab-lvl3">שלב 3</span>
+        </button>
+        <button id="tab-lvl4" onclick="setMode('lvl4')" class="tab-btn tab-inactive snap-center flex-none px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-4"></i> <span id="t-tab-lvl4">שלב 4</span>
+        </button>
+      </nav>
+
+    </div>
+  </header>
+
+  <main class="flex-1 w-full max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-2 pb-12">
+    
+    <!-- Canvas Area -->
+    <section class="lg:col-span-7 xl:col-span-8 flex flex-col items-center bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl relative">
+      
+      <div class="w-full flex justify-between items-center mb-4 text-sm flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          
+          <!-- Deg / Rad Toggle -->
+          <div class="flex bg-slate-900 rounded-lg p-1 border border-slate-700">
+            <button id="btn-deg" onclick="setUnitMode('deg')" class="px-4 py-1.5 rounded text-white bg-indigo-600 font-medium text-xs transition t-btn-deg">מעלות</button>
+            <button id="btn-rad" onclick="setUnitMode('rad')" class="px-4 py-1.5 rounded text-slate-400 hover:text-white bg-transparent text-xs transition t-btn-rad">רדיאנים</button>
+          </div>
+          
+        </div>
+        <button onclick="resetAngle()" class="text-slate-400 hover:text-white text-xs px-3 py-1.5 bg-slate-900 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-rotate-left"></i> <span id="t-btn-reset">איפוס</span>
+        </button>
+      </div>
+
+      <!-- Max constraints ensure it fits well on mobile without overtaking the screen -->
+      <div class="relative w-full max-w-[500px] max-h-[50vh] md:max-h-[600px] aspect-square flex items-center justify-center">
+        <canvas id="unitCircleCanvas" class="w-full h-full bg-slate-900 rounded-xl shadow-inner cursor-crosshair border border-slate-750"></canvas>
+        <!-- Absolute overlay for KaTeX near origin -->
+        <div id="angle-math-overlay" class="absolute pointer-events-none bg-slate-900/90 text-white px-2 py-1 rounded-md shadow-md border border-slate-700 transition-all duration-75 flex items-center justify-center math-ltr" style="display: none; transform: translate(-50%, -50%); min-width: 40px; min-height: 32px;"></div>
+      </div>
+
+      <!-- Current Coordinate Display (Free Mode Only) -->
+      <div id="free-mode-coords" class="mt-4 flex gap-4 sm:gap-6 text-sm bg-slate-900 px-4 sm:px-6 py-2 rounded-full border border-slate-700 items-center justify-center flex-wrap">
+        <div class="text-indigo-300 flex items-center gap-2" dir="ltr"><span class="text-slate-500 font-sans text-xs">cos θ (x):</span> <span id="val-cos" class="font-mono-math w-10 text-right">1.00</span></div>
+        <div class="text-emerald-300 flex items-center gap-2" dir="ltr"><span class="text-slate-500 font-sans text-xs">sin θ (y):</span> <span id="val-sin" class="font-mono-math w-10 text-right">0.00</span></div>
+      </div>
+    </section>
+
+    <!-- Task Area -->
+    <section class="lg:col-span-5 xl:col-span-4 flex flex-col gap-4 w-full h-full">
+      
+      <div id="task-panel" class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl relative flex flex-col h-full min-h-[350px]">
+        
+        <div class="flex justify-between items-start mb-2">
+          <h2 id="mode-title" class="text-xl font-bold text-white">אימון חופשי</h2>
+          <div id="progress-badge" class="hidden bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+            <span id="t-q-prefix" class="hidden">Q</span> <span id="q-current">1</span> / 5
+          </div>
+        </div>
+        
+        <p id="mode-desc" class="text-sm text-slate-400 mb-5 leading-relaxed">גרור באופן חופשי במצב מעלות, או היצמד לכפולות של π/12 במצב רדיאנים.</p>
+        
+        <!-- Target Display -->
+        <div id="target-container" class="hidden flex-1 flex flex-col items-center justify-center bg-slate-900 border border-indigo-500/30 rounded-xl p-6 text-center shadow-inner mb-6">
+          <p id="t-find-angle" class="text-sm text-indigo-300 font-semibold uppercase tracking-wider mb-4">מצא זווית זו</p>
+          <div id="target-angle-math" class="text-3xl text-white w-full flex items-center justify-center min-h-[80px] math-ltr">
+            <!-- KaTeX rendered content will go here -->
+          </div>
+        </div>
+
+        <button id="check-btn" onclick="checkAnswer()" class="hidden w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition transform active:scale-95 flex items-center justify-center gap-2 text-lg mt-auto">
+          <i class="fa-solid fa-location-crosshairs"></i> <span id="t-btn-submit">שלח מיקום</span>
+        </button>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- Answer Feedback Modal -->
+  <div id="feedback-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div id="feedback-content" class="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl modal-enter relative">
+      <div id="modal-icon-container" class="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 border-4">
+        <i id="modal-icon" class="fa-solid"></i>
+      </div>
+      <h3 id="modal-title" class="text-2xl font-black text-white mb-2"></h3>
+      <div id="modal-message" class="text-slate-300 mb-6 text-lg flex flex-col items-center"></div>
+      
+      <button onclick="closeModalAndNext()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition shadow-lg">
+        <span id="modal-btn-text"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Level Complete Celebration Modal -->
+  <div id="level-complete-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div id="level-complete-content" class="bg-slate-800 border border-amber-500/50 rounded-3xl max-w-md w-full p-8 text-center shadow-2xl modal-enter relative overflow-hidden">
+      <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-400"></div>
+      <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-5xl mb-6 shadow-lg shadow-amber-500/30 text-white border-4 border-slate-800">
+        <i class="fa-solid fa-trophy"></i>
+      </div>
+      <h3 id="t-lvl-complete" class="text-3xl font-black text-white mb-2 tracking-tight">השלב הושלם!</h3>
+      <p id="t-lvl-complete-msg" class="text-slate-300 mb-8 text-base">עבודה יוצאת מן הכלל! שלטת בכל 5 השאלות בשלב זה.</p>
+      
+      <div class="flex gap-4 flex-row-reverse">
+        <button onclick="returnToMenu()" class="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition">
+          <span id="t-btn-menu">תפריט</span>
+        </button>
+        <button onclick="goToNextLevel()" id="next-level-btn" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2">
+          <span id="t-btn-next-lvl">לשלב הבא</span> <i class="fa-solid fa-arrow-left rtl:fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="confetti-canvas"></canvas>
+
+  <script>
+    // I18N Dictionary
+    const i18n = {
+      en: {
+        title: "Unit Circle Quest",
+        subtitle: "11th Grade Mathematics",
+        tab_free: "Free Practice",
+        tab_lvl1: "Level 1",
+        tab_lvl2: "Level 2",
+        tab_lvl3: "Level 3",
+        tab_lvl4: "Level 4",
+        btn_deg: "Degrees",
+        btn_rad: "Radians",
+        btn_reset: "Reset",
+        desc_free: "Drag smoothly in Degrees, or snap to multiples of π/12 in Radians mode.",
+        desc_lvl1: "Find the correct position for the given basic angle (0° to 360°).",
+        desc_lvl2: "Find the position. Includes negative angles and extra rotations!",
+        desc_lvl3: "Find the angle given its exact positive sine and cosine conditions.",
+        desc_lvl4: "Identify the correct angle based on positive and negative exact values!",
+        title_free: "Free Practice",
+        title_lvl1: "Level 1: Basic Angles",
+        title_lvl2: "Level 2: Advanced Rotation",
+        title_lvl3: "Level 3: Exact Values (Q1)",
+        title_lvl4: "Level 4: Master Trig Values",
+        find_angle: "Find This Angle",
+        btn_submit: "Submit Position",
+        modal_correct: "Correct!",
+        modal_correct_msg: "Great job! Your angle maps perfectly.",
+        modal_wrong: "Try Again",
+        modal_wrong_msg1: "Your angle is currently at:",
+        modal_wrong_msg2: "Keep looking!",
+        btn_next_q: "Next Question",
+        btn_finish_lvl: "Finish Level",
+        btn_keep_trying: "Keep Trying",
+        lvl_complete: "Level Complete!",
+        lvl_complete_msg: "Outstanding job! You've mastered all 5 questions in this level.",
+        btn_menu: "Menu",
+        btn_next_lvl: "Next Level",
+        q_prefix: "Q"
+      },
+      he: {
+        title: "מעגל היחידה",
+        subtitle: "מתמטיקה לכיתה י'א",
+        tab_free: "התנסות",
+        tab_lvl1: "שלב 1",
+        tab_lvl2: "שלב 2",
+        tab_lvl3: "שלב 3",
+        tab_lvl4: "שלב 4",
+        btn_deg: "מעלות",
+        btn_rad: "רדיאנים",
+        btn_reset: "איפוס",
+        desc_free: "גרור באופן חופשי במצב מעלות, או היצמד לכפולות של π/12 במצב רדיאנים.",
+        desc_lvl1: "מצא את המיקום הנכון עבור הזווית הבסיסית הנתונה (0° עד 360°).",
+        desc_lvl2: "מצא את המיקום. כולל זוויות שליליות וסיבובים נוספים (מעל 360)!",
+        desc_lvl3: "מצא את הזווית על סמך ערכי הסינוס והקוסינוס המדויקים שלה (ברביע הראשון).",
+        desc_lvl4: "זהה את הזווית הנכונה על סמך ערכים מדויקים חיוביים ושליליים בכל הרביעים!",
+        title_free: "התנסות",
+        title_lvl1: "שלב 1: זוויות בסיסיות",
+        title_lvl2: "שלב 2: סיבובים מתקדמים",
+        title_lvl3: "שלב 3: ערכים מדויקים (רביע 1)",
+        title_lvl4: "שלב 4: ערכים מדוייקים",
+        find_angle: "מצא זווית זו",
+        btn_submit: "בדוק",
+        modal_correct: "כל הכבוד!",
+        modal_correct_msg: "עבודה מצוינת! הזווית שלך ממוקמת באופן מושלם.",
+        modal_wrong: "נסה שוב",
+        modal_wrong_msg1: "הזווית שלך נמצאת כרגע ב:",
+        modal_wrong_msg2: "המשך לחפש!",
+        btn_next_q: "שאלה הבאה",
+        btn_finish_lvl: "סיים שלב",
+        btn_keep_trying: "המשך לנסות",
+        lvl_complete: "השלב הושלם!",
+        lvl_complete_msg: "עבודה יוצאת מן הכלל! שלטת בכל 5 השאלות בשלב זה.",
+        btn_menu: "תפריט",
+        btn_next_lvl: "לשלב הבא",
+        q_prefix: "ש"
+      }
+    };
+
+    // Exact Values Dictionary formatted for KaTeX
+    const EXACT_VALUES = {
+      0:   { cos: '1', sin: '0' },
+      30:  { cos: '\\frac{\\sqrt{3}}{2}', sin: '\\frac{1}{2}' },
+      45:  { cos: '\\frac{\\sqrt{2}}{2}', sin: '\\frac{\\sqrt{2}}{2}' },
+      60:  { cos: '\\frac{1}{2}', sin: '\\frac{\\sqrt{3}}{2}' },
+      90:  { cos: '0', sin: '1' },
+      120: { cos: '-\\frac{1}{2}', sin: '\\frac{\\sqrt{3}}{2}' },
+      135: { cos: '-\\frac{\\sqrt{2}}{2}', sin: '\\frac{\\sqrt{2}}{2}' },
+      150: { cos: '-\\frac{\\sqrt{3}}{2}', sin: '\\frac{1}{2}' },
+      180: { cos: '-1', sin: '0' },
+      210: { cos: '-\\frac{\\sqrt{3}}{2}', sin: '-\\frac{1}{2}' },
+      225: { cos: '-\\frac{\\sqrt{2}}{2}', sin: '-\\frac{\\sqrt{2}}{2}' },
+      240: { cos: '-\\frac{1}{2}', sin: '-\\frac{\\sqrt{3}}{2}' },
+      270: { cos: '0', sin: '-1' },
+      300: { cos: '\\frac{1}{2}', sin: '-\\frac{\\sqrt{3}}{2}' },
+      315: { cos: '\\frac{\\sqrt{2}}{2}', sin: '-\\frac{\\sqrt{2}}{2}' },
+      330: { cos: '\\frac{\\sqrt{3}}{2}', sin: '-\\frac{1}{2}' },
+      360: { cos: '1', sin: '0' }
+    };
+
+    // State Management
+    const state = {
+      lang: 'he',
+      mode: 'free',
+      unitMode: 'deg', // 'deg' or 'rad'
+      
+      // FIX: Decoupled angles for perfect math/drag tracking
+      continuousAngle: 0,   // Raw accumulated continuous angle (supports multi-turn)
+      currentAngle: 0,      // Displayed angle (snapped or unsnapped based on mode)
+      prevRawMouseAngle: 0, // Last mouse pointer angle relative to center
+      isDragging: false,
+      
+      currentQuestion: 1,
+      totalQuestions: 5,
+      targetAngle: 0
+    };
+
+    const MODES = ['free', 'lvl1', 'lvl2', 'lvl3', 'lvl4'];
+
+    function setLanguage(langCode) {
+      state.lang = langCode;
+      const htmlTag = document.documentElement;
+      
+      if (langCode === 'he') {
+        htmlTag.setAttribute('dir', 'rtl');
+        htmlTag.setAttribute('lang', 'he');
+      } else {
+        htmlTag.setAttribute('dir', 'ltr');
+        htmlTag.setAttribute('lang', 'en');
+      }
+
+      updateTranslations();
+      updateModeTextUI();
+      
+      // Update Arrow Direction in Next Level Button
+      const icon = document.querySelector('#next-level-btn i');
+      if(icon) {
+        if(langCode === 'he') {
+          icon.className = 'fa-solid fa-arrow-left';
+        } else {
+          icon.className = 'fa-solid fa-arrow-right';
+        }
+      }
+    }
+
+    function updateTranslations() {
+      const t = i18n[state.lang];
+      document.getElementById('t-title').textContent = t.title;
+      document.getElementById('t-subtitle').textContent = t.subtitle;
+      document.getElementById('t-tab-free').textContent = t.tab_free;
+      document.getElementById('t-tab-lvl1').textContent = t.tab_lvl1;
+      document.getElementById('t-tab-lvl2').textContent = t.tab_lvl2;
+      document.getElementById('t-tab-lvl3').textContent = t.tab_lvl3;
+      document.getElementById('t-tab-lvl4').textContent = t.tab_lvl4;
+      
+      document.querySelectorAll('.t-btn-deg').forEach(el => el.textContent = t.btn_deg);
+      document.querySelectorAll('.t-btn-rad').forEach(el => el.textContent = t.btn_rad);
+      document.getElementById('t-btn-reset').textContent = t.btn_reset;
+      
+      document.getElementById('t-find-angle').textContent = t.find_angle;
+      document.getElementById('t-btn-submit').textContent = t.btn_submit;
+      document.getElementById('t-lvl-complete').textContent = t.lvl_complete;
+      document.getElementById('t-lvl-complete-msg').textContent = t.lvl_complete_msg;
+      document.getElementById('t-btn-menu').textContent = t.btn_menu;
+      document.getElementById('t-btn-next-lvl').textContent = t.btn_next_lvl;
+      
+      const qPrefix = document.getElementById('t-q-prefix');
+      qPrefix.textContent = t.q_prefix;
+      if (state.lang === 'en') qPrefix.classList.remove('hidden');
+      else qPrefix.classList.add('hidden'); // Hebrew uses plain number naturally
+    }
+
+    // Converts degrees to simplified LaTeX Radian fractions
+    function degToRadTex(deg) {
+      if (deg === 0) return "0";
+      const sign = deg < 0 ? "-" : "";
+      const absDeg = Math.abs(deg);
+      
+      const gcd = (a, b) => b ? gcd(b, a % b) : a;
+      let num = absDeg;
+      let den = 180;
+      const g = gcd(num, den);
+      num /= g;
+      den /= g;
+
+      const numStr = num === 1 ? "\\pi" : num + "\\pi";
+      if (den === 1) return `${sign}${numStr}`;
+      return `${sign}\\frac{${numStr}}{${den}}`;
+    }
+
+    function renderMath(elementId, texString, displayMode = false) {
+      const el = document.getElementById(elementId);
+      if(el) {
+        katex.render(texString, el, {
+          throwOnError: false,
+          displayMode: displayMode
+        });
+      }
+    }
+
+    const canvas = document.getElementById('unitCircleCanvas');
+    const ctx = canvas.getContext('2d');
+    let width = 0, height = 0, centerX = 0, centerY = 0, radius = 0;
+
+    function resizeCanvas() {
+      const container = canvas.parentElement;
+      const rect = container.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+
+      width = rect.width;
+      height = rect.height;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.scale(dpr, dpr);
+
+      centerX = width / 2;
+      centerY = height / 2;
+      radius = Math.min(width, height) * 0.38; // Give slight padding
+
+      draw();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    canvas.addEventListener('pointerdown', (e) => {
+      state.isDragging = true;
+      try { canvas.setPointerCapture(e.pointerId); } catch(err) {}
+      
+      const pos = getMousePos(e);
+      // Initialize raw mouse angle based on center
+      state.prevRawMouseAngle = Math.atan2(-(pos.y - centerY), pos.x - centerX) * (180 / Math.PI);
+      handlePointerMove(e);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!state.isDragging) return;
+      handlePointerMove(e);
+    });
+
+    function stopDrag(e) {
+      if (state.isDragging) {
+        state.isDragging = false;
+        try { canvas.releasePointerCapture(e.pointerId); } catch(err) {}
+        
+        // Final sanity update on drag stop
+        updateAnglesAndDraw();
+      }
+    }
+
+    canvas.addEventListener('pointerup', stopDrag);
+    canvas.addEventListener('pointercancel', stopDrag);
+
+    function getMousePos(e) {
+      const rect = canvas.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+
+    function handlePointerMove(e) {
+      const pos = getMousePos(e);
+      const rawMouseAngle = Math.atan2(-(pos.y - centerY), pos.x - centerX) * (180 / Math.PI);
+      
+      // Calculate delta to correctly accumulate continuous rotation
+      let delta = rawMouseAngle - state.prevRawMouseAngle;
+      
+      // Handle the wrapping boundary (-180 to 180)
+      if (delta > 180) delta -= 360;
+      if (delta < -180) delta += 360;
+      
+      // Accumulate the continuous mathematical angle
+      state.continuousAngle += delta;
+      state.prevRawMouseAngle = rawMouseAngle;
+
+      updateAnglesAndDraw();
+    }
+
+    function updateAnglesAndDraw() {
+      // FIX: Apply snapping *after* continuous tracking to prevent fighting/freezing
+      if (state.unitMode === 'rad') {
+        // Snap to multiples of pi/12 (15 degrees)
+        state.currentAngle = Math.round(state.continuousAngle / 15) * 15;
+      } else {
+        // Smooth dragging
+        state.currentAngle = Math.round(state.continuousAngle * 10) / 10;
+      }
+      
+      updateUI();
+      draw();
+    }
+
+    function setUnitMode(mode) {
+      state.unitMode = mode;
+      const btnDeg = document.getElementById('btn-deg');
+      const btnRad = document.getElementById('btn-rad');
+
+      if (mode === 'rad') {
+        btnRad.className = 'px-4 py-1.5 rounded text-white bg-indigo-600 font-medium text-xs transition t-btn-rad';
+        btnDeg.className = 'px-4 py-1.5 rounded text-slate-400 hover:text-white bg-transparent text-xs transition t-btn-deg';
+      } else {
+        btnDeg.className = 'px-4 py-1.5 rounded text-white bg-indigo-600 font-medium text-xs transition t-btn-deg';
+        btnRad.className = 'px-4 py-1.5 rounded text-slate-400 hover:text-white bg-transparent text-xs transition t-btn-rad';
+      }
+      
+      // Render target in new unit if needed
+      if (state.mode === 'lvl1' || state.mode === 'lvl2') {
+         const tex = state.unitMode === 'rad' ? degToRadTex(state.targetAngle) : `${state.targetAngle}^\\circ`;
+         renderMath('target-angle-math', tex, true);
+      }
+      
+      updateAnglesAndDraw();
+    }
+
+    function resetAngle() {
+      state.continuousAngle = 0;
+      state.currentAngle = 0;
+      state.prevRawMouseAngle = 0;
+      updateUI();
+      draw();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+
+      // Axes
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#334155';
+      ctx.beginPath();
+      ctx.moveTo(0, centerY); ctx.lineTo(width, centerY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(centerX, 0); ctx.lineTo(centerX, height);
+      ctx.stroke();
+      
+      // Unit Circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      const rad = state.currentAngle * (Math.PI / 180);
+      const px = centerX + radius * Math.cos(rad);
+      const py = centerY - radius * Math.sin(rad);
+
+      drawSpiralArc(state.currentAngle);
+
+      // Ray (Hypotenuse)
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(px, py);
+      ctx.strokeStyle = '#818cf8';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Handle (Point on circle)
+      ctx.beginPath();
+      ctx.arc(px, py, 12, 0, 2 * Math.PI);
+      ctx.fillStyle = '#6366f1';
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      positionMathOverlay(rad);
+    }
+
+    function drawSpiralArc(angleDeg) {
+      if (Math.abs(angleDeg) < 1) return;
+
+      const isNeg = angleDeg < 0;
+      const totalRad = Math.abs(angleDeg) * (Math.PI / 180);
+      const steps = Math.min(400, Math.max(60, Math.abs(angleDeg)));
+      
+      ctx.beginPath();
+      const baseR = 15;
+      const spiralGrowth = 12; // Radius increases per full turn
+      
+      for (let i = 0; i <= steps; i++) {
+        const t = (i / steps) * totalRad;
+        const currentDeg = t * (180 / Math.PI);
+        const r = baseR + (currentDeg / 360) * spiralGrowth;
+
+        const actualRad = isNeg ? -t : t;
+        const x = centerX + r * Math.cos(actualRad);
+        const y = centerY - r * Math.sin(actualRad);
+
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+
+      ctx.strokeStyle = isNeg ? '#f43f5e' : '#38bdf8';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    function positionMathOverlay(angleRad) {
+      const overlay = document.getElementById('angle-math-overlay');
+      const offsetDist = 55; // Distance from center
+      let tx = centerX + offsetDist * Math.cos(angleRad);
+      let ty = centerY - offsetDist * Math.sin(angleRad);
+      
+      overlay.style.left = `${tx}px`;
+      overlay.style.top = `${ty}px`;
+      overlay.style.display = 'flex';
+
+      const roundedAngle = Math.round(state.currentAngle);
+      if (state.unitMode === 'rad') {
+         renderMath('angle-math-overlay', degToRadTex(roundedAngle));
+      } else {
+         renderMath('angle-math-overlay', `${roundedAngle}^\\circ`);
+      }
+    }
+
+    function updateUI() {
+      if (state.mode === 'free') {
+        const rad = state.currentAngle * (Math.PI / 180);
+        let cosVal = Math.cos(rad);
+        let sinVal = Math.sin(rad);
+        // Clean up floating point near zero
+        if (Math.abs(cosVal) < 0.001) cosVal = 0;
+        if (Math.abs(sinVal) < 0.001) sinVal = 0;
+        document.getElementById('val-cos').textContent = cosVal.toFixed(2);
+        document.getElementById('val-sin').textContent = sinVal.toFixed(2);
+      }
+    }
+
+    function setMode(mode) {
+      state.mode = mode;
+      state.currentQuestion = 1;
+      resetAngle();
+      
+      MODES.forEach(m => {
+        const btn = document.getElementById(`tab-${m}`);
+        if(btn) {
+          if (m === mode) {
+            btn.classList.remove('tab-inactive');
+            btn.classList.add('tab-active');
+            // Scroll tab into view if needed
+            btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          } else {
+            btn.classList.remove('tab-active');
+            btn.classList.add('tab-inactive');
+          }
+        }
+      });
+
+      const targetContainer = document.getElementById('target-container');
+      const checkBtn = document.getElementById('check-btn');
+      const progressBadge = document.getElementById('progress-badge');
+      const freeCoords = document.getElementById('free-mode-coords');
+
+      if (mode === 'free') {
+        targetContainer.classList.add('hidden');
+        checkBtn.classList.add('hidden');
+        progressBadge.classList.add('hidden');
+        freeCoords.classList.remove('hidden');
+      } else {
+        targetContainer.classList.remove('hidden');
+        checkBtn.classList.remove('hidden');
+        progressBadge.classList.remove('hidden');
+        freeCoords.classList.add('hidden');
+        
+        updateProgressUI();
+        generateQuestion();
+      }
+      updateModeTextUI();
+    }
+
+    function updateModeTextUI() {
+      const title = document.getElementById('mode-title');
+      const desc = document.getElementById('mode-desc');
+      const t = i18n[state.lang];
+      
+      if (state.mode === 'free') {
+        title.textContent = t.title_free;
+        desc.textContent = t.desc_free;
+      } else if (state.mode === 'lvl1') {
+        title.textContent = t.title_lvl1;
+        desc.textContent = t.desc_lvl1;
+      } else if (state.mode === 'lvl2') {
+        title.textContent = t.title_lvl2;
+        desc.textContent = t.desc_lvl2;
+      } else if (state.mode === 'lvl3') {
+        title.textContent = t.title_lvl3;
+        desc.textContent = t.desc_lvl3;
+      } else if (state.mode === 'lvl4') {
+        title.textContent = t.title_lvl4;
+        desc.textContent = t.desc_lvl4;
+      }
+    }
+
+    function updateProgressUI() {
+      document.getElementById('q-current').textContent = state.currentQuestion;
+    }
+
+    function generateQuestion() {
+      if (state.mode === 'lvl1') {
+        // Multiples of 15 degrees from 0 to 360
+        state.targetAngle = Math.floor(Math.random() * 24) * 15; 
+        const tex = state.unitMode === 'rad' ? degToRadTex(state.targetAngle) : `${state.targetAngle}^\\circ`;
+        renderMath('target-angle-math', tex, true);
+      } 
+      else if (state.mode === 'lvl2') {
+        // Negative angles or >360 angles
+        const isNeg = Math.random() > 0.5;
+        if (isNeg) {
+          state.targetAngle = -(Math.floor(Math.random() * 30) + 1) * 15; // up to -450
+        } else {
+          state.targetAngle = (Math.floor(Math.random() * 24) + 25) * 15; // 375 to 720
+        }
+        const tex = state.unitMode === 'rad' ? degToRadTex(state.targetAngle) : `${state.targetAngle}^\\circ`;
+        renderMath('target-angle-math', tex, true);
+      } 
+      else if (state.mode === 'lvl3') {
+        // Positive exact values (Quadrant 1)
+        const q1Angles = [0, 30, 45, 60, 90];
+        const baseAngle = q1Angles[Math.floor(Math.random() * q1Angles.length)];
+        const exact = EXACT_VALUES[baseAngle];
+        state.targetAngle = baseAngle; 
+
+        const tex = `\\begin{aligned} \\sin(\\theta) &= ${exact.sin} \\\\ \\cos(\\theta) &= ${exact.cos} \\end{aligned}`;
+        renderMath('target-angle-math', tex, true);
+      }
+      else if (state.mode === 'lvl4') {
+        // All quadrants exact values (Multiples of 30, 45)
+        const allAngles = Object.keys(EXACT_VALUES).map(Number);
+        const baseAngle = allAngles[Math.floor(Math.random() * allAngles.length)];
+        const exact = EXACT_VALUES[baseAngle];
+        state.targetAngle = baseAngle;
+
+        const tex = `\\begin{aligned} \\sin(\\theta) &= ${exact.sin} \\\\ \\cos(\\theta) &= ${exact.cos} \\end{aligned}`;
+        renderMath('target-angle-math', tex, true);
+      }
+    }
+
+    function checkAnswer() {
+      const tolerance = 2; // Allow +/- 2 degrees tolerance in checking
+      // Using modulo to normalize both angles and check diff
+      let diff = ((state.currentAngle - state.targetAngle) % 360 + 360) % 360;
+      const isCorrect = diff <= tolerance || diff >= (360 - tolerance);
+      
+      showModal(isCorrect);
+    }
+
+    function showModal(isCorrect) {
+      const modal = document.getElementById('feedback-modal');
+      const content = document.getElementById('feedback-content');
+      const iconContainer = document.getElementById('modal-icon-container');
+      const icon = document.getElementById('modal-icon');
+      const title = document.getElementById('modal-title');
+      const message = document.getElementById('modal-message');
+      const btnText = document.getElementById('modal-btn-text');
+      const t = i18n[state.lang];
+
+      if (isCorrect) {
+        iconContainer.className = 'w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 border-4 bg-emerald-500/20 border-emerald-500 text-emerald-400';
+        icon.className = 'fa-solid fa-check';
+        title.textContent = t.modal_correct;
+        message.innerHTML = t.modal_correct_msg;
+        btnText.textContent = state.currentQuestion < state.totalQuestions ? t.btn_next_q : t.btn_finish_lvl;
+        content.dataset.correct = 'true';
+      } else {
+        iconContainer.className = 'w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 border-4 bg-rose-500/20 border-rose-500 text-rose-400';
+        icon.className = 'fa-solid fa-xmark';
+        title.textContent = t.modal_wrong;
+        
+        const inputTex = state.unitMode === 'rad' ? degToRadTex(Math.round(state.currentAngle)) : `${Math.round(state.currentAngle)}^\\circ`;
+        message.innerHTML = `<span>${t.modal_wrong_msg1}</span> <div id="feedback-math-current" class="my-2 math-ltr w-full text-center"></div> <span>${t.modal_wrong_msg2}</span>`;
+        
+        setTimeout(() => renderMath('feedback-math-current', inputTex, true), 10);
+        
+        btnText.textContent = t.btn_keep_trying;
+        content.dataset.correct = 'false';
+      }
+
+      modal.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        content.classList.add('modal-enter-active');
+      });
+    }
+
+    function closeModalAndNext() {
+      const modal = document.getElementById('feedback-modal');
+      const content = document.getElementById('feedback-content');
+      content.classList.remove('modal-enter-active');
+      
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        if (content.dataset.correct === 'true') {
+          if (state.currentQuestion < state.totalQuestions) {
+            state.currentQuestion++;
+            updateProgressUI();
+            generateQuestion();
+            resetAngle();
+          } else {
+            showLevelComplete();
+          }
+        }
+      }, 200);
+    }
+
+    function showLevelComplete() {
+      const modal = document.getElementById('level-complete-modal');
+      const content = document.getElementById('level-complete-content');
+      
+      const currentIndex = MODES.indexOf(state.mode);
+      const nextBtn = document.getElementById('next-level-btn');
+      if (currentIndex < MODES.length - 1) {
+        nextBtn.classList.remove('hidden');
+      } else {
+        nextBtn.classList.add('hidden'); 
+      }
+
+      modal.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        content.classList.add('modal-enter-active');
+        fireConfetti();
+      });
+    }
+
+    function returnToMenu() {
+      document.getElementById('level-complete-modal').classList.add('hidden');
+      document.getElementById('level-complete-content').classList.remove('modal-enter-active');
+      stopConfetti();
+      setMode('free');
+    }
+
+    function goToNextLevel() {
+      document.getElementById('level-complete-modal').classList.add('hidden');
+      document.getElementById('level-complete-content').classList.remove('modal-enter-active');
+      stopConfetti();
+      
+      const currentIndex = MODES.indexOf(state.mode);
+      if (currentIndex < MODES.length - 1) {
+        setMode(MODES[currentIndex + 1]);
+      }
+    }
+
+    let confettiParticles = [];
+    let confettiAnimationId = null;
+    const confettiColors = ['#f43f5e', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'];
+
+    function fireConfetti() {
+      const canvas = document.getElementById('confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      
+      confettiParticles = [];
+      for (let i = 0; i < 150; i++) {
+        confettiParticles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          size: Math.random() * 10 + 5,
+          color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
+          speedY: Math.random() * 3 + 2,
+          speedX: Math.random() * 4 - 2,
+          rotation: Math.random() * 360,
+          rotationSpeed: Math.random() * 10 - 5
+        });
+      }
+
+      function renderConfetti() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let active = false;
+        
+        confettiParticles.forEach(p => {
+          p.y += p.speedY;
+          p.x += p.speedX;
+          p.rotation += p.rotationSpeed;
+          
+          if (p.y < canvas.height) active = true;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rotation * Math.PI / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+          ctx.restore();
+        });
+
+        if (active) {
+          confettiAnimationId = requestAnimationFrame(renderConfetti);
+        }
+      }
+      renderConfetti();
+    }
+
+    function stopConfetti() {
+      if (confettiAnimationId) {
+        cancelAnimationFrame(confettiAnimationId);
+      }
+      const canvas = document.getElementById('confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    window.onload = () => {
+      setLanguage('he'); // Force default on load
+      setMode('free');
+      resizeCanvas();
+    };
+  </script>
+</body>
+</html>

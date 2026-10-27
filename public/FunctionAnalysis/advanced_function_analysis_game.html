@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Advanced Function Analysis</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            touch-action: pan-y;
+        }
+        #game-canvas {
+            touch-action: none;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            cursor: crosshair;
+        }
+        .step-hidden { display: none; }
+        .step-inactive { opacity: 0.5; pointer-events: none; }
+        .step-collapsed {
+            padding: 12px 20px !important;
+            opacity: 0.75;
+            background-color: #f1f5f9;
+        }
+        .step-collapsed .step-content { display: none; }
+        .check-icon { display: none; }
+        .step-collapsed .check-icon { display: block; }
+        
+        /* Custom scrollbar */
+        .steps-container::-webkit-scrollbar { width: 6px; }
+        .steps-container::-webkit-scrollbar-track { background: transparent; }
+        .steps-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        /* LTR overrides when lang is En */
+        [dir="ltr"] .check-icon { margin-left: auto; margin-right: 0; }
+        [dir="rtl"] .check-icon { margin-right: auto; margin-left: 0; }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
+
+<div class="max-w-6xl mx-auto w-full p-2 md:p-4 h-full flex flex-col relative">
+    
+    <!-- Header -->
+    <header class="text-center mb-4 shrink-0 relative">
+        <div class="absolute top-0 right-0 left-auto" dir="ltr">
+            <select id="lang-select" onchange="changeLang(this.value)" class="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-1.5 shadow-sm">
+                <option value="he" selected>עברית</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+
+        <h1 class="text-2xl md:text-3xl font-bold text-indigo-700 mb-1" data-i18n="title">חקירת פונקציות מתקדמת</h1>
+        <div class="flex flex-wrap justify-center gap-2 mb-3 mt-1" id="level-selector">
+            <!-- Level Buttons Dynamically Injected Here -->
+        </div>
+        <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-200 inline-block px-8 text-xl md:text-2xl text-slate-800" id="function-display" dir="ltr">
+            <!-- KaTeX rendering area -->
+        </div>
+    </header>
+
+    <!-- Main Game Area -->
+    <div class="flex flex-col md:flex-row gap-4 flex-1 min-h-0">
+        
+        <!-- Canvas Section -->
+        <div class="w-full md:w-3/5 lg:w-2/3 bg-white rounded-2xl shadow-md border border-slate-200 p-2 flex flex-col relative shrink-0">
+            <div id="canvas-container" class="w-full h-[45vh] md:h-full relative rounded-xl overflow-hidden">
+                <canvas id="game-canvas" class="absolute inset-0 w-full h-full"></canvas>
+            </div>
+            <div id="canvas-overlay-msg" class="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800/80 text-white px-4 py-2 rounded-full text-sm font-medium opacity-0 transition-opacity pointer-events-none z-10 whitespace-nowrap">
+                Message
+            </div>
+        </div>
+
+        <!-- Controls / Steps Section -->
+        <div class="w-full md:w-2/5 lg:w-1/3 flex flex-col gap-3 overflow-y-auto pb-20 steps-container px-2" id="steps-container">
+            
+            <!-- Step 1 -->
+            <div id="step-1" class="step-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 transition-all duration-300">
+                <h3 class="font-bold text-base text-indigo-600 flex items-center mb-2">
+                    <span data-i18n="s1_title">1. נקודות חיתוך עם ציר x</span>
+                    <svg class="w-5 h-5 text-green-500 check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </h3>
+                <div class="step-content text-sm">
+                    <p class="text-slate-600 mb-3" data-i18n="s1_desc">לחץ על ציר ה-x כדי לסמן את שורשי הפונקציה.</p>
+                    <button class="w-full bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition" onclick="checkQ1()" data-i18n="s1_btn">בדוק שורשים</button>
+                    <div id="fb-1" class="font-medium mt-2 hidden text-center"></div>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div id="step-2" class="step-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 step-inactive transition-all duration-300">
+                <h3 class="font-bold text-base text-indigo-600 flex items-center mb-2">
+                    <span data-i18n="s2_title">2. זוגיות</span>
+                    <svg class="w-5 h-5 text-green-500 check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </h3>
+                <div class="step-content text-sm">
+                    <p class="text-slate-600 mb-3" data-i18n="s2_desc">האם הפונקציה זוגית, אי-זוגית או לא זוגית ולא אי-זוגית?</p>
+                    <div class="grid grid-cols-3 gap-2 mb-3">
+                        <button class="parity-btn border border-slate-300 py-1.5 rounded-lg hover:bg-indigo-50 transition" onclick="setParity('even')" data-i18n="s2_even">זוגית</button>
+                        <button class="parity-btn border border-slate-300 py-1.5 rounded-lg hover:bg-indigo-50 transition" onclick="setParity('odd')" data-i18n="s2_odd">אי-זוגית</button>
+                        <button class="parity-btn border border-slate-300 py-1.5 rounded-lg hover:bg-indigo-50 transition" onclick="setParity('neither')" data-i18n="s2_neither">כללי</button>
+                    </div>
+                    <button class="w-full bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition" onclick="checkQ2()" data-i18n="s2_btn">בדוק זוגיות</button>
+                    <div id="fb-2" class="font-medium mt-2 hidden text-center"></div>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div id="step-3" class="step-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 step-inactive transition-all duration-300">
+                <h3 class="font-bold text-base text-indigo-600 flex items-center mb-2">
+                    <span data-i18n="s3_title">3. אסימפטוטות אופקיות</span>
+                    <svg class="w-5 h-5 text-green-500 check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </h3>
+                <div class="step-content text-sm">
+                    <p class="text-slate-600 mb-3" data-i18n="s3_desc">לחץ על ציר ה-y כדי להציב אסימפטוטות אופקיות.</p>
+                    <button class="w-full bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition" onclick="checkQ3()" data-i18n="s3_btn">בדוק אסימפטוטות</button>
+                    <div id="fb-3" class="font-medium mt-2 hidden text-center"></div>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div id="step-4" class="step-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 step-inactive transition-all duration-300">
+                <h3 class="font-bold text-base text-indigo-600 flex items-center mb-2">
+                    <span data-i18n="s4_title">4. אסימפטוטות אנכיות</span>
+                    <svg class="w-5 h-5 text-green-500 check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </h3>
+                <div class="step-content text-sm">
+                    <p class="text-slate-600 mb-3" data-i18n="s4_desc">לחץ על ציר ה-x כדי להציב אסימפטוטות אנכיות.</p>
+                    <button class="w-full bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition" onclick="checkQ4()" data-i18n="s4_btn">בדוק אסימפטוטות</button>
+                    <div id="fb-4" class="font-medium mt-2 hidden text-center"></div>
+                </div>
+            </div>
+
+            <!-- Step 5 -->
+            <div id="step-5" class="step-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 step-inactive transition-all duration-300">
+                <h3 class="font-bold text-base text-indigo-600 flex items-center mb-2">
+                    <span data-i18n="s5_title">5. נקודות קיצון (f'(x) = 0)</span>
+                    <svg class="w-5 h-5 text-green-500 check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </h3>
+                <div class="step-content text-sm">
+                    <p class="text-slate-600 mb-3" data-i18n="s5_desc">סמן את ערכי ה-x בהם f'(x) = 0 על ידי לחיצה על ציר ה-x.</p>
+                    <div class="flex gap-2">
+                        <button class="flex-[2] bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition" onclick="checkQ5()" data-i18n="s5_btn1">בדוק נקודות קיצון</button>
+                        <button class="flex-1 bg-slate-200 text-slate-700 font-medium py-2 rounded-lg hover:bg-slate-300 transition" onclick="skipQ5()" data-i18n="s5_btn2">דלג וגלה</button>
+                    </div>
+                    <div id="fb-5" class="font-medium mt-2 hidden text-center"></div>
+                </div>
+            </div>
+
+            <!-- Step 6 -->
+            <div id="step-6" class="step-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 step-inactive transition-all duration-300">
+                <h3 class="font-bold text-base text-indigo-600 flex items-center mb-2">
+                    <span data-i18n="s6_title">6. שרטוט הפונקציה</span>
+                    <svg class="w-5 h-5 text-green-500 check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </h3>
+                <div class="step-content text-sm">
+                    <p class="text-slate-600 mb-3" data-i18n="s6_desc">שרטט את הפונקציה f(x). חובה לעבור דרך הנקודות ולציית לאסימפטוטות.</p>
+                    <div class="flex gap-2 mb-2" id="q6-controls">
+                        <button class="flex-1 bg-slate-200 text-slate-700 font-medium py-2 rounded-lg hover:bg-slate-300 transition text-xs" onclick="clearPaths()" data-i18n="btn_clear">נקה</button>
+                        <button class="flex-1 bg-slate-200 text-slate-700 font-medium py-2 rounded-lg hover:bg-slate-300 transition text-xs" onclick="skipQ6()" data-i18n="btn_skip">דלג</button>
+                        <button class="flex-[2] bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition" onclick="checkQ6()" data-i18n="btn_validate">בדוק</button>
+                    </div>
+                    <button id="btn-continue-q6" class="w-full bg-green-500 text-white font-medium py-2 rounded-lg hover:bg-green-600 transition hidden" onclick="advanceToQ7()" data-i18n="btn_continue">המשך</button>
+                    <div id="fb-6" class="font-medium mt-2 hidden text-center"></div>
+                </div>
+            </div>
+
+            <!-- Step 7 -->
+            <div id="step-7" class="step-card bg-white p-4 rounded-xl shadow-sm border border-slate-200 step-inactive transition-all duration-300">
+                <h3 class="font-bold text-base text-indigo-600 flex items-center mb-2">
+                    <span data-i18n="s7_title">7. התמרות</span>
+                    <svg class="w-5 h-5 text-green-500 check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </h3>
+                <div class="step-content text-sm">
+                    <p class="text-slate-600 mb-2" data-i18n="s7_desc">בהינתן הגרף של f(x) (בירוק), שרטט:</p>
+                    <div id="transform-formula" class="bg-indigo-50 py-2 rounded text-center text-lg mb-3" dir="ltr"></div>
+                    <div class="flex gap-2 mb-2" id="q7-controls">
+                        <button class="flex-1 bg-slate-200 text-slate-700 font-medium py-2 rounded-lg hover:bg-slate-300 transition text-xs" onclick="clearPaths()" data-i18n="btn_clear">נקה</button>
+                        <button class="flex-1 bg-slate-200 text-slate-700 font-medium py-2 rounded-lg hover:bg-slate-300 transition text-xs" onclick="skipQ7()" data-i18n="btn_skip">דלג</button>
+                        <button class="flex-[2] bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition" onclick="checkQ7()" data-i18n="btn_validate">בדוק</button>
+                    </div>
+                    <div id="fb-7" class="font-medium mt-2 hidden text-center"></div>
+                </div>
+            </div>
+            
+            <button id="btn-next-level" class="w-full bg-emerald-500 text-white font-bold py-3 rounded-xl hover:bg-emerald-600 transition shadow-md hidden mt-2 shrink-0 mb-6" onclick="nextLevel()" data-i18n="btn_next_level">שלב הבא</button>
+            
+        </div>
+    </div>
+</div>
+
+<script>
+    const dict = {
+        en: {
+            title: "Advanced Function Analysis",
+            level: "Level",
+            s1_title: "1. x-Intercepts (Roots)",
+            s1_desc: "Click on the x-axis to mark the roots of the function.",
+            s1_btn: "Check Roots",
+            s2_title: "2. Parity",
+            s2_desc: "Is the function even, odd, or neither?",
+            s2_even: "Even",
+            s2_odd: "Odd",
+            s2_neither: "Neither",
+            s2_btn: "Check Parity",
+            s3_title: "3. Horizontal Asymptotes",
+            s3_desc: "Click on the y-axis to place horizontal asymptotes. (If none, just click Check).",
+            s3_btn: "Check Asymptotes",
+            s4_title: "4. Vertical Asymptotes",
+            s4_desc: "Click on the x-axis to place vertical asymptotes. (If none, just click Check).",
+            s4_btn: "Check Asymptotes",
+            s5_title: "5. Extrema (f'(x) = 0)",
+            s5_desc: "Mark x-values where f'(x) = 0 by clicking on the x-axis.",
+            s5_btn1: "Check Extrema",
+            s5_btn2: "Skip & Reveal",
+            s6_title: "6. Sketch Function",
+            s6_desc: "Draw the function f(x) passing exactly through the roots and extrema points.",
+            btn_clear: "Clear",
+            btn_skip: "Skip",
+            btn_validate: "Validate",
+            btn_continue: "Continue",
+            s7_title: "7. Transformation",
+            s7_desc: "Given the plot of f(x) (green), sketch:",
+            btn_next_level: "Next Level",
+            course_completed: "Course Completed!",
+            fb1_correct: "Correct roots!",
+            fb1_incorrect: "Incorrect roots. Try again.",
+            fb2_select: "Select an option first.",
+            fb2_correct: "Correct parity!",
+            fb2_incorrect: "Incorrect. Consider f(-x).",
+            fb3_correct: "Correct horizontal asymptotes!",
+            fb3_incorrect: "Incorrect horizontal asymptotes. Consider x->±∞.",
+            fb4_correct: "Correct vertical asymptotes!",
+            fb4_incorrect: "Incorrect vertical asymptotes. Check denominator domain.",
+            fb5_correct: "Correct extrema locations!",
+            fb5_incorrect: "Incorrect x-values for extrema.",
+            fb5_skip: "Answers revealed.",
+            fb6_draw: "Please draw the function first.",
+            fb6_undef: "You drew inside an undefined region.",
+            fb6_cross: "You crossed the x-axis at an incorrect location.",
+            fb6_miss_root: "You missed the intersection at root x=",
+            fb6_miss_ext: "You missed the extremum point at x=",
+            fb6_miss_va: "Missing graph details near vertical asymptote x=",
+            fb6_sign: "You drew part of the function on the wrong side of the x-axis.",
+            fb6_ha: "Make sure your graph is on the correct side of the horizontal asymptotes.",
+            fb6_success: "Great job! This matches the general shape. Showing exact plot.",
+            fb6_skip: "Sketch revealed.",
+            fb7_draw: "Please draw the transformed function first.",
+            fb7_undef: "You drew inside an undefined region.",
+            fb7_more: "Please draw a bit more of the function.",
+            fb7_success: "Excellent transformation!",
+            fb7_incorrect: "Transformation incorrect. Check your curve carefully.",
+            fb7_skip: "Transformation revealed.",
+            fb7_sign: "You drew part of the transformed function on the wrong side of the x-axis."
+        },
+        he: {
+            title: "חקירת פונקציות מתקדמת",
+            level: "שלב",
+            s1_title: "1. נקודות חיתוך עם ציר x",
+            s1_desc: "לחץ על ציר ה-x כדי לסמן את שורשי הפונקציה.",
+            s1_btn: "בדוק שורשים",
+            s2_title: "2. זוגיות",
+            s2_desc: "האם הפונקציה זוגית, אי-זוגית או לא זוגית ולא אי-זוגית?",
+            s2_even: "זוגית",
+            s2_odd: "אי-זוגית",
+            s2_neither: "כללי",
+            s2_btn: "בדוק זוגיות",
+            s3_title: "3. אסימפטוטות אופקיות",
+            s3_desc: "לחץ על ציר ה-y כדי להציב אסימפטוטות אופקיות. (אם אין, לחץ על בדוק).",
+            s3_btn: "בדוק אסימפטוטות",
+            s4_title: "4. אסימפטוטות אנכיות",
+            s4_desc: "לחץ על ציר ה-x כדי להציב אסימפטוטות אנכיות. (אם אין, לחץ על בדוק).",
+            s4_btn: "בדוק אסימפטוטות",
+            s5_title: "5. נקודות קיצון (f'(x) = 0)",
+            s5_desc: "סמן את ערכי ה-x בהם f'(x) = 0 על ידי לחיצה על ציר ה-x.",
+            s5_btn1: "בדוק נקודות קיצון",
+            s5_btn2: "דלג וגלה",
+            s6_title: "6. שרטוט הפונקציה",
+            s6_desc: "שרטט את הפונקציה f(x). חובה לעבור בדיוק דרך השורשים ונקודות הקיצון.",
+            btn_clear: "נקה",
+            btn_skip: "דלג",
+            btn_validate: "בדוק",
+            btn_continue: "המשך",
+            s7_title: "7. התמרות",
+            s7_desc: "בהינתן הגרף של f(x) (בירוק), שרטט:",
+            btn_next_level: "שלב הבא",
+            course_completed: "הקורס הושלם!",
+            fb1_correct: "שורשים נכונים!",
+            fb1_incorrect: "שורשים שגויים. נסה שוב.",
+            fb2_select: "בחר אפשרות תחילה.",
+            fb2_correct: "זוגיות נכונה!",
+            fb2_incorrect: "שגוי. חשב את f(-x).",
+            fb3_correct: "אסימפטוטות אופקיות נכונות!",
+            fb3_incorrect: "אסימפטוטות אופקיות שגויות. בדוק כאשר x->±∞.",
+            fb4_correct: "אסימפטוטות אנכיות נכונות!",
+            fb4_incorrect: "אסימפטוטות אנכיות שגויות. בדוק את מכנה הפונקציה.",
+            fb5_correct: "מיקומי נקודות קיצון נכונים!",
+            fb5_incorrect: "ערכי x שגויים לנקודות הקיצון.",
+            fb5_skip: "התשובות נחשפו.",
+            fb6_draw: "אנא שרטט את הפונקציה תחילה.",
+            fb6_undef: "שרטטת בתחום לא מוגדר.",
+            fb6_cross: "חצית את ציר ה-x במיקום שגוי.",
+            fb6_miss_root: "פספסת את נקודת החיתוך בשורש x=",
+            fb6_miss_ext: "פספסת את נקודת הקיצון במדויק ב-x=",
+            fb6_miss_va: "חסרים פרטים בגרף ליד האסימפטוטה האנכית x=",
+            fb6_sign: "שרטטת חלק מהפונקציה בצד הלא נכון של ציר ה-x.",
+            fb6_ha: "וודא שהגרף מתקרב לאסימפטוטות האופקיות מהצד הנכון.",
+            fb6_success: "כל הכבוד! הצורה הכללית נכונה. מציג את הגרף המדויק.",
+            fb6_skip: "השרטוט נחשף.",
+            fb7_draw: "אנא שרטט את הפונקציה המותמרת תחילה.",
+            fb7_undef: "שרטטת בתחום לא מוגדר.",
+            fb7_more: "אנא שרטט קצת יותר מהפונקציה.",
+            fb7_success: "התמרה מצוינת!",
+            fb7_incorrect: "התמרה שגויה. בדוק את העקומה שלך.",
+            fb7_skip: "ההתמרה נחשפה.",
+            fb7_sign: "שרטטת חלק מהפונקציה המותמרת בצד הלא נכון של ציר ה-x."
+        }
+    };
+
+    let currentLang = 'he';
+    function t(key) { return dict[currentLang][key] || key; }
+
+    const levels = [
+        {
+            equation: "f(x) = \\frac{4x}{x^2 + 4}",
+            roots: [0],
+            parity: 'odd',
+            ha: [0],
+            va: [],
+            extrema: [-2, 2],
+            undefinedRegions: [],
+            viewport: { minX: -10, maxX: 10, minY: -2, maxY: 2, stepX: 2, stepY: 1 },
+            mathFn: (x) => (4 * x) / (x * x + 4),
+            transformFormula: "g(x) = |f(x)|",
+            transformFn: (x) => Math.abs((4 * x) / (x * x + 4))
+        },
+        {
+            equation: "f(x) = \\sqrt{x^2 - 9}",
+            roots: [-3, 3],
+            parity: 'even',
+            ha: [],
+            va: [],
+            extrema: [], 
+            undefinedRegions: [[-2.99, 2.99]],
+            viewport: { minX: -8, maxX: 8, minY: -2, maxY: 6, stepX: 2, stepY: 1 },
+            mathFn: (x) => {
+                if(x*x - 9 < 0) return NaN;
+                return Math.sqrt(x*x - 9);
+            },
+            transformFormula: "g(x) = (f(x))^2",
+            transformFn: (x) => {
+                if(x*x - 9 < 0) return NaN;
+                return x*x - 9;
+            }
+        },
+        {
+            equation: "f(x) = \\frac{3}{\\sqrt{x^2 - 4}}",
+            roots: [],
+            parity: 'even',
+            ha: [0],
+            va: [-2, 2],
+            extrema: [],
+            undefinedRegions: [[-1.99, 1.99]],
+            viewport: { minX: -6, maxX: 6, minY: -1, maxY: 5, stepX: 1, stepY: 1 },
+            mathFn: (x) => {
+                if (x*x - 4 <= 0) return NaN;
+                return 3 / Math.sqrt(x*x - 4);
+            },
+            transformFormula: "g(x) = \\frac{1}{f(x)}",
+            transformFn: (x) => {
+                if (x*x - 4 <= 0) return NaN;
+                return Math.sqrt(x*x - 4) / 3;
+            }
+        },
+        { 
+            equation: "f(x) = \\frac{\\sqrt{3x^2-3}}{x^3}",
+            roots: [-1, 1],
+            parity: 'odd',
+            ha: [0],
+            va: [],
+            extrema: [-1.22, 1.22],
+            undefinedRegions: [[-0.99, 0.99]],
+            viewport: { minX: -4, maxX: 4, minY: -1.5, maxY: 1.5, stepX: 1, stepY: 1 },
+            mathFn: (x) => {
+                if(3*x*x - 3 < 0) return NaN;
+                if(x === 0) return NaN;
+                return Math.sqrt(3*x*x - 3) / (x*x*x);
+            },
+            transformFormula: "g(x) = f(-x)",
+            transformFn: (x) => {
+                if(3*x*x - 3 < 0) return NaN;
+                if(x === 0) return NaN;
+                return Math.sqrt(3*x*x - 3) / ((-x)*(-x)*(-x));
+            }
+        },
+        { 
+            equation: "f(x) = \\frac{x^2}{\\sqrt{x^2-4}}",
+            roots: [],
+            parity: 'even',
+            ha: [],
+            va: [-2, 2],
+            extrema: [-2.83, 2.83],
+            undefinedRegions: [[-1.99, 1.99]],
+            viewport: { minX: -8, maxX: 8, minY: -2, maxY: 10, stepX: 2, stepY: 2 },
+            mathFn: (x) => {
+                if(x*x - 4 <= 0) return NaN;
+                return (x*x) / Math.sqrt(x*x - 4);
+            },
+            transformFormula: "g(x) = \\frac{1}{f(x)}",
+            transformFn: (x) => {
+                if(x*x - 4 <= 0) return NaN;
+                return Math.sqrt(x*x - 4) / (x*x);
+            }
+        },
+        { 
+            equation: "f(x) = \\frac{x^2-16}{\\sqrt{x+5}}",
+            roots: [-4, 4],
+            parity: 'neither',
+            ha: [],
+            va: [-5],
+            extrema: [-0.93],
+            undefinedRegions: [[-20, -4.99]], 
+            viewport: { minX: -6, maxX: 10, minY: -10, maxY: 15, stepX: 2, stepY: 5 },
+            mathFn: (x) => {
+                if(x + 5 <= 0) return NaN;
+                return (x*x - 16) / Math.sqrt(x + 5);
+            },
+            transformFormula: "g(x) = |f(x)|",
+            transformFn: (x) => {
+                if(x + 5 <= 0) return NaN;
+                return Math.abs((x*x - 16) / Math.sqrt(x + 5));
+            }
+        },
+        { 
+            equation: "f(x) = \\frac{4x}{\\sqrt{x^2+x}}",
+            roots: [],
+            parity: 'neither',
+            ha: [-4, 4],
+            va: [-1, 0],
+            extrema: [],
+            undefinedRegions: [[-0.99, 0]],
+            viewport: { minX: -8, maxX: 8, minY: -6, maxY: 6, stepX: 2, stepY: 2 },
+            mathFn: (x) => {
+                if(x*x + x <= 0) return NaN;
+                return (4*x) / Math.sqrt(x*x + x);
+            },
+            transformFormula: "g(x) = (f(x))^2",
+            transformFn: (x) => {
+                if(x*x + x <= 0) return NaN;
+                return (16*x*x) / (x*x + x);
+            }
+        },
+        { 
+            equation: "f(x) = \\frac{\\sqrt{x}-4}{(\\sqrt{x}-2)^2}",
+            roots: [16],
+            parity: 'neither',
+            ha: [0],
+            va: [4],
+            extrema: [36],
+            undefinedRegions: [[-20, -0.01]], 
+            viewport: { minX: -2, maxX: 40, minY: -2, maxY: 3, stepX: 5, stepY: 1 },
+            mathFn: (x) => {
+                if(x < 0) return NaN;
+                if(Math.abs(x - 4) < 0.05) return NaN;
+                return (Math.sqrt(x) - 4) / Math.pow(Math.sqrt(x) - 2, 2);
+            },
+            transformFormula: "g(x) = \\sqrt{f(x)}",
+            transformFn: (x) => {
+                if(x < 0) return NaN;
+                if(Math.abs(x - 4) < 0.05) return NaN;
+                let val = (Math.sqrt(x) - 4) / Math.pow(Math.sqrt(x) - 2, 2);
+                if(val < 0) return NaN;
+                return Math.sqrt(val);
+            }
+        }
+    ];
+
+    let currentLevel = 0;
+    let currentStep = 1;
+    
+    let state = {
+        roots: [],
+        parity: null,
+        ha: [],
+        va: [],
+        extrema: [],
+        paths: [],
+        exactPlotMode: 'none'
+    };
+
+    let isDrawing = false;
+    let currentPath = [];
+
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    let vp = { minX: -10, maxX: 10, minY: -10, maxY: 10, stepX: 2, stepY: 2 };
+
+    function renderLevelButtons() {
+        const container = document.getElementById('level-selector');
+        container.innerHTML = '';
+        levels.forEach((_, idx) => {
+            let btn = document.createElement('button');
+            btn.onclick = () => selectLevel(idx);
+            btn.textContent = `${t('level')} ${idx + 1}`;
+            if (idx === currentLevel) {
+                btn.className = "level-btn px-4 py-1 rounded-full text-sm font-semibold transition-colors bg-indigo-600 text-white shadow-sm";
+            } else {
+                btn.className = "level-btn px-4 py-1 rounded-full text-sm font-semibold transition-colors bg-slate-200 text-slate-600 hover:bg-slate-300";
+            }
+            container.appendChild(btn);
+        });
+    }
+
+    function changeLang(lang) {
+        currentLang = lang;
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+        
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (dict[currentLang][key]) {
+                el.textContent = dict[currentLang][key];
+            }
+        });
+        
+        renderLevelButtons();
+        
+        let btnNext = document.getElementById('btn-next-level');
+        if(currentLevel >= levels.length - 1 && currentStep === 7 && state.exactPlotMode === 'both') {
+            btnNext.textContent = t('course_completed');
+        }
+        drawScene();
+    }
+
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        drawScene();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function mX(x) { return ((x - vp.minX) / (vp.maxX - vp.minX)) * canvas.width; }
+    function mY(y) { return canvas.height - ((y - vp.minY) / (vp.maxY - vp.minY)) * canvas.height; }
+    function unMX(px) { return (px / canvas.width) * (vp.maxX - vp.minX) + vp.minX; }
+    function unMY(py) { return vp.minY + ((canvas.height - py) / canvas.height) * (vp.maxY - vp.minY); }
+
+    function drawScene() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const lvl = levels[currentLevel];
+
+        ctx.fillStyle = 'rgba(203, 213, 225, 0.5)';
+        lvl.undefinedRegions.forEach(reg => {
+            let startX = mX(reg[0]);
+            let endX = mX(reg[1]);
+            ctx.fillRect(startX, 0, endX - startX, canvas.height);
+        });
+
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for(let x = Math.ceil(vp.minX); x <= Math.floor(vp.maxX); x++) {
+            ctx.moveTo(mX(x), 0); ctx.lineTo(mX(x), canvas.height);
+        }
+        for(let y = Math.ceil(vp.minY); y <= Math.floor(vp.maxY); y++) {
+            ctx.moveTo(0, mY(y)); ctx.lineTo(canvas.width, mY(y));
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, mY(0)); ctx.lineTo(canvas.width, mY(0));
+        ctx.moveTo(mX(0), 0); ctx.lineTo(mX(0), canvas.height);
+        ctx.stroke();
+
+        ctx.fillStyle = '#64748b';
+        ctx.font = '10px Inter';
+        ctx.direction = 'ltr';
+        ctx.textAlign = 'center';
+        
+        for(let x = Math.ceil(vp.minX); x <= Math.floor(vp.maxX); x++) {
+            if(x !== 0 && x % vp.stepX === 0) {
+                ctx.fillText(x.toString(), mX(x) - (x < 0 ? 8 : 4), mY(0) + 14);
+            }
+        }
+        ctx.textAlign = 'left';
+        for(let y = Math.ceil(vp.minY); y <= Math.floor(vp.maxY); y++) {
+            if(y !== 0 && y % vp.stepY === 0) {
+                ctx.fillText(y.toString(), mX(0) + 6, mY(y) + 3);
+            }
+        }
+        ctx.direction = document.dir;
+        ctx.textAlign = 'start';
+
+        if (state.exactPlotMode === 'f(x)' || state.exactPlotMode === 'both') {
+            drawExactMathFn(lvl.mathFn, '#10b981', 3);
+        }
+        if (state.exactPlotMode === 'both') {
+             drawExactMathFn(lvl.transformFn, '#8b5cf6', 2, true);
+        }
+
+        state.ha.forEach(y => {
+            ctx.beginPath(); ctx.moveTo(0, mY(y)); ctx.lineTo(canvas.width, mY(y));
+            ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.setLineDash([8, 6]); ctx.stroke(); ctx.setLineDash([]);
+        });
+        
+        state.va.forEach(x => {
+            ctx.beginPath(); ctx.moveTo(mX(x), 0); ctx.lineTo(mX(x), canvas.height);
+            ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2; ctx.setLineDash([8, 6]); ctx.stroke(); ctx.setLineDash([]);
+        });
+
+        state.roots.forEach(x => drawPoint(x, 0, '#3b82f6'));
+        
+        // CRUCIAL FIX: Draw extrema at proper y coordinates if step >= 6
+        state.extrema.forEach(x => {
+            let yPos = 0;
+            if (currentStep >= 6) {
+                yPos = lvl.mathFn(x);
+                if (isNaN(yPos) || !isFinite(yPos)) yPos = 0;
+            }
+            drawPoint(x, yPos, '#ec4899');
+            ctx.fillStyle = '#ec4899';
+            ctx.direction = 'ltr';
+            ctx.fillText("f'=0", mX(x) - 10, mY(yPos) - 15);
+            ctx.direction = document.dir;
+        });
+
+        ctx.strokeStyle = currentStep === 7 ? '#6366f1' : '#f43f5e';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        state.paths.forEach(path => {
+            if(path.length < 2) return;
+            ctx.beginPath();
+            ctx.moveTo(mX(path[0].x), mY(path[0].y));
+            for(let i=1; i<path.length; i++) ctx.lineTo(mX(path[i].x), mY(path[i].y));
+            ctx.stroke();
+        });
+        
+        if (currentPath.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(mX(currentPath[0].x), mY(currentPath[0].y));
+            for(let i=1; i<currentPath.length; i++) ctx.lineTo(mX(currentPath[i].x), mY(currentPath[i].y));
+            ctx.stroke();
+        }
+    }
+
+    function drawPoint(x, y, color) {
+        ctx.beginPath();
+        ctx.arc(mX(x), mY(y), 5, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
+
+    function drawExactMathFn(fn, color, width, dashed=false) {
+        ctx.beginPath();
+        let prevValid = false;
+        const step = (vp.maxX - vp.minX) / 400; // responsive drawing resolution
+        for (let x = vp.minX; x <= vp.maxX; x += step) {
+            let y = fn(x);
+            if (isNaN(y) || !isFinite(y) || Math.abs(y) > 50) {
+                prevValid = false;
+                continue;
+            }
+            if (!prevValid) {
+                ctx.moveTo(mX(x), mY(y));
+            } else {
+                ctx.lineTo(mX(x), mY(y));
+            }
+            prevValid = true;
+        }
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        if(dashed) ctx.setLineDash([5, 5]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    function getPointerPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: unMX(clientX - rect.left), y: unMY(clientY - rect.top) };
+    }
+
+    function toggleArrayItem(arr, val, threshold = 0.5) {
+        const idx = arr.findIndex(v => Math.abs(v - val) < threshold);
+        if (idx > -1) arr.splice(idx, 1);
+        else arr.push(val);
+    }
+
+    function handlePointerDown(e) {
+        e.preventDefault();
+        const pos = getPointerPos(e);
+        const snpX = Math.round(pos.x);
+        const snpY = Math.round(pos.y);
+
+        if (currentStep === 1) {
+            if (Math.abs(pos.y) < 1.5) { toggleArrayItem(state.roots, snpX); drawScene(); }
+        } else if (currentStep === 3) {
+            toggleArrayItem(state.ha, snpY); drawScene();
+        } else if (currentStep === 4) {
+            if (Math.abs(pos.y) < 1.5) { toggleArrayItem(state.va, snpX); drawScene(); }
+        } else if (currentStep === 5) {
+            if (Math.abs(pos.y) < 1.5) { toggleArrayItem(state.extrema, snpX); drawScene(); }
+        } else if (currentStep === 6 || currentStep === 7) {
+            isDrawing = true;
+            currentPath = [pos];
+        }
+    }
+
+    function handlePointerMove(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        currentPath.push(getPointerPos(e));
+        drawScene();
+    }
+
+    function handlePointerUp(e) {
+        if (isDrawing && currentPath.length > 0) {
+            isDrawing = false;
+            if(currentPath.length > 3) {
+                currentPath.sort((a,b) => a.x - b.x);
+                state.paths.push([...currentPath]);
+            }
+            currentPath = [];
+            drawScene();
+        }
+    }
+
+    canvas.addEventListener('mousedown', handlePointerDown);
+    canvas.addEventListener('mousemove', handlePointerMove);
+    canvas.addEventListener('mouseup', handlePointerUp);
+    canvas.addEventListener('mouseleave', () => { if(isDrawing) handlePointerUp(); });
+    canvas.addEventListener('touchstart', handlePointerDown, {passive: false});
+    canvas.addEventListener('touchmove', handlePointerMove, {passive: false});
+    canvas.addEventListener('touchend', handlePointerUp);
+
+    function selectLevel(idx) {
+        currentLevel = idx;
+        initLevel();
+    }
+
+    function initLevel() {
+        const lvl = levels[currentLevel];
+        vp = lvl.viewport || { minX: -10, maxX: 10, minY: -10, maxY: 10, stepX: 2, stepY: 2 };
+
+        renderLevelButtons();
+
+        katex.render(lvl.equation, document.getElementById('function-display'));
+        katex.render(lvl.transformFormula, document.getElementById('transform-formula'));
+        
+        currentStep = 1;
+        state = { roots: [], parity: null, ha: [], va: [], extrema: [], paths: [], exactPlotMode: 'none' };
+        
+        for(let i=1; i<=7; i++) {
+            const el = document.getElementById(`step-${i}`);
+            el.classList.remove('step-collapsed');
+            if(i===1) { el.classList.remove('step-inactive'); } 
+            else { el.classList.add('step-inactive'); }
+            const fb = document.getElementById(`fb-${i}`);
+            fb.classList.add('hidden'); fb.textContent = '';
+        }
+        
+        document.querySelectorAll('.parity-btn').forEach(btn => btn.classList.remove('bg-indigo-100', 'border-indigo-500'));
+        
+        let btnNext = document.getElementById('btn-next-level');
+        btnNext.className = "w-full bg-emerald-500 text-white font-bold py-3 rounded-xl hover:bg-emerald-600 transition shadow-md hidden mt-2 shrink-0 mb-6";
+        btnNext.textContent = t('btn_next_level');
+        btnNext.onclick = nextLevel;
+
+        document.getElementById('q6-controls').classList.remove('hidden');
+        document.getElementById('btn-continue-q6').classList.add('hidden');
+        document.getElementById('q7-controls').classList.remove('hidden');
+
+        document.getElementById('steps-container').scrollTop = 0;
+        setTimeout(resizeCanvas, 50);
+    }
+
+    function showFeedback(step, msgKey, success, dynamicSuffix = '') {
+        const fb = document.getElementById(`fb-${step}`);
+        let message = t(msgKey) + dynamicSuffix;
+        fb.textContent = message;
+        fb.className = `font-medium mt-3 text-center text-sm ${success ? 'text-green-600' : 'text-red-500'}`;
+        fb.classList.remove('hidden');
+        
+        const popMsg = document.getElementById('canvas-overlay-msg');
+        popMsg.textContent = message;
+        popMsg.style.backgroundColor = success ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)';
+        popMsg.classList.remove('opacity-0');
+        setTimeout(() => popMsg.classList.add('opacity-0'), 2500);
+    }
+
+    function advanceStep(current, next) {
+        document.getElementById(`step-${current}`).classList.add('step-collapsed');
+        const nextEl = document.getElementById(`step-${next}`);
+        nextEl.classList.remove('step-inactive');
+        
+        setTimeout(() => {
+            nextEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 300);
+        
+        currentStep = next;
+    }
+
+    function arrMatch(arr1, arr2) {
+        if(arr1.length !== arr2.length) return false;
+        let s1 = [...arr1].sort(); let s2 = [...arr2].sort();
+        for(let i=0; i<s1.length; i++) {
+            if (Math.abs(s1[i] - s2[i]) > 0.5) return false;
+        }
+        return true;
+    }
+
+    function checkQ1() {
+        if (arrMatch(state.roots, levels[currentLevel].roots)) {
+            showFeedback(1, "fb1_correct", true); advanceStep(1, 2);
+        } else showFeedback(1, "fb1_incorrect", false);
+    }
+
+    function setParity(val) {
+        if(currentStep !== 2) return;
+        state.parity = val;
+        document.querySelectorAll('.parity-btn').forEach(b => b.classList.remove('bg-indigo-100', 'border-indigo-500'));
+        event.target.classList.add('bg-indigo-100', 'border-indigo-500');
+    }
+
+    function checkQ2() {
+        if(!state.parity) { showFeedback(2, "fb2_select", false); return; }
+        if (state.parity === levels[currentLevel].parity) {
+            showFeedback(2, "fb2_correct", true); advanceStep(2, 3);
+        } else showFeedback(2, "fb2_incorrect", false);
+    }
+
+    function checkQ3() {
+        if (arrMatch(state.ha, levels[currentLevel].ha)) {
+            showFeedback(3, "fb3_correct", true); advanceStep(3, 4);
+        } else showFeedback(3, "fb3_incorrect", false);
+    }
+
+    function checkQ4() {
+        if (arrMatch(state.va, levels[currentLevel].va)) {
+            showFeedback(4, "fb4_correct", true); advanceStep(4, 5);
+        } else showFeedback(4, "fb4_incorrect", false);
+    }
+
+    function checkQ5() {
+        if (arrMatch(state.extrema, levels[currentLevel].extrema)) {
+            // SNAP TO EXACT VALUES for rendering cleanly in Step 6
+            state.extrema = [...levels[currentLevel].extrema]; 
+            showFeedback(5, "fb5_correct", true); 
+            advanceStep(5, 6);
+            drawScene(); // Forces re-render with points at y = f(x)
+        } else showFeedback(5, "fb5_incorrect", false);
+    }
+
+    function skipQ5() {
+        state.extrema = [...levels[currentLevel].extrema];
+        showFeedback(5, "fb5_skip", true);
+        advanceStep(5, 6);
+        drawScene(); // Forces re-render with points at y = f(x)
+    }
+
+    function clearPaths() { state.paths = []; drawScene(); }
+
+    function checkQ6() {
+        if (state.paths.length === 0) { showFeedback(6, "fb6_draw", false); return; }
+
+        const lvl = levels[currentLevel];
+        let errorKey = null;
+        let errorSuffix = '';
+
+        let inUndefined = false;
+        state.paths.forEach(path => {
+            path.forEach(pt => {
+                lvl.undefinedRegions.forEach(reg => {
+                    if(pt.x > reg[0] + 0.2 && pt.x < reg[1] - 0.2) inUndefined = true; 
+                });
+            });
+        });
+        if(inUndefined) errorKey = "fb6_undef";
+
+        if(!errorKey) {
+            let falseRoot = false;
+            state.paths.forEach(path => {
+                for(let i=1; i<path.length; i++) {
+                    if(Math.sign(path[i-1].y) !== Math.sign(path[i].y)) {
+                        let crossedX = path[i].x;
+                        let nearActualRoot = lvl.roots.some(r => Math.abs(r - crossedX) < 2.5);
+                        if(!nearActualRoot) falseRoot = true;
+                    }
+                }
+            });
+            if(falseRoot) errorKey = "fb6_cross";
+        }
+
+        if(!errorKey) {
+            for(let r of lvl.roots) {
+                 let hasPointsNearRoot = state.paths.some(path => path.some(pt => Math.abs(pt.x - r) < 2.0 && Math.abs(pt.y) < 2.5));
+                 if(!hasPointsNearRoot) { errorKey = "fb6_miss_root"; errorSuffix = r; break; }
+            }
+        }
+
+        if(!errorKey) {
+            for(let ext of lvl.extrema) {
+                 let extY = lvl.mathFn(ext);
+                 let yCheckRadius = isNaN(extY) ? 5.0 : 2.5; // fallback
+                 let hasPointsNear = state.paths.some(path => path.some(pt => Math.abs(pt.x - ext) < 2.5 && Math.abs(pt.y - extY) < yCheckRadius));
+                 if(!hasPointsNear) { errorKey = "fb6_miss_ext"; errorSuffix = ext; break; }
+            }
+        }
+
+        if(!errorKey) {
+            for(let va of lvl.va) {
+                let hasPointsNear = state.paths.some(path => path.some(pt => Math.abs(pt.x - va) < 2.5));
+                if(!hasPointsNear) { errorKey = "fb6_miss_va"; errorSuffix = va; break; }
+            }
+        }
+
+        if(!errorKey) {
+            let wrongSign = false;
+            state.paths.forEach(path => {
+                path.forEach(pt => {
+                    let expectedY = lvl.mathFn(pt.x);
+                    if (!isNaN(expectedY)) {
+                        if ((expectedY > 0.5 && pt.y < -0.5) || (expectedY < -0.5 && pt.y > 0.5)) {
+                            wrongSign = true;
+                        }
+                    }
+                });
+            });
+            if (wrongSign) errorKey = "fb6_sign";
+        }
+
+        if(!errorKey) {
+            let haErrors = 0;
+            state.paths.forEach(path => {
+                path.forEach(pt => {
+                    let expectedY = lvl.mathFn(pt.x);
+                    if (!isNaN(expectedY)) {
+                        lvl.ha.forEach(haY => {
+                            let expectedDiff = expectedY - haY;
+                            let drawnDiff = pt.y - haY;
+                            if (Math.abs(expectedDiff) > 0.5) {
+                                if ((expectedDiff > 0 && drawnDiff < -0.5) || (expectedDiff < 0 && drawnDiff > 0.5)) {
+                                    haErrors++;
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+            if (haErrors > 10) errorKey = "fb6_ha";
+        }
+
+        if (errorKey) {
+            showFeedback(6, errorKey, false, errorSuffix);
+        } else {
+            showFeedback(6, "fb6_success", true);
+            state.paths = []; 
+            state.exactPlotMode = 'f(x)';
+            drawScene();
+            
+            document.getElementById('q6-controls').classList.add('hidden');
+            document.getElementById('btn-continue-q6').classList.remove('hidden');
+        }
+    }
+
+    function skipQ6() {
+        state.paths = [];
+        state.exactPlotMode = 'f(x)';
+        drawScene();
+        showFeedback(6, "fb6_skip", true);
+        document.getElementById('q6-controls').classList.add('hidden');
+        document.getElementById('btn-continue-q6').classList.remove('hidden');
+    }
+
+    function advanceToQ7() {
+        advanceStep(6, 7);
+        state.paths = [];
+        drawScene();
+    }
+
+    function checkQ7() {
+        if (state.paths.length === 0) { showFeedback(7, "fb7_draw", false); return; }
+
+        const lvl = levels[currentLevel];
+        let correctPoints = 0;
+        let totalEvaluatedPoints = 0;
+        let inUndefined = false;
+        let wrongSign = false;
+
+        state.paths.forEach(path => {
+            path.forEach(pt => {
+                let expectedY = lvl.transformFn(pt.x);
+                if (isNaN(expectedY)) {
+                    inUndefined = true; return; 
+                }
+                totalEvaluatedPoints++;
+
+                if ((expectedY > 0.5 && pt.y < -0.5) || (expectedY < -0.5 && pt.y > 0.5)) {
+                    wrongSign = true;
+                }
+
+                if (Math.abs(expectedY) > 8) {
+                    if (Math.sign(pt.y) === Math.sign(expectedY) && Math.abs(pt.y) > 5) correctPoints++;
+                } 
+                else if (Math.abs(pt.y - expectedY) < 2.0) {
+                    correctPoints++;
+                }
+            });
+        });
+
+        if (inUndefined) { showFeedback(7, "fb7_undef", false); return; }
+        if (wrongSign) { showFeedback(7, "fb7_sign", false); return; }
+        if (totalEvaluatedPoints < 10) { showFeedback(7, "fb7_more", false); return; }
+
+        let accuracy = totalEvaluatedPoints > 0 ? (correctPoints / totalEvaluatedPoints) : 0;
+
+        if (accuracy > 0.50) {
+             showFeedback(7, "fb7_success", true);
+             state.exactPlotMode = 'both';
+             drawScene();
+             document.getElementById('step-7').classList.add('step-collapsed');
+             
+             let btn = document.getElementById('btn-next-level');
+             btn.classList.remove('hidden');
+             if (currentLevel >= levels.length - 1) {
+                 btn.textContent = t('course_completed');
+                 btn.onclick = null;
+                 btn.classList.remove('hover:bg-emerald-600', 'bg-emerald-500');
+                 btn.classList.add('bg-slate-400', 'cursor-default');
+             }
+             document.getElementById('q7-controls').classList.add('hidden');
+        } else {
+             showFeedback(7, "fb7_incorrect", false);
+        }
+    }
+
+    function skipQ7() {
+        state.paths = [];
+        state.exactPlotMode = 'both';
+        drawScene();
+        showFeedback(7, "fb7_skip", true);
+        document.getElementById('step-7').classList.add('step-collapsed');
+        document.getElementById('q7-controls').classList.add('hidden');
+        
+        let btn = document.getElementById('btn-next-level');
+        btn.classList.remove('hidden');
+        if (currentLevel >= levels.length - 1) {
+            btn.textContent = t('course_completed');
+            btn.onclick = null;
+            btn.classList.remove('hover:bg-emerald-600', 'bg-emerald-500');
+            btn.classList.add('bg-slate-400', 'cursor-default');
+        }
+    }
+
+    function nextLevel() {
+        if (currentLevel < levels.length - 1) {
+            currentLevel++;
+            initLevel();
+        }
+    }
+
+    window.onload = () => {
+        changeLang('he'); 
+        initLevel();
+    };
+</script>
+</body>
+</html>

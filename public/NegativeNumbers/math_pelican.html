@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Math Pelican: Creature Quest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Elevation Bar Styles */
+        #elevation-bar-container {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 80%;
+            width: 40px;
+            background: linear-gradient(to bottom, rgba(135, 206, 235, 0.2) 0%, rgba(135, 206, 235, 0.4) 50%, rgba(0, 105, 148, 0.4) 50%, rgba(0, 0, 0, 0.5) 100%);
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+
+        #sea-level-line {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            height: 2px;
+            background-color: white;
+            z-index: 1;
+        }
+
+        .bar-label {
+            position: absolute;
+            left: 50px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: bold;
+            font-size: 0.8rem;
+            text-shadow: 1px 1px 2px black;
+        }
+        #label-max { top: 5px; }
+        #label-min { bottom: 5px; }
+        #label-sea { top: 50%; transform: translateY(-50%); color: white;}
+
+        #elevation-marker {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #ffcc00;
+            border-radius: 50%;
+            border: 3px solid white;
+            left: 2px;
+            transform: translateY(50%);
+            transition: bottom 0.1s linear;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.8);
+            z-index: 2;
+        }
+
+        #elevation-text {
+            position: absolute;
+            left: 45px;
+            top: -10px;
+            color: #ffcc00;
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-shadow: 1px 1px 2px black;
+            white-space: nowrap;
+        }
+
+        #target-marker {
+            position: absolute;
+            left: 35px;
+            font-size: 1.5rem;
+            transform: translateY(50%);
+            transition: bottom 0.3s linear;
+            z-index: 3;
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.8));
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        /* Top HUD */
+        #top-hud {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        #stamina-container {
+            width: 80%;
+            background-color: rgba(0,0,0,0.5);
+            border-radius: 15px;
+            padding: 5px;
+            border: 2px solid white;
+        }
+
+        #stamina-bar {
+            height: 15px;
+            background: linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%);
+            border-radius: 10px;
+            width: 100%;
+            transition: width 0.1s linear, background 0.3s;
+        }
+
+        #creature-bar {
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-height: 40px;
+            align-items: center;
+        }
+
+        .creature-icon {
+            font-size: 24px;
+            filter: drop-shadow(0px 0px 5px rgba(255, 255, 255, 0.8));
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Toast Notification */
+        #toast-notification {
+            position: absolute;
+            top: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,0.8), rgba(0,0,0,0));
+            color: #ffcc00;
+            padding: 10px 40px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            text-shadow: 2px 2px 4px black;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .toast-show {
+            animation: showToast 4s forwards;
+        }
+
+        @keyframes showToast {
+            0% { opacity: 0; transform: translate(-50%, -20px); }
+            10% { opacity: 1; transform: translate(-50%, 0); }
+            90% { opacity: 1; transform: translate(-50%, 0); }
+            100% { opacity: 0; transform: translate(-50%, -20px); }
+        }
+
+        /* Screens (UI Overlay) */
+        .screen {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 242, 254, 0.4);
+            transition: transform 0.1s;
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Touch Controls */
+        #touch-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .touch-btn {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255,255,255,0.2);
+            border: 3px solid rgba(255,255,255,0.5);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            user-select: none;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+        }
+
+        .floating-text {
+            position: absolute;
+            color: white;
+            font-weight: bold;
+            font-size: 1.5rem;
+            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            pointer-events: none;
+            animation: floatUp 1.5s ease-out forwards;
+            z-index: 10;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-60px); }
+        }
+
+        @media (min-width: 768px) {
+            #touch-controls { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI Overlay -->
+    <div id="elevation-bar-container">
+        <div class="bar-label" id="label-max">600m</div>
+        <div id="sea-level-line"></div>
+        <div class="bar-label" id="label-sea">0m</div>
+        <div class="bar-label" id="label-min">-600m</div>
+        <div id="elevation-marker" style="bottom: 50%;">
+            <div id="elevation-text">0m</div>
+        </div>
+        <div id="target-marker">🦅</div>
+    </div>
+
+    <div id="top-hud">
+        <div id="stamina-container">
+            <div class="text-white text-center text-xs font-bold mb-1 tracking-wider uppercase">Stamina</div>
+            <div id="stamina-bar" style="width: 100%;"></div>
+        </div>
+        <div id="creature-bar">
+            <!-- Collected creatures will appear here -->
+        </div>
+        <!-- Mystery Equation UI -->
+        <div id="mystery-equation-container" class="hidden mt-2 bg-black/70 border-2 border-yellow-400 rounded-lg p-2 text-yellow-400 text-xl font-bold shadow-[0_0_10px_rgba(255,215,0,0.5)]"></div>
+    </div>
+
+    <div id="toast-notification">Target Updated!</div>
+
+    <!-- Mobile Controls -->
+    <div id="touch-controls">
+        <div class="touch-btn" id="btn-up">▲</div>
+        <div class="touch-btn" id="btn-down">▼</div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="screen-start" class="screen">
+        <h1 class="text-5xl font-bold mb-4 text-yellow-400 drop-shadow-lg">Math Pelican: Creature Quest</h1>
+        <p class="text-xl mb-6 max-w-lg">
+            Fly into the atmosphere and dive into the abyss to discover rare creatures!<br><br>
+            Use <b>UP</b> and <b>DOWN</b> arrows to fly and dive. <br>
+            Use <b>LEFT</b> and <b>RIGHT</b> arrows to adjust your speed.<br><br>
+            Hitting math boxes alters your elevation instantly. <b>Watch out for subtraction!</b><br>
+            Catch normal birds and fish to regain stamina. 
+        </p>
+        <button class="btn" id="btn-start">Start Adventure</button>
+    </div>
+
+    <!-- Victory Screen -->
+    <div id="screen-victory" class="screen hidden">
+        <h1 class="text-6xl font-bold mb-4 text-yellow-400">Quest Complete!</h1>
+        <p class="text-2xl mb-6">You have discovered every rare creature in the world.</p>
+        <div id="stats" class="text-lg mb-8 text-gray-300"></div>
+        <button class="btn" id="btn-restart">Keep Exploring</button>
+    </div>
+
+    <!-- Testing Mode Screen -->
+    <div id="screen-testing" class="screen hidden" style="z-index: 60;">
+        <h1 class="text-4xl font-bold mb-4 text-purple-400 drop-shadow-md">Testing Mode</h1>
+        <p class="text-xl mb-6">Select a level to jump to:</p>
+        <div id="level-buttons-container" class="flex flex-col gap-4 max-h-[50vh] overflow-y-auto w-full max-w-md">
+            <!-- Buttons injected via JS -->
+        </div>
+        <button class="btn mt-8" style="background: linear-gradient(to bottom, #e74c3c 0%, #c0392b 100%);" id="btn-close-testing">Close Testing Menu</button>
+    </div>
+</div>
+
+<script>
+    /**
+     * GAME CONFIGURATION & STATE
+     */
+    const GAME_CONFIG = {
+        global: {
+            staminaMax: 100,
+            pixelsPerMeter: 10,
+            baseSpeed: 5,
+            minSpeed: 3,
+            maxSpeed: 10,
+            hAccel: 0.1, 
+            hFriction: 0.4, 
+            maxElevationUI: 600 
+        },
+        levels: [
+            {
+                level: 1,
+                targetCreature: { name: 'Sunbird', emoji: '🦅', elevation: 150, type: 'sky' },
+                math: { type: 'single', valRange: [15, 50], parenthesis: false, color: true },
+                spawning: { boxInterval: 2000, foodInterval: 3000, foodBundleMin: 2, foodBundleMax: 4 },
+                physics: { flapPower: 0.2, divePower: 0.2, gravity: 0.05, buoyancy: 0.05, staminaDrain: 0.2, staminaRegen: 0.08, envPenalty: 0.05 }
+            },
+            {
+                level: 2,
+                targetCreature: { name: 'Anglerfish', emoji: '🐡', elevation: -200, type: 'sea' },
+                math: { type: 'single', valRange: [50, 100], parenthesis: true, color: false },
+                spawning: { boxInterval: 1800, foodInterval: 3200, foodBundleMin: 3, foodBundleMax: 5 },
+                physics: { flapPower: 0.2, divePower: 0.2, gravity: 0.06, buoyancy: 0.06, staminaDrain: 0.25, staminaRegen: 0.07, envPenalty: 0.08 }
+            },
+            {
+                level: 3,
+                targetCreature: { name: 'Space Owl', emoji: '🦉', elevation: 350, type: 'sky' },
+                math: { type: 'bundle', valRange: [70, 120], bundleSize: [2, 3], parenthesis: false, color: true },
+                spawning: { boxInterval: 1600, foodInterval: 3500, foodBundleMin: 3, foodBundleMax: 6 },
+                physics: { flapPower: 0.22, divePower: 0.22, gravity: 0.08, buoyancy: 0.08, staminaDrain: 0.3, staminaRegen: 0.06, envPenalty: 0.1 }
+            },
+            {
+                level: 4,
+                targetCreature: { name: 'Kraken', emoji: '🦑', elevation: -450, type: 'sea' },
+                math: { type: 'bundle', valRange: [100, 150], bundleSize: [2, 3], parenthesis: true, color: false },
+                spawning: { boxInterval: 1500, foodInterval: 3500, foodBundleMin: 2, foodBundleMax: 5 },
+                physics: { flapPower: 0.25, divePower: 0.25, gravity: 0.1, buoyancy: 0.1, staminaDrain: 0.35, staminaRegen: 0.05, envPenalty: 0.12 }
+            },
+            {
+                level: 5,
+                targetCreature: { name: 'Megalodon', emoji: '🦈', elevation: -550, type: 'sea' },
+                math: { type: 'multiplication', valRange: [150, 250], parenthesis: true, color: false },
+                spawning: { boxInterval: 1600, foodInterval: 3000, foodBundleMin: 2, foodBundleMax: 5 },
+                physics: { flapPower: 0.26, divePower: 0.26, gravity: 0.11, buoyancy: 0.11, staminaDrain: 0.38, staminaRegen: 0.05, envPenalty: 0.13 }
+            },
+            {
+                level: 6,
+                targetCreature: { name: 'Star Dragon', emoji: '🐉', elevation: 550, type: 'sky' },
+                math: { type: 'complex', valRange: [200, 300], parenthesis: true, color: false },
+                spawning: { boxInterval: 1700, foodInterval: 3000, foodBundleMin: 3, foodBundleMax: 6 },
+                physics: { flapPower: 0.28, divePower: 0.28, gravity: 0.12, buoyancy: 0.12, staminaDrain: 0.4, staminaRegen: 0.04, envPenalty: 0.15 }
+            },
+            {
+                level: 7,
+                targetCreature: { name: 'Pegasus', emoji: '🦄', elevation: 400, type: 'sky' },
+                mystery: true,
+                equation: "2 × 🦄 - 200 = 600",
+                math: { type: 'bundle', valRange: [150, 250], bundleSize: [2, 3], parenthesis: true, color: false },
+                spawning: { boxInterval: 1700, foodInterval: 3000, foodBundleMin: 3, foodBundleMax: 6 },
+                physics: { flapPower: 0.28, divePower: 0.28, gravity: 0.12, buoyancy: 0.12, staminaDrain: 0.4, staminaRegen: 0.04, envPenalty: 0.15 }
+            },
+            {
+                level: 8,
+                targetCreature: { name: 'Leviathan', emoji: '🐋', elevation: -300, type: 'sea' },
+                mystery: true,
+                equation: "-4 × 🐋 - 200 = 1000",
+                math: { type: 'multiplication', valRange: [200, 300], parenthesis: true, color: false },
+                spawning: { boxInterval: 1600, foodInterval: 3000, foodBundleMin: 3, foodBundleMax: 6 },
+                physics: { flapPower: 0.28, divePower: 0.28, gravity: 0.12, buoyancy: 0.12, staminaDrain: 0.4, staminaRegen: 0.04, envPenalty: 0.15 }
+            },
+            {
+                level: 9,
+                targetCreature: { name: 'Phoenix', emoji: '🔥', elevation: 600, type: 'sky' },
+                mystery: true,
+                equation: "-3 × 🔥 + 1000 = -800",
+                math: { type: 'complex', valRange: [250, 400], parenthesis: true, color: false },
+                spawning: { boxInterval: 1700, foodInterval: 3000, foodBundleMin: 3, foodBundleMax: 6 },
+                physics: { flapPower: 0.3, divePower: 0.3, gravity: 0.14, buoyancy: 0.14, staminaDrain: 0.45, staminaRegen: 0.04, envPenalty: 0.15 }
+            }
+        ]
+    };
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // UI Elements
+    const elevationMarker = document.getElementById('elevation-marker');
+    const elevationText = document.getElementById('elevation-text');
+    const targetMarker = document.getElementById('target-marker');
+    const staminaBar = document.getElementById('stamina-bar');
+    const creatureBar = document.getElementById('creature-bar');
+    const mysteryEquationContainer = document.getElementById('mystery-equation-container');
+    const toast = document.getElementById('toast-notification');
+    const screenStart = document.getElementById('screen-start');
+    const screenVictory = document.getElementById('screen-victory');
+    const screenTesting = document.getElementById('screen-testing');
+    const btnStart = document.getElementById('btn-start');
+    const btnRestart = document.getElementById('btn-restart');
+    const btnCloseTesting = document.getElementById('btn-close-testing');
+    const levelButtonsContainer = document.getElementById('level-buttons-container');
+
+    // Game State
+    let state = {
+        isRunning: false,
+        gameFinished: false,
+        levelIndex: 0,
+        config: GAME_CONFIG.levels[0], 
+        timeElapsed: 0,
+        lastTime: 0,
+        camera: { elevation: 0 },
+        specialCreatureSpawned: false
+    };
+
+    let entities = {
+        boxes: [],
+        food: [],
+        particles: [],
+        special: null
+    };
+
+    let player = {
+        x: 150,
+        elevation: 0,       
+        targetElevation: 0, 
+        stamina: GAME_CONFIG.global.staminaMax,
+        hVelocity: GAME_CONFIG.global.baseSpeed, 
+        radius: 20
+    };
+
+    // Inputs
+    const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, KeyX: false, KeyG: false };
+    let cheatToggleDebounce = false;
+
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'ArrowUp' || e.code === 'KeyW') keys.ArrowUp = true;
+        if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.ArrowDown = true;
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.ArrowLeft = true;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.ArrowRight = true;
+        if (e.code === 'KeyX' || e.key.toLowerCase() === 'x') keys.KeyX = true;
+        if (e.code === 'KeyG' || e.key.toLowerCase() === 'g') keys.KeyG = true;
+
+        if (keys.KeyX && keys.KeyG && state.isRunning && !cheatToggleDebounce) {
+            toggleTestingMode();
+        }
+    });
+    window.addEventListener('keyup', (e) => {
+        if (e.code === 'ArrowUp' || e.code === 'KeyW') keys.ArrowUp = false;
+        if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.ArrowDown = false;
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.ArrowLeft = false;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.ArrowRight = false;
+        if (e.code === 'KeyX' || e.key.toLowerCase() === 'x') keys.KeyX = false;
+        if (e.code === 'KeyG' || e.key.toLowerCase() === 'g') keys.KeyG = false;
+    });
+
+    const btnUp = document.getElementById('btn-up');
+    const btnDown = document.getElementById('btn-down');
+    btnUp.addEventListener('touchstart', (e) => { e.preventDefault(); keys.ArrowUp = true; });
+    btnUp.addEventListener('touchend', (e) => { e.preventDefault(); keys.ArrowUp = false; });
+    btnDown.addEventListener('touchstart', (e) => { e.preventDefault(); keys.ArrowDown = true; });
+    btnDown.addEventListener('touchend', (e) => { e.preventDefault(); keys.ArrowDown = false; });
+
+    // Resize
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    /**
+     * HELPERS
+     */
+    function mapElevationToY(elevation) {
+        return (canvas.height / 2) - ((elevation - state.camera.elevation) * GAME_CONFIG.global.pixelsPerMeter);
+    }
+
+    function spawnFloatingText(text, x, y, color = 'white', duration = 1500) {
+        const el = document.createElement('div');
+        el.className = 'floating-text';
+        el.textContent = text;
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.color = color;
+        el.style.animationDuration = `${duration/1000}s`;
+        document.getElementById('game-container').appendChild(el);
+        setTimeout(() => el.remove(), duration);
+    }
+
+    function showToast(message) {
+        toast.textContent = message;
+        toast.classList.remove('toast-show');
+        void toast.offsetWidth; // trigger reflow to restart animation
+        toast.classList.add('toast-show');
+    }
+
+    function updateUI() {
+        // UI Bar mapped statically to +/- maxElevationUI
+        const range = GAME_CONFIG.global.maxElevationUI * 2;
+        const percent = ((player.elevation + GAME_CONFIG.global.maxElevationUI) / range) * 100;
+        elevationMarker.style.bottom = `${Math.max(0, Math.min(100, percent))}%`;
+        
+        let displayElev = Math.round(player.elevation);
+        elevationText.textContent = displayElev + 'm';
+        if (displayElev > 0) elevationText.style.color = '#87CEEB';
+        else if (displayElev < 0) elevationText.style.color = '#00f2fe';
+        else elevationText.style.color = '#ffcc00';
+
+        // Target Marker Update
+        if (!state.gameFinished && state.config && state.config.targetCreature) {
+            if (state.config.mystery) {
+                targetMarker.style.display = 'none';
+                mysteryEquationContainer.textContent = `Find Target: ${state.config.equation}`;
+                mysteryEquationContainer.classList.remove('hidden');
+            } else {
+                mysteryEquationContainer.classList.add('hidden');
+                const tc = state.config.targetCreature;
+                const targetPercent = ((tc.elevation + GAME_CONFIG.global.maxElevationUI) / range) * 100;
+                targetMarker.style.bottom = `${Math.max(0, Math.min(100, targetPercent))}%`;
+                targetMarker.textContent = tc.emoji;
+                targetMarker.style.display = 'block';
+            }
+        } else {
+            targetMarker.style.display = 'none';
+            mysteryEquationContainer.classList.add('hidden');
+        }
+
+        // Stamina
+        staminaBar.style.width = `${Math.max(0, (player.stamina / GAME_CONFIG.global.staminaMax) * 100)}%`;
+        if (player.stamina < 25) staminaBar.style.background = 'linear-gradient(90deg, #8a2387, #e94057)';
+        else staminaBar.style.background = 'linear-gradient(90deg, #11998e, #38ef7d)';
+    }
+
+    /**
+     * ENTITIES
+     */
+    class MathBox {
+        constructor(x, elevation, text, netValue, hasColor) {
+            this.x = x;
+            this.elevation = elevation;
+            this.text = text;
+            this.netValue = netValue;
+            this.hasColor = hasColor;
+            
+            // Adjust width dynamically based on text length to accommodate parenthesis
+            this.width = Math.max(65, this.text.length * 15 + 10); 
+            this.height = 65;
+            this.active = true;
+        }
+        
+        get actualValue() {
+            return this.netValue;
+        }
+        
+        get displayText() {
+            return this.text;
+        }
+        
+        update(dt) {
+            this.x -= (player.hVelocity * GAME_CONFIG.global.hFriction) * (dt / 16);
+        }
+        
+        draw(ctx) {
+            const y = mapElevationToY(this.elevation);
+            
+            // Coloring logic based on configuration
+            if (!this.hasColor) {
+                ctx.fillStyle = 'rgba(100, 100, 110, 0.95)'; // Gray for no-color levels
+            } else {
+                ctx.fillStyle = this.netValue > 0 ? 'rgba(46, 204, 113, 0.95)' : 'rgba(231, 76, 60, 0.95)'; // Green/Red
+            }
+
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            
+            ctx.beginPath();
+            ctx.roundRect(this.x - this.width/2, y - this.height/2, this.width, this.height, 12);
+            ctx.fill();
+            ctx.stroke();
+
+            // Link visual if part of a bundle
+            if (this.siblings) {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(this.x - this.width/2 - 5, y - 5, 10, 10);
+            }
+
+            // Shine effect
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.beginPath();
+            ctx.roundRect(this.x - this.width/2 + 5, y - this.height/2 + 5, this.width - 10, this.height/2 - 5, 6);
+            ctx.fill();
+
+            // Text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 20px Fredoka';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(this.text, this.x, y);
+        }
+    }
+
+    class Food {
+        constructor(x, elevation, type) {
+            this.x = x;
+            this.elevation = elevation;
+            this.type = type; 
+            this.active = true;
+            this.radius = 12;
+            this.bobOffset = Math.random() * Math.PI * 2;
+        }
+        update(dt) {
+            this.x -= (player.hVelocity * 0.8) * (dt / 16);
+            this.bobOffset += 0.1 * (dt/16);
+        }
+        draw(ctx) {
+            const baseY = mapElevationToY(this.elevation);
+            const y = baseY + Math.sin(this.bobOffset) * 5;
+
+            ctx.save();
+            ctx.translate(this.x, y);
+            
+            if (this.type === 'bird') {
+                ctx.fillStyle = '#8e44ad';
+                ctx.beginPath(); ctx.ellipse(0, 0, 12, 7, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#9b59b6';
+                ctx.beginPath();
+                const flapOffset = Math.sin(this.bobOffset * 4) * 6;
+                ctx.ellipse(2, -2 + flapOffset, 8, 4, Math.PI/8, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#f1c40f';
+                ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(-18, 2); ctx.lineTo(-10, 4); ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.beginPath(); ctx.arc(-6, -1, 2, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'black';
+                ctx.beginPath(); ctx.arc(-6.5, -1, 1, 0, Math.PI*2); ctx.fill();
+            } else {
+                ctx.fillStyle = '#ff9f43';
+                ctx.beginPath(); ctx.ellipse(0, 0, 12, 8, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(20, -6); ctx.lineTo(20, 6); ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.beginPath(); ctx.arc(-5, -2, 2, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'black';
+                ctx.beginPath(); ctx.arc(-5.5, -2, 1, 0, Math.PI*2); ctx.fill();
+            }
+            ctx.restore();
+        }
+    }
+
+    class SpecialCreature {
+        constructor(x, elevation, emoji, name) {
+            this.x = x;
+            this.elevation = elevation;
+            this.emoji = emoji;
+            this.name = name;
+            this.active = true;
+            this.radius = 40;
+            this.bobOffset = 0;
+        }
+        update(dt) {
+            // Moves very slowly so it's easy to catch
+            this.x -= (player.hVelocity * 0.2) * (dt/16);
+            this.bobOffset += 0.05 * (dt/16);
+            
+            // If missed, despawn and let it respawn ahead
+            if (this.x < -100) {
+                this.active = false;
+                state.specialCreatureSpawned = false;
+            }
+        }
+        draw(ctx) {
+            const y = mapElevationToY(this.elevation) + Math.sin(this.bobOffset) * 10;
+            
+            // Glowing Aura
+            const grad = ctx.createRadialGradient(this.x, y, 10, this.x, y, 60);
+            grad.addColorStop(0, 'rgba(255,255,255,0.6)');
+            grad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.arc(this.x, y, 70, 0, Math.PI*2); ctx.fill();
+
+            // Emoji
+            ctx.globalAlpha = 1.0;
+            ctx.fillStyle = 'white';
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+            ctx.shadowBlur = 15;
+            ctx.font = '60px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(this.emoji, this.x, y);
+            ctx.shadowBlur = 0; // reset
+            
+            // Name label
+            ctx.font = 'bold 18px Fredoka';
+            ctx.fillStyle = 'white';
+            ctx.shadowColor = 'black';
+            ctx.shadowBlur = 4;
+            ctx.fillText(this.name, this.x, y - 45);
+            ctx.shadowBlur = 0; // reset
+        }
+    }
+
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x;
+            this.y = y;
+            this.vx = (Math.random() - 0.5) * 10;
+            this.vy = (Math.random() - 0.5) * 10;
+            this.life = 1.0;
+            this.color = color;
+        }
+        update(dt) {
+            this.x += this.vx * (dt/16);
+            this.y += this.vy * (dt/16);
+            this.life -= 0.05 * (dt/16);
+        }
+        draw(ctx) {
+            ctx.globalAlpha = Math.max(0, this.life);
+            ctx.fillStyle = this.color;
+            ctx.beginPath(); ctx.arc(this.x, this.y, 4, 0, Math.PI*2); ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    function createExplosion(x, y, color) {
+        for(let i=0; i<20; i++) entities.particles.push(new Particle(x, y, color));
+    }
+
+    /**
+     * GENERATORS
+     */
+    let boxSpawnTimer = 0;
+    let foodSpawnTimer = 0;
+
+    function getRandInRange(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function formatMath(netValue, useParenthesis) {
+        if (!useParenthesis) {
+            return netValue > 0 ? `+${netValue}` : `${netValue}`;
+        } else {
+            // Randomly choose if it's shown as addition or subtraction of an inner value
+            const showAsSub = Math.random() > 0.5;
+            if (showAsSub) {
+                // netValue = -(innerValue) => innerValue = -netValue
+                return `- (${-netValue})`;
+            } else {
+                // netValue = +(innerValue) => innerValue = netValue
+                return `+ (${netValue})`;
+            }
+        }
+    }
+
+    function getBundleParts(targetSum, size) {
+        let parts = [];
+        let remaining = targetSum;
+        for (let i = 0; i < size - 1; i++) {
+            // Generate parts that swing wildly to ensure students have to calculate
+            let maxSwing = Math.max(20, Math.abs(targetSum));
+            let part = getRandInRange(-maxSwing, maxSwing);
+            parts.push(part);
+            remaining -= part;
+        }
+        parts.push(remaining);
+        return parts;
+    }
+
+    function spawnBoxPattern() {
+        const mathCfg = state.config.math;
+        const startX = canvas.width + 60;
+        const baseElev = player.elevation + (Math.random() * 60) - 30; // Randomize spawn elevation slightly
+
+        // Determine the target absolute value
+        const absTarget = getRandInRange(mathCfg.valRange[0], mathCfg.valRange[1]);
+        const targetSum = Math.random() > 0.5 ? absTarget : -absTarget;
+
+        if (mathCfg.type === 'bundle') {
+            const size = getRandInRange(mathCfg.bundleSize[0], mathCfg.bundleSize[1]);
+            const parts = getBundleParts(targetSum, size);
+            
+            let bundle = [];
+            let nextLeftEdge = startX;
+            
+            for (let i = 0; i < size; i++) {
+                const text = formatMath(parts[i], mathCfg.parenthesis);
+                // Calculate width to fit the text snugly, keeping them attached
+                const boxW = Math.max(65, text.length * 15 + 10);
+                const boxX = nextLeftEdge + boxW / 2; // Center position based on width
+                
+                let box = new MathBox(boxX, baseElev, text, parts[i], mathCfg.color);
+                box.width = boxW; // Assign specific width
+                bundle.push(box);
+                
+                nextLeftEdge += boxW; // Push the next box's starting position to the right edge
+            }
+            
+            bundle.forEach(b => {
+                b.siblings = bundle;
+                entities.boxes.push(b);
+            });
+
+        } else if (mathCfg.type === 'multiplication') {
+            // Level 5: e.g., (-2) × (-100)
+            let f1 = getRandInRange(2, 10) * (Math.random() > 0.5 ? 1 : -1);
+            let f2 = Math.round(targetSum / f1);
+            let actualSum = f1 * f2; // Real calculate to prevent rounding errors affecting sum
+            let text = `${f1 < 0 ? '(' + f1 + ')' : f1} × ${f2 < 0 ? '(' + f2 + ')' : f2}`;
+            entities.boxes.push(new MathBox(startX, baseElev, text, actualSum, mathCfg.color));
+
+        } else if (mathCfg.type === 'complex') {
+            // Level 6: e.g., -500 - 3 × (-200)
+            let B = getRandInRange(2, 6) * (Math.random() > 0.5 ? 1 : -1);
+            let C = getRandInRange(10, 50) * (Math.random() > 0.5 ? 1 : -1);
+            let product = B * C;
+            let A = targetSum - product; 
+            
+            let sign = B < 0 ? '-' : '+';
+            let absB = Math.abs(B);
+            let text = `${A} ${sign} ${absB} × ${C < 0 ? '(' + C + ')' : C}`;
+            
+            entities.boxes.push(new MathBox(startX, baseElev, text, targetSum, mathCfg.color));
+
+        } else {
+            // Single Box
+            const text = formatMath(targetSum, mathCfg.parenthesis);
+            entities.boxes.push(new MathBox(startX, baseElev, text, targetSum, mathCfg.color));
+        }
+    }
+
+    function spawnFood() {
+        const startX = canvas.width + 50;
+        const elev = player.elevation + (Math.random() * 60) - 30;
+        const type = elev > 0 ? 'bird' : 'fish';
+        
+        const numFood = Math.floor(Math.random() * (state.config.spawning.foodBundleMax - state.config.spawning.foodBundleMin + 1)) + state.config.spawning.foodBundleMin;
+        const isCurve = Math.random() > 0.5;
+        
+        for (let i = 0; i < numFood; i++) {
+            const offsetX = i * 40;
+            const offsetElev = isCurve ? Math.sin(i * 1.5) * 15 : 0; 
+            entities.food.push(new Food(startX + offsetX, elev + offsetElev, type));
+        }
+    }
+
+    function checkSpecialSpawn() {
+        if (state.specialCreatureSpawned || state.gameFinished) return;
+
+        const tc = state.config.targetCreature;
+        // Check if player crossed the threshold
+        if ((tc.type === 'sky' && player.elevation >= tc.elevation - 30) ||
+            (tc.type === 'sea' && player.elevation <= tc.elevation + 30)) {
+            
+            entities.special = new SpecialCreature(
+                canvas.width - 80, // Spawn exactly where the outline was instead of off-screen
+                tc.elevation, 
+                tc.emoji,
+                tc.name
+            );
+            state.specialCreatureSpawned = true;
+        }
+    }
+
+    /**
+     * DRAWING
+     */
+    function drawBackground() {
+        // Map critical elevations to Y coordinates on screen
+        const yMax = mapElevationToY(600); // Very top of atmosphere
+        const y0 = mapElevationToY(0);     // Sea level
+        const yMin = mapElevationToY(-600); // Deep abyss
+
+        // Sky Drawing
+        if (y0 > 0) {
+            // Linear gradient representing the entire 600m atmosphere
+            const skyGrad = ctx.createLinearGradient(0, yMax, 0, y0);
+            skyGrad.addColorStop(0, '#020024');   // Deep space
+            skyGrad.addColorStop(0.3, '#090979'); // High atmosphere
+            skyGrad.addColorStop(1, '#87CEEB');   // Sea level light blue
+            
+            ctx.fillStyle = skyGrad;
+            // Draw from top of screen to sea level (or bottom of screen)
+            ctx.fillRect(0, 0, canvas.width, Math.min(canvas.height, y0));
+
+            // Optional: Draw stars if high up
+            if (state.camera.elevation > 200) {
+                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                for(let i=0; i<30; i++) {
+                    const sx = ((Date.now() / 50) + i * 150) % canvas.width;
+                    const sy = mapElevationToY(300 + (i * 20) % 300);
+                    if(sy > -50 && sy < canvas.height + 50) ctx.fillRect(sx, sy, 2, 2);
+                }
+            }
+        }
+
+        // Sea Drawing
+        if (y0 < canvas.height) {
+            // Linear gradient representing the 600m depth
+            const seaGrad = ctx.createLinearGradient(0, y0, 0, yMin);
+            seaGrad.addColorStop(0, '#006994'); // Surface
+            seaGrad.addColorStop(0.5, '#011c3a'); // Mid depth
+            seaGrad.addColorStop(1, '#000000'); // Abyss
+            
+            ctx.fillStyle = seaGrad;
+            ctx.fillRect(0, Math.max(0, y0), canvas.width, canvas.height - Math.max(0, y0));
+
+            // Surface Wave Line
+            if (y0 > -10 && y0 < canvas.height + 10) {
+                ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                for (let x = 0; x <= canvas.width; x += 20) {
+                    const wave = Math.sin((x + Date.now() / 15) * 0.05) * 5;
+                    if (x === 0) ctx.moveTo(x, y0 + wave);
+                    else ctx.lineTo(x, y0 + wave);
+                }
+                ctx.stroke();
+            }
+        }
+    }
+
+    function drawTargetOutline() {
+        if (state.gameFinished || state.specialCreatureSpawned) return;
+        if (state.config.mystery) return; // Do not reveal the target location
+        
+        const tc = state.config.targetCreature;
+        const y = mapElevationToY(tc.elevation);
+        const x = canvas.width - 80;
+        
+        ctx.save();
+        
+        // Dashed line across the target elevation
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([15, 20]);
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+        ctx.setLineDash([]); 
+
+        // Translucent ghost of the creature (Increased visibility)
+        ctx.globalAlpha = 0.9;
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+        ctx.shadowBlur = 10;
+        ctx.font = '60px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(tc.emoji, x, y);
+        
+        ctx.fillStyle = 'rgba(255, 255, 255, 1.0)';
+        ctx.font = 'bold 16px Fredoka';
+        ctx.shadowColor = 'black';
+        ctx.shadowBlur = 5;
+        ctx.fillText(`Target: ${tc.elevation}m`, x, y + 40);
+        
+        ctx.restore();
+    }
+
+    function drawPlayer() {
+        const y = mapElevationToY(player.elevation);
+        
+        ctx.save();
+        ctx.translate(player.x, y);
+
+        const diff = player.targetElevation - player.elevation;
+        const tilt = Math.max(-Math.PI/4, Math.min(Math.PI/4, diff * -0.05));
+        ctx.rotate(tilt);
+
+        ctx.fillStyle = 'white';
+        ctx.beginPath(); ctx.ellipse(0, 0, 22, 14, 0, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = '#e2e8f0';
+        ctx.beginPath();
+        const flapOffset = (keys.ArrowUp || keys.ArrowDown) ? Math.sin(Date.now() / 50) * 10 : 0;
+        ctx.ellipse(-5, -5 + flapOffset, 12, 6, Math.PI/6, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath(); ctx.moveTo(15, -2); ctx.lineTo(40, 5); ctx.lineTo(15, 8); ctx.fill();
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath(); ctx.moveTo(18, 2); ctx.lineTo(38, 5); ctx.lineTo(18, 8); ctx.fill();
+
+        ctx.fillStyle = 'black';
+        ctx.beginPath(); ctx.arc(10, -5, 2.5, 0, Math.PI*2); ctx.fill();
+
+        if (player.stamina <= 0) {
+            ctx.fillStyle = '#60a5fa';
+            ctx.beginPath(); ctx.arc(-10, -15, 3, 0, Math.PI*2); ctx.lineTo(-10, -25); ctx.fill();
+        }
+
+        ctx.restore();
+    }
+
+    /**
+     * CORE LOGIC
+     */
+    function updatePhysics(dt) {
+        const globalCfg = GAME_CONFIG.global;
+        const physCfg = state.config.physics;
+
+        // User Horizontal Speed Control (No stamina cost for speed)
+        if (keys.ArrowRight) {
+            player.hVelocity = Math.min(globalCfg.maxSpeed, player.hVelocity + globalCfg.hAccel * (dt/16));
+        } else if (keys.ArrowLeft) {
+            player.hVelocity = Math.max(globalCfg.minSpeed, player.hVelocity - globalCfg.hAccel * (dt/16));
+        }
+
+        let usingStamina = false;
+        
+        if (keys.ArrowUp && player.stamina > 0) {
+            player.targetElevation += physCfg.flapPower * (dt/16);
+            if (player.elevation >= 0) usingStamina = true; // Flapping up in the sky costs stamina
+        } else if (keys.ArrowDown && player.stamina > 0) {
+            player.targetElevation -= physCfg.divePower * (dt/16);
+            if (player.elevation <= 0) usingStamina = true; // Diving down in the sea costs stamina
+        } else {
+            // Gravity/Buoyancy pull to 0
+            if (player.targetElevation > 0.5) player.targetElevation -= physCfg.gravity * (dt/16);
+            else if (player.targetElevation < -0.5) player.targetElevation += physCfg.buoyancy * (dt/16);
+            else player.targetElevation = 0;
+        }
+
+        if (usingStamina) {
+            player.stamina -= physCfg.staminaDrain * (dt/16);
+            if (keys.ArrowUp && player.elevation > 0) player.stamina -= physCfg.envPenalty * (dt/16);
+            if (keys.ArrowDown && player.elevation < 0) player.stamina -= physCfg.envPenalty * (dt/16);
+        }
+
+        // Passive Regeneration
+        player.stamina += physCfg.staminaRegen * (dt/16);
+        player.stamina = Math.max(0, Math.min(globalCfg.staminaMax, player.stamina));
+
+        // Smooth follow
+        player.elevation += (player.targetElevation - player.elevation) * 0.1 * (dt/16);
+        state.camera.elevation += (player.elevation - state.camera.elevation) * 0.1 * (dt/16);
+    }
+
+    function triggerLevelUp() {
+        const tc = state.config.targetCreature;
+        
+        // Add emoji to top bar
+        const icon = document.createElement('div');
+        icon.className = 'creature-icon';
+        icon.textContent = tc.emoji;
+        icon.title = tc.name;
+        creatureBar.appendChild(icon);
+
+        createExplosion(entities.special.x, mapElevationToY(entities.special.elevation), '#FFD700');
+        spawnFloatingText(`Found ${tc.name}!`, player.x, mapElevationToY(player.elevation) - 50, '#FFD700', 3000);
+        
+        entities.special = null;
+        state.levelIndex++;
+        
+        if (state.levelIndex >= GAME_CONFIG.levels.length) {
+            state.gameFinished = true;
+            setTimeout(() => {
+                screenVictory.classList.remove('hidden');
+            }, 1500);
+        } else {
+            // Seamlessly load next level config
+            state.config = GAME_CONFIG.levels[state.levelIndex];
+            state.specialCreatureSpawned = false;
+            
+            // Notify player of new target
+            setTimeout(() => {
+                if (state.config.mystery) {
+                    showToast(`Mystery Target! Solve the equation to find the ${state.config.targetCreature.name}!`);
+                } else {
+                    showToast(`New Target: Find the ${state.config.targetCreature.name} at ${state.config.targetCreature.elevation}m!`);
+                }
+            }, 1500);
+        }
+    }
+
+    function checkCollisions() {
+        const py = mapElevationToY(player.elevation);
+        const px = player.x;
+
+        // Boxes
+        entities.boxes.forEach(box => {
+            if (!box.active) return;
+            const by = mapElevationToY(box.elevation);
+            
+            if (px + player.radius > box.x - box.width/2 && px - player.radius < box.x + box.width/2 &&
+                py + player.radius > by - box.height/2 && py - player.radius < by + box.height/2) {
+                
+                const triggerBox = (b) => {
+                    b.active = false;
+                    const val = b.actualValue;
+                    player.targetElevation += val;
+                    const color = val > 0 ? '#2ecc71' : '#e74c3c';
+                    createExplosion(b.x, mapElevationToY(b.elevation), color);
+                    spawnFloatingText(b.displayText, b.x, mapElevationToY(b.elevation) - 40, color);
+                };
+
+                if (box.siblings) {
+                    box.siblings.forEach(sibling => { if (sibling.active) triggerBox(sibling); });
+                } else {
+                    triggerBox(box);
+                }
+            }
+        });
+
+        // Food
+        entities.food.forEach(food => {
+            if (!food.active) return;
+            const fy = mapElevationToY(food.elevation);
+            if (Math.hypot(px - food.x, py - fy) < player.radius + food.radius) {
+                food.active = false;
+                player.stamina = Math.min(GAME_CONFIG.global.staminaMax, player.stamina + 20);
+                createExplosion(food.x, fy, '#f1c40f');
+            }
+        });
+
+        // Special Creature
+        if (entities.special && entities.special.active) {
+            const sy = mapElevationToY(entities.special.elevation);
+            if (Math.hypot(px - entities.special.x, py - sy) < player.radius + entities.special.radius) {
+                entities.special.active = false;
+                triggerLevelUp();
+            }
+        }
+    }
+
+    function cleanupEntities() {
+        entities.boxes = entities.boxes.filter(b => b.active && b.x > -100);
+        entities.food = entities.food.filter(f => f.active && f.x > -100);
+        entities.particles = entities.particles.filter(p => p.life > 0);
+    }
+
+    function gameLoop(timestamp) {
+        if (!state.isRunning) return;
+
+        const dt = timestamp - state.lastTime;
+        state.lastTime = timestamp;
+        
+        if (dt > 100) {
+            requestAnimationFrame(gameLoop);
+            return;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
+        drawTargetOutline();
+
+        boxSpawnTimer += dt;
+        foodSpawnTimer += dt;
+
+        if (boxSpawnTimer > state.config.spawning.boxInterval) {
+            spawnBoxPattern();
+            boxSpawnTimer = 0;
+        }
+        if (foodSpawnTimer > state.config.spawning.foodInterval) {
+            spawnFood();
+            foodSpawnTimer = 0;
+        }
+        checkSpecialSpawn();
+
+        updatePhysics(dt);
+        
+        entities.boxes.forEach(b => b.update(dt));
+        entities.food.forEach(f => f.update(dt));
+        entities.particles.forEach(p => p.update(dt));
+        if (entities.special) entities.special.update(dt);
+
+        checkCollisions();
+        cleanupEntities();
+
+        // Drawing
+        entities.boxes.forEach(b => b.draw(ctx));
+        entities.food.forEach(f => f.draw(ctx));
+        if (entities.special && entities.special.active) entities.special.draw(ctx);
+        entities.particles.forEach(p => p.draw(ctx));
+        
+        drawPlayer();
+        updateUI();
+
+        state.timeElapsed += dt;
+        requestAnimationFrame(gameLoop);
+    }
+
+    function startGame() {
+        state.isRunning = true;
+        state.timeElapsed = 0;
+        state.lastTime = performance.now();
+        
+        screenStart.classList.add('hidden');
+        screenVictory.classList.add('hidden');
+        
+        if (state.config.mystery) {
+            showToast(`Mystery Target! Solve the equation to find the ${state.config.targetCreature.name}!`);
+        } else {
+            showToast(`Target: Find the ${state.config.targetCreature.name} at ${state.config.targetCreature.elevation}m!`);
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    btnStart.addEventListener('click', () => {
+        // Reset everything for first play
+        state.levelIndex = 0;
+        state.config = GAME_CONFIG.levels[0];
+        state.gameFinished = false;
+        state.specialCreatureSpawned = false;
+        state.camera.elevation = 0;
+        player.elevation = 0;
+        player.targetElevation = 0;
+        player.stamina = GAME_CONFIG.global.staminaMax;
+        creatureBar.innerHTML = ''; // clear UI
+        startGame();
+    });
+
+    btnRestart.addEventListener('click', () => {
+        // Keep exploring from current state
+        screenVictory.classList.add('hidden');
+        state.isRunning = true;
+        state.lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+    });
+
+    // Testing Mode Logic
+    function toggleTestingMode() {
+        cheatToggleDebounce = true;
+        setTimeout(() => cheatToggleDebounce = false, 500);
+
+        if (screenTesting.classList.contains('hidden')) {
+            screenTesting.classList.remove('hidden');
+            state.isRunning = false; // Pause the game loop
+            
+            levelButtonsContainer.innerHTML = '';
+            GAME_CONFIG.levels.forEach((lvl, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn';
+                btn.style.width = '100%';
+                btn.textContent = `Level ${lvl.level}: ${lvl.targetCreature.name}`;
+                btn.onclick = () => jumpToLevel(index);
+                levelButtonsContainer.appendChild(btn);
+            });
+        } else {
+            closeTestingMode();
+        }
+    }
+
+    function closeTestingMode() {
+        screenTesting.classList.add('hidden');
+        if (!state.gameFinished) {
+            state.isRunning = true;
+            state.lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+    }
+
+    function jumpToLevel(index) {
+        state.levelIndex = index;
+        state.config = GAME_CONFIG.levels[index];
+        state.gameFinished = false;
+        state.specialCreatureSpawned = false;
+        
+        // Reset entities
+        entities.special = null;
+        entities.boxes = [];
+        entities.food = [];
+
+        // Reset Player Position to 0
+        player.elevation = 0;
+        player.targetElevation = 0;
+        state.camera.elevation = 0;
+
+        // Update Creature UI
+        creatureBar.innerHTML = '';
+        for (let i = 0; i < index; i++) {
+            const icon = document.createElement('div');
+            icon.className = 'creature-icon';
+            icon.textContent = GAME_CONFIG.levels[i].targetCreature.emoji;
+            icon.title = GAME_CONFIG.levels[i].targetCreature.name;
+            creatureBar.appendChild(icon);
+        }
+
+        closeTestingMode();
+        showToast(`Jumped to Level ${index + 1}: ${state.config.targetCreature.name}!`);
+    }
+
+    btnCloseTesting.addEventListener('click', closeTestingMode);
+
+    drawBackground();
+    drawPlayer();
+
+</script>
+</body>
+</html>

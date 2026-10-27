@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>בניית משוואות | Equation Towers</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React & ReactDOM CDNs -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel Standalone CDN for in-browser JSX parsing -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    @keyframes dropIn {
+      0% { transform: translateY(-20px) scale(0.95); opacity: 0; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    @keyframes slideUp {
+      0% { transform: translateY(20px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    .animate-drop { animation: dropIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .animate-toast { animation: slideUp 0.3s ease-out forwards; }
+    .stripes { background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.08), rgba(0,0,0,0.08) 10px, transparent 10px, transparent 20px); }
+    .blueprint-bg {
+      background-color: #1e293b;
+      background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans select-none overflow-x-hidden">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const Star = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+    );
+
+    const CheckCircle = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+    );
+
+    const Construction = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <rect x="2" y="6" width="20" height="8" rx="1"/>
+        <path d="M17 14v7"/>
+        <path d="M7 14v7"/>
+        <path d="M17 3v3"/>
+        <path d="M7 3v3"/>
+        <path d="M10 14l4 7"/>
+        <path d="M14 14l-4 7"/>
+      </svg>
+    );
+
+    const RefreshCcw = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+        <path d="M16 16h5v5"/>
+      </svg>
+    );
+
+    const GripHorizontal = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="9" r="1"/>
+        <circle cx="19" cy="9" r="1"/>
+        <circle cx="5" cy="9" r="1"/>
+        <circle cx="12" cy="15" r="1"/>
+        <circle cx="19" cy="15" r="1"/>
+        <circle cx="5" cy="15" r="1"/>
+      </svg>
+    );
+
+    const ChevronRight = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    );
+
+    const Play = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polygon points="5 3 19 12 5 21 5 3"/>
+      </svg>
+    );
+
+    const Globe = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="2" y1="12" x2="22" y2="12"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+    );
+
+    const AlertCircle = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    );
+
+    const LEVELS = [
+      { id: 1, target: 11, inventory: [ { id: 'b2', label: '2', value: 2, type: 'number', color: 'bg-orange-400', border: 'border-orange-600' }, { id: 'bx', label: 'x', value: 3, type: 'variable', color: 'bg-blue-400', border: 'border-blue-600' } ], xValue: 3 },
+      { id: 2, target: 17, inventory: [ { id: 'b4', label: '4', value: 4, type: 'number', color: 'bg-emerald-400', border: 'border-emerald-600' }, { id: 'bx', label: 'x', value: 5, type: 'variable', color: 'bg-blue-400', border: 'border-blue-600' } ], xValue: 5 },
+      { id: 3, target: 22, inventory: [ { id: 'b4', label: '4', value: 4, type: 'number', color: 'bg-emerald-400', border: 'border-emerald-600' }, { id: 'bx', label: 'x', value: 6, type: 'variable', color: 'bg-blue-400', border: 'border-blue-600' } ], xValue: 6 },
+      { id: 4, target: 25, inventory: [ { id: 'b3', label: '3', value: 3, type: 'number', color: 'bg-pink-400', border: 'border-pink-600' }, { id: 'b2x', label: '2x', value: 8, type: 'variable', color: 'bg-purple-400', border: 'border-purple-600' } ], xValue: 4 },
+      { id: 5, target: 26, inventory: [ { id: 'b4', label: '4', value: 4, type: 'number', color: 'bg-emerald-400', border: 'border-emerald-600' }, { id: 'b2x', label: '2x', value: 14, type: 'variable', color: 'bg-purple-400', border: 'border-purple-600' } ], xValue: 7 },
+      { id: 6, target: 20, inventory: [ { id: 'b2', label: '2', value: 2, type: 'number', color: 'bg-orange-400', border: 'border-orange-600' }, { id: 'bx2', label: 'x+2', value: 7, type: 'variable', color: 'bg-indigo-400', border: 'border-indigo-600' } ], xValue: 5 },
+      { id: 7, target: 31, inventory: [ { id: 'bx', label: 'x', value: 5, type: 'variable', color: 'bg-blue-400', border: 'border-blue-600' }, { id: 'bx2', label: 'x+2', value: 7, type: 'variable', color: 'bg-indigo-400', border: 'border-indigo-600' } ], xValue: 5 },
+      { id: 8, target: 38, inventory: [ { id: 'b5', label: '5', value: 5, type: 'number', color: 'bg-teal-400', border: 'border-teal-600' }, { id: 'b3x', label: '3x', value: 18, type: 'variable', color: 'bg-rose-400', border: 'border-rose-600' } ], xValue: 6 },
+      { id: 9, target: 45, inventory: [ { id: 'b4', label: '4', value: 4, type: 'number', color: 'bg-emerald-400', border: 'border-emerald-600' }, { id: 'b2x', label: '2x', value: 10, type: 'variable', color: 'bg-purple-400', border: 'border-purple-600' }, { id: 'bx2', label: 'x+2', value: 7, type: 'variable', color: 'bg-indigo-400', border: 'border-indigo-600' } ], xValue: 5 }
+    ];
+
+    const DICTIONARY = {
+      en: {
+        title1: "EQUATION", title2: "BUILDER", levels: "Levels", level: "Level", target: "Target",
+        yourBuild: "Your Build", reset: "Reset", inventoryYard: "Inventory Yard",
+        instructions: "Click or Drag blocks to build a tower matching the exact height visually.",
+        writeEq: "Write Equation", solveX: "Solve for x", verify: "Verify", check: "Check",
+        nextLevel: "Next Level", allComplete: "All Levels Complete!", correctEq: "Correct Equation!",
+        errorEq: "That equation doesn't seem mathematically correct for this tower. Make sure it equals the target height and uses 'x'!",
+        errorX: "Not quite! Solve the equation you just wrote to find the true value of x.",
+        langName: "English"
+      },
+      he: {
+        title1: "בניית", title2: "משוואות", levels: "שלבים", level: "שלב", target: "מטרה",
+        yourBuild: "הבנייה שלך", reset: "איפוס", inventoryYard: "מחסן לבנים",
+        instructions: "לחץ או גרור לבנים כדי לבנות מגדל בגובה התואם למטרה.",
+        writeEq: "כתוב משוואה מתאימה", solveX: "פתור עבור x", verify: "בדוק", check: "בדוק",
+        nextLevel: "השלב הבא", allComplete: "כל השלבים הושלמו!", correctEq: "משוואה נכונה!",
+        errorEq: "המשוואה לא נראית נכונה מתמטית עבור המגדל הזה. ודא שהיא שווה לגובה המטרה ומשתמשת ב-'x'!",
+        errorX: "לא בדיוק! פתור את המשוואה שכתבת כדי למצוא את הערך האמיתי של x.",
+        langName: "עברית"
+      }
+    };
+
+    const Confetti = ({ trigger }) => {
+      const canvasRef = React.useRef(null);
+
+      React.useEffect(() => {
+        if (trigger === 0) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particles = [];
+        const colors = ['#fde047', '#3b82f6', '#ef4444', '#10b981', '#a855f7', '#f97316'];
+
+        for (let i = 0; i < 120; i++) {
+          particles.push({
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            r: Math.random() * 6 + 3,
+            dx: Math.random() * 12 - 6,
+            dy: Math.random() * -12 - 5,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            tilt: Math.floor(Math.random() * 10) - 10,
+            tiltAngleInc: (Math.random() * 0.07) + 0.05,
+            tiltAngle: 0
+          });
+        }
+
+        let animationFrameId;
+        const render = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          let active = false;
+
+          particles.forEach((p) => {
+            p.tiltAngle += p.tiltAngleInc;
+            p.y += (Math.cos(p.tiltAngle) + 1 + p.r / 2) / 2;
+            p.x += Math.sin(p.tiltAngle) * 2;
+            p.dy += 0.15; 
+            p.y += p.dy;
+            p.x += p.dx;
+
+            if (p.y <= canvas.height) active = true;
+
+            ctx.beginPath();
+            ctx.lineWidth = p.r;
+            ctx.strokeStyle = p.color;
+            ctx.moveTo(p.x + p.tilt + p.r, p.y);
+            ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
+            ctx.stroke();
+          });
+
+          if (active) animationFrameId = requestAnimationFrame(render);
+          else ctx.clearRect(0, 0, canvas.width, canvas.height);
+        };
+
+        render();
+        return () => cancelAnimationFrame(animationFrameId);
+      }, [trigger]);
+
+      return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-50" style={{ width: '100%', height: '100%' }} />;
+    };
+
+    const checkEquationValidity = (eqStr, targetX, targetHeight) => {
+      let str = eqStr.toLowerCase().replace(/\s+/g, '');
+      if (!str.includes('x') || !str.includes('=')) return false;
+      
+      let parts = str.split('=');
+      if (parts.length !== 2) return false;
+
+      const evalExpr = (expr, xVal) => {
+        try {
+          let parsed = expr.replace(/([0-9])x/g, '$1*x');
+          parsed = parsed.replace(/x([0-9])/g, 'x*$1');
+          parsed = parsed.replace(/([0-9])\(/g, '$1*(');
+          parsed = parsed.replace(/\)x/g, ')*x');
+          parsed = parsed.replace(/x\(/g, 'x*(');
+          parsed = parsed.replace(/x/g, `(${xVal})`);
+          
+          if (!/^[0-9\+\-\*\/\(\)\.]+$/.test(parsed)) return null;
+          return new Function(`return ${parsed}`)();
+        } catch (e) {
+          return null; 
+        }
+      };
+
+      let leftCorrect = evalExpr(parts[0], targetX);
+      let rightCorrect = evalExpr(parts[1], targetX);
+
+      if (leftCorrect === null || rightCorrect === null) return false;
+      if (Math.abs(leftCorrect - rightCorrect) > 0.001) return false;
+
+      let leftWrong = evalExpr(parts[0], targetX + 1);
+      let rightWrong = evalExpr(parts[1], targetX + 1);
+      if (Math.abs(leftWrong - rightWrong) < 0.001) return false;
+
+      if (Math.abs(leftCorrect - targetHeight) > 0.001 && Math.abs(rightCorrect - targetHeight) > 0.001) return false;
+
+      return true;
+    };
+
+    function App() {
+      const [lang, setLang] = React.useState('he');
+      const t = (key) => DICTIONARY[lang][key];
+      const isRTL = lang === 'he';
+
+      const [currentLevelId, setCurrentLevelId] = React.useState(1);
+      const [progress, setProgress] = React.useState(
+        LEVELS.reduce((acc, level) => {
+          acc[level.id] = { stack: [], eqAnswered: false, xAnswered: false };
+          return acc;
+        }, {})
+      );
+      
+      const [eqInput, setEqInput] = React.useState('');
+      const [xInput, setXInput] = React.useState('');
+      const [confettiTrigger, setConfettiTrigger] = React.useState(0);
+      const [isDraggingOver, setIsDraggingOver] = React.useState(false);
+      const [toastMsg, setToastMsg] = React.useState(null);
+
+      const level = LEVELS.find(l => l.id === currentLevelId);
+      const currentProgress = progress[currentLevelId];
+      
+      const currentStackHeight = currentProgress.stack.reduce((sum, block) => sum + block.value, 0);
+      const isHeightMatched = currentStackHeight === level.target;
+
+      const showToast = (msg) => {
+        setToastMsg(msg);
+        setTimeout(() => setToastMsg(null), 5000);
+      };
+
+      const handleAddBlock = (blockTemplate) => {
+        if (currentProgress.eqAnswered) return;
+        if (currentStackHeight > level.target) return;
+
+        setProgress(prev => {
+          const newStack = [...prev[currentLevelId].stack, { ...blockTemplate, instanceId: Date.now() + Math.random() }];
+          return { ...prev, [currentLevelId]: { ...prev[currentLevelId], stack: newStack } };
+        });
+      };
+
+      const handleRemoveBlock = (indexToRemove) => {
+        if (currentProgress.eqAnswered) return;
+        setProgress(prev => {
+          const newStack = prev[currentLevelId].stack.filter((_, idx) => idx !== indexToRemove);
+          return { ...prev, [currentLevelId]: { ...prev[currentLevelId], stack: newStack } };
+        });
+      };
+
+      const onDragStart = (e, block) => {
+        if (currentProgress.eqAnswered) e.preventDefault();
+        e.dataTransfer.setData('application/json', JSON.stringify(block));
+      };
+
+      const onDragOver = (e) => {
+        e.preventDefault();
+        if (!currentProgress.eqAnswered) setIsDraggingOver(true);
+      };
+
+      const onDrop = (e) => {
+        e.preventDefault();
+        setIsDraggingOver(false);
+        if (currentProgress.eqAnswered) return;
+        
+        try {
+          const blockData = JSON.parse(e.dataTransfer.getData('application/json'));
+          if (blockData && blockData.id) handleAddBlock(blockData);
+        } catch (err) {
+          console.error("Drop failed");
+        }
+      };
+
+      React.useEffect(() => {
+        if (isHeightMatched && !currentProgress.eqAnswered && currentProgress.stack.length > 0) {
+          const timer = setTimeout(() => setConfettiTrigger(prev => prev + 1), 300);
+          return () => clearTimeout(timer);
+        }
+      }, [isHeightMatched, currentProgress.eqAnswered, currentProgress.stack.length]);
+
+      const handleSubmitEquation = (e) => {
+        e.preventDefault();
+        if (checkEquationValidity(eqInput, level.xValue, level.target)) {
+          setProgress(prev => ({ ...prev, [currentLevelId]: { ...prev[currentLevelId], eqAnswered: true } }));
+          setConfettiTrigger(prev => prev + 1);
+          setToastMsg(null);
+        } else {
+          showToast(t('errorEq'));
+        }
+      };
+
+      const handleSubmitX = (e) => {
+        e.preventDefault();
+        const sanitizedInput = xInput.trim();
+        if (sanitizedInput === level.xValue.toString()) {
+          setProgress(prev => ({ ...prev, [currentLevelId]: { ...prev[currentLevelId], xAnswered: true } }));
+          setConfettiTrigger(prev => prev + 1);
+          setToastMsg(null);
+        } else {
+          showToast(t('errorX'));
+        }
+      };
+
+      React.useEffect(() => {
+        setEqInput('');
+        setXInput('');
+        setToastMsg(null);
+      }, [currentLevelId, lang]);
+
+      const calculateStars = (levelId) => {
+        const p = progress[levelId];
+        const l = LEVELS.find(lev => lev.id === levelId);
+        let stars = 0;
+        if (p.stack.reduce((sum, b) => sum + b.value, 0) === l.target) stars++;
+        if (p.eqAnswered) stars++;
+        if (p.xAnswered) stars++;
+        return stars;
+      };
+
+      return (
+        <div className="flex flex-col md:flex-row min-h-screen md:h-screen bg-slate-900 font-sans text-slate-100 overflow-x-hidden select-none" dir={isRTL ? 'rtl' : 'ltr'}>
+          <Confetti trigger={confettiTrigger} />
+
+          {/* Sidebar Navigation */}
+          <div className="w-full md:w-72 bg-slate-950 flex flex-col shadow-2xl z-40 border-slate-800 md:border-r border-b md:border-b-0 shrink-0">
+            <div className="p-4 flex items-center justify-between border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="bg-yellow-400 p-2 rounded-lg">
+                   <Construction className="w-6 h-6 sm:w-8 sm:h-8 text-slate-900" />
+                </div>
+                <h1 className="text-lg sm:text-xl font-black tracking-wider text-white leading-tight">
+                  {t('title1')}<br/><span className="text-yellow-400">{t('title2')}</span>
+                </h1>
+              </div>
+              <button 
+                onClick={() => setLang(lang === 'he' ? 'en' : 'he')}
+                className="flex flex-col items-center justify-center text-xs text-slate-400 hover:text-white transition-colors bg-slate-900 p-2 rounded-lg border border-slate-800"
+              >
+                <Globe size={18} />
+                <span className="mt-1 font-bold">{lang === 'he' ? 'EN' : 'HE'}</span>
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto py-2 max-h-48 md:max-h-full">
+              <h2 className="px-6 text-xs font-bold text-slate-500 mb-3 mt-2 uppercase tracking-widest">{t('levels')}</h2>
+              <nav className="space-y-1 px-3">
+                {LEVELS.map(l => {
+                  const stars = calculateStars(l.id);
+                  const isActive = l.id === currentLevelId;
+                  return (
+                    <button
+                      key={l.id}
+                      onClick={() => setCurrentLevelId(l.id)}
+                      className={`w-full px-4 py-3 flex items-center justify-between rounded-xl transition-all ${
+                        isActive ? 'bg-slate-800 text-white shadow-lg border border-slate-700' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                      }`}
+                    >
+                      <span className="font-bold flex items-center gap-2">
+                        {isActive && <Play size={14} className={`text-yellow-400 ${isRTL ? 'rotate-180' : ''}`} />}
+                        {t('level')} {l.id}
+                      </span>
+                      <div className="flex gap-0.5" dir="ltr">
+                        {[1, 2, 3].map(s => (
+                          <Star key={s} size={14} className={`${s <= stars ? 'fill-yellow-400 text-yellow-400' : 'text-slate-700'}`} />
+                        ))}
+                      </div>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          </div>
+
+          <div className="flex-1 flex flex-col relative blueprint-bg overflow-y-auto">
+            
+            {/* Toast Error Alert */}
+            {toastMsg && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 animate-toast w-11/12 max-w-md">
+                <div className="bg-red-500/90 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-sm border border-red-400 font-bold text-center">
+                  <AlertCircle className="shrink-0" />
+                  <p>{toastMsg}</p>
+                </div>
+              </div>
+            )}
+
+            {}
+            <div className="flex-1 flex flex-col items-center justify-end pb-8 pt-20 px-4 overflow-visible relative min-h-[350px]">
+              <div className="flex flex-row items-end justify-center gap-8 sm:gap-24 relative z-10 w-full max-w-2xl h-[35vh] sm:h-[45vh]">
+                
+                {/* Target Building */}
+                <div className="relative flex flex-col items-center justify-end h-full w-20 sm:w-32">
+                  <div className="absolute -top-12 whitespace-nowrap text-xs sm:text-base font-black bg-slate-800 px-3 py-2 rounded-lg shadow-xl text-white border-2 border-slate-600 z-20">
+                    {t('target')}: {level.target}
+                  </div>
+                  <div className="w-full bg-slate-500 border-4 border-slate-700 rounded-t-sm shadow-2xl relative flex flex-col justify-end h-full">
+                    <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')]"></div>
+                    <div className="absolute inset-0 stripes opacity-30"></div>
+                  </div>
+                  <div className="h-6 w-28 sm:w-40 bg-slate-800 rounded-b-md mt-[-4px] shadow-2xl z-10 flex items-center justify-center">
+                      <div className="w-full h-1 bg-slate-700 mx-2 rounded-full"></div>
+                  </div>
+                </div>
+
+                {/* Player Building Dropzone */}
+                <div 
+                    className={`relative flex flex-col items-center justify-end h-full w-20 sm:w-32 transition-colors duration-300 ${isDraggingOver ? 'bg-white/5 rounded-t-lg' : ''}`}
+                    onDragOver={onDragOver}
+                    onDragLeave={() => setIsDraggingOver(false)}
+                    onDrop={onDrop}
+                >
+                  <div className="absolute -top-12 whitespace-nowrap text-xs sm:text-base font-black bg-yellow-400/10 px-3 py-2 rounded-lg shadow-xl text-yellow-400 border-2 border-yellow-400/30 flex items-center gap-2 z-20">
+                    {t('yourBuild')}
+                    {isHeightMatched && !currentProgress.eqAnswered && <CheckCircle size={16} className="text-yellow-400" />}
+                  </div>
+                  
+                  <div className="w-full flex flex-col-reverse items-center justify-start relative z-10 h-full pb-0 overflow-visible">
+                    {currentProgress.stack.map((block, index) => {
+                      const percentageHeight = (block.value / level.target) * 100;
+                      return (
+                        <div
+                          key={block.instanceId}
+                          onClick={() => handleRemoveBlock(index)}
+                          className={`w-full ${block.color} ${block.border} border-[3px] sm:border-4 rounded-sm shadow-lg flex flex-col items-center justify-center cursor-pointer hover:brightness-110 active:scale-95 transition-all animate-drop stripes relative overflow-hidden group shrink-0`}
+                          style={{ height: `${percentageHeight}%` }}
+                          title="Click to remove"
+                        >
+                          <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                          <span className="font-black text-white text-lg sm:text-2xl drop-shadow-md font-mono tracking-tighter" dir="ltr">
+                              {block.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  <div className="h-6 w-28 sm:w-40 bg-slate-800 rounded-b-md mt-[-4px] shadow-2xl z-0 flex items-center justify-center relative">
+                     <div className="w-full h-1 bg-slate-700 mx-2 rounded-full"></div>
+                  </div>
+                  
+                  {!currentProgress.eqAnswered && currentProgress.stack.length > 0 && (
+                      <button 
+                        onClick={() => setProgress(prev => ({...prev, [currentLevelId]: {...prev[currentLevelId], stack: []}}))}
+                        className="absolute -bottom-12 text-slate-400 hover:text-white flex items-center gap-2 text-sm font-bold transition-colors bg-slate-800 px-4 py-2 rounded-full border border-slate-700 shadow-lg z-30"
+                      >
+                        <RefreshCcw size={14} className={isRTL ? 'rotate-180' : ''} /> {t('reset')}
+                      </button>
+                  )}
+                </div>
+                
+              </div>
+              <div className="w-[120%] h-3 bg-slate-800/80 rounded-full shadow-lg z-0 mt-[-4px]"></div>
+            </div>
+
+            {}
+            <div className="bg-slate-950 border-t border-slate-800 z-20 flex flex-col shadow-[0_-20px_25px_-5px_rgba(0,0,0,0.3)]">
+              
+              <div className="p-4 bg-slate-900/50 flex flex-col items-center border-b border-slate-800 relative min-h-[140px]">
+                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <GripHorizontal size={14}/> {t('inventoryYard')}
+                </h3>
+                <div className="flex gap-4 sm:gap-8 items-end justify-center">
+                  {level.inventory.map(block => (
+                    <button
+                      key={block.id}
+                      draggable={!currentProgress.eqAnswered}
+                      onDragStart={(e) => onDragStart(e, block)}
+                      onClick={() => handleAddBlock(block)}
+                      disabled={currentProgress.eqAnswered}
+                      className={`${block.color} ${block.border} border-4 rounded-sm shadow-xl w-16 sm:w-20 flex flex-col items-center justify-center transition-transform hover:-translate-y-2 active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 cursor-grab active:cursor-grabbing relative overflow-hidden`}
+                      style={{ height: '70px' }} 
+                    >
+                      <div className="absolute inset-0 stripes opacity-40 pointer-events-none"></div>
+                      <span className="font-black text-white text-xl sm:text-2xl drop-shadow-md font-mono z-10" dir="ltr">{block.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {!isHeightMatched && !currentProgress.eqAnswered && (
+                  <p className="text-slate-400 text-xs sm:text-sm mt-4 animate-pulse font-medium text-center">{t('instructions')}</p>
+                )}
+              </div>
+
+              {}
+              <div className="p-4 sm:p-6 max-w-5xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1">
+                
+                {/* Equation Form */}
+                <div className={`p-4 sm:p-5 rounded-2xl flex items-start gap-4 transition-all duration-500 ${isHeightMatched ? (currentProgress.eqAnswered ? 'bg-slate-800/80 border border-slate-700' : 'bg-slate-800 border-2 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]') : 'opacity-30 grayscale pointer-events-none bg-slate-900'}`}>
+                  <div className={`${currentProgress.eqAnswered ? 'bg-emerald-500/20' : 'bg-blue-500/20'} p-3 rounded-xl shrink-0`}>
+                    <Star className={`w-6 h-6 sm:w-8 sm:h-8 ${currentProgress.eqAnswered ? 'fill-yellow-400 text-yellow-400' : 'text-blue-400'}`} />
+                  </div>
+                  <div className="flex-1 w-full">
+                    <h3 className="font-bold text-base sm:text-lg text-white flex items-center gap-2">
+                        {t('writeEq')}
+                        {currentProgress.eqAnswered && <CheckCircle size={16} className="text-emerald-400"/>}
+                    </h3>
+                    {currentProgress.eqAnswered ? (
+                      <p className="text-emerald-400 font-bold font-mono text-lg mt-2 bg-slate-900/50 p-2 rounded-lg inline-block" dir="ltr">{t('correctEq')}</p>
+                    ) : (
+                      <form onSubmit={handleSubmitEquation} className="flex flex-col sm:flex-row gap-3 mt-3 w-full">
+                        <input
+                          type="text"
+                          value={eqInput}
+                          onChange={(e) => setEqInput(e.target.value)}
+                          placeholder="e.g. 4+x=11"
+                          dir="ltr"
+                          className="flex-1 px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-mono text-lg text-white placeholder-slate-600 transition-all w-full text-center sm:text-left"
+                          required
+                        />
+                        <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold transition-colors whitespace-nowrap shadow-lg">
+                          {t('verify')}
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </div>
+
+                {/* Solve for X Form */}
+                <div className={`p-4 sm:p-5 rounded-2xl flex items-start gap-4 transition-all duration-500 ${currentProgress.eqAnswered ? (currentProgress.xAnswered ? 'bg-slate-800/80 border border-slate-700' : 'bg-slate-800 border-2 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]') : 'opacity-30 grayscale pointer-events-none bg-slate-900'}`}>
+                  <div className={`${currentProgress.xAnswered ? 'bg-yellow-500/20' : 'bg-emerald-500/20'} p-3 rounded-xl shrink-0`}>
+                    <Star className={`w-6 h-6 sm:w-8 sm:h-8 ${currentProgress.xAnswered ? 'fill-yellow-400 text-yellow-400' : 'text-emerald-400'}`} />
+                  </div>
+                  <div className="flex-1 w-full">
+                    <h3 className="font-bold text-base sm:text-lg text-white flex items-center gap-2">
+                        {t('solveX')}
+                        {currentProgress.xAnswered && <CheckCircle size={16} className="text-yellow-400"/>}
+                    </h3>
+                    {currentProgress.xAnswered ? (
+                      <p className="text-yellow-400 font-bold font-mono text-lg mt-2 bg-slate-900/50 p-2 rounded-lg inline-block" dir="ltr">x = {level.xValue}</p>
+                    ) : (
+                      <form onSubmit={handleSubmitX} className="flex gap-3 mt-3 items-center w-full" dir="ltr">
+                        <span className="font-bold font-mono text-xl sm:text-2xl text-slate-400 shrink-0">x = </span>
+                        <input
+                          type="number"
+                          value={xInput}
+                          onChange={(e) => setXInput(e.target.value)}
+                          placeholder="?"
+                          className="w-20 sm:w-24 px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono text-lg text-white text-center transition-all"
+                          required
+                        />
+                        <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-lg">
+                          {t('check')}
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </div>
+
+                {/* Completion Navigation */}
+                {currentProgress.xAnswered && currentLevelId < LEVELS.length && (
+                    <div className="col-span-1 lg:col-span-2 text-center pt-2 pb-2">
+                        <button 
+                          onClick={() => setCurrentLevelId(currentLevelId + 1)}
+                          className="bg-yellow-400 hover:bg-yellow-300 text-slate-900 font-black px-8 py-3 rounded-full shadow-[0_0_20px_rgba(250,204,21,0.4)] animate-bounce flex items-center gap-2 mx-auto transition-colors"
+                        >
+                            {t('nextLevel')} <ChevronRight size={20} className={isRTL ? 'rotate-180' : ''}/>
+                        </button>
+                    </div>
+                )}
+                
+                {currentProgress.xAnswered && currentLevelId === LEVELS.length && (
+                    <div className="col-span-1 lg:col-span-2 text-center pt-2 pb-2">
+                        <span className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-black px-8 py-3 rounded-full shadow-xl flex items-center justify-center gap-2 mx-auto">
+                            <Star className="fill-white"/> {t('allComplete')} <Star className="fill-white"/>
+                        </span>
+                    </div>
+                )}
+
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>חוקיות וביטויים אלגבריים</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #4A90E2;
+            --secondary: #FF6B6B;
+            --success: #2ECC71;
+            --background: #F4F7F6;
+            --dark: #2C3E50;
+            --grid-bg: #E0E4E8;
+        }
+
+        body {
+            /* Applied the Rubik font here */
+            font-family: 'Rubik', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background);
+            color: var(--dark);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-container {
+            max-width: 900px;
+            width: 100%;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+        }
+
+        .progress-indicator {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            margin-bottom: 25px;
+        }
+
+        /* Flex row for structures - RTL automatically places item 1 on the right! */
+        .structures-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .structure-card {
+            background: #fff;
+            border: 3px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .structure-card.interactive {
+            border: 4px dashed var(--primary);
+            background: #f0f7ff;
+        }
+
+        .structure-card h3 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            color: var(--dark);
+        }
+
+        /* Grid CSS replacing the canvas */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(5, 35px);
+            grid-template-rows: repeat(5, 35px);
+            gap: 2px;
+            background-color: #bdc3c7;
+            padding: 4px;
+            border-radius: 6px;
+            display: inline-grid;
+        }
+
+        .grid-cell {
+            background-color: white;
+            border-radius: 2px;
+            transition: background-color 0.15s ease;
+        }
+
+        /* Filled cells */
+        .grid-cell.filled {
+            background-color: var(--dark);
+        }
+
+        /* Hover styles only for the interactive target grid */
+        .interactive .grid-cell {
+            cursor: pointer;
+        }
+
+        .interactive .grid-cell:hover {
+            background-color: #b3d4fc;
+        }
+
+        .interactive .grid-cell.filled:hover {
+            background-color: #34495e;
+        }
+
+        /* Questions Section styled neatly */
+        .questions-section {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .question-block {
+            margin-bottom: 20px;
+        }
+
+        .question-block label {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .question-block input {
+            font-family: 'Rubik', sans-serif;
+            font-size: 1.2rem;
+            padding: 10px 15px;
+            width: 100%;
+            max-width: 300px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s;
+            /* Keeps the math typed left-to-right inside the RTL layout */
+            direction: ltr; 
+            text-align: right; 
+        }
+
+        .question-block input:focus {
+            border-color: var(--primary);
+        }
+
+        /* Validation feedback messaging styling */
+        .feedback-msg {
+            font-weight: bold;
+            margin-top: 5px;
+            font-size: 1rem;
+            display: none;
+        }
+
+        .feedback-msg.correct {
+            color: var(--success);
+            display: block;
+        }
+
+        .feedback-msg.wrong {
+            color: var(--secondary);
+            display: block;
+        }
+
+        /* Action Controls */
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            font-family: 'Rubik', sans-serif;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        #submit-btn {
+            background-color: var(--success);
+            color: white;
+        }
+
+        #next-btn {
+            background-color: var(--primary);
+            color: white;
+            display: none;
+        }
+
+        /* End screen screen styling */
+        .quiz-finished {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .quiz-finished h2 {
+            color: var(--success);
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="game-container" id="quiz-wrapper">
+        <h1 id="main-title">חוקיות וביטויים אלגבריים</h1>
+        <div class="progress-indicator" id="progress">שאלה 1 מתוך 2</div>
+
+        <div class="structures-row" id="structures-container">
+        </div>
+
+        <div class="questions-section">
+            <div class="question-block">
+                <label for="num-of-squares">כמה ריבועים מתווספים בכל מבנה?</label>
+                <input type="text" id="num-of-squares" placeholder="לדוגמה: 3" autocomplete="off" />
+                <div class="feedback-msg" id="squares-feedback"></div>
+            </div>
+
+            <div class="question-block">
+                <label for="algebraic-expression">מהו הביטוי האלגברי המתאר את מספר הריבועים במבנה ה-n?</label>
+                <input type="text" id="algebraic-expression" placeholder="2n+1" autocomplete="off" />
+                <div class="feedback-msg" id="expression-feedback"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="submit-btn" onclick="submitAnswer()">בדיקת תשובה</button>
+            <button id="next-btn" onclick="nextQuestion()">לשאלה הבאה ⬅</button>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA ARCHITECTURE ---
+        const quizQuestions = [
+            {
+                "givenGrids": [
+                    [[false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, true, true, false]],
+                    [[false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, true, true, false], [false, false, true, true, false]],
+                    [[false, false, false, false, false], [false, false, false, false, false], [false, false, true, true, false], [false, false, true, true, false], [false, false, true, true, false]]
+                ],
+                "targetGrid": [
+                    [[false, false, false, false, false], [false, false, true, true, false], [false, false, true, true, false], [false, false, true, true, false], [false, false, true, true, false]]
+                ],
+                "correctSquares": "2",
+                "correctExpression": "2n"
+            },
+            {
+                "givenGrids": [
+                    [[false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [true, true, true, true, false]],
+                    [[false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [true, true, true, true, false], [true, true, true, true, false]],
+                    [[false, false, false, false, false], [false, false, false, false, false], [true, true, true, true, false], [true, true, true, true, false], [true, true, true, true, false]]
+                ],
+                "targetGrid": [
+                    [[false, false, false, false, false], [true, true, true, true, false], [true, true, true, true, false], [true, true, true, true, false], [true, true, true, true, false]]
+                ],
+                "correctSquares": "4",
+                "correctExpression": "4n"
+            },
+            {
+                "givenGrids": [
+                    [[false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, true, false, false]],
+                    [[false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, true, false, false], [false, true, true, true, false]],
+                    [[false, false, false, false, false], [false, false, false, false, false], [false, false, true, false, false], [false, true, true, true, false], [false, true, true, true, false]]
+                ],
+                "targetGrid": [
+                    [[false, false, false, false, false], [false, false, true, false, false], [false, true, true, true, false], [false, true, true, true, false], [false, true, true, true, false]]
+                ],
+                "correctSquares": "3",
+                "correctExpression": "3n-2"
+            },
+            {
+                "givenGrids": [
+                    [[false, true, true, true, true], [false, true, true, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false]],
+                    [[false, true, true, true, true], [false, true, true, true, true], [false, true, true, false, false], [false, false, false, false, false], [false, false, false, false, false]],
+                    [[false, true, true, true, true], [false, true, true, true, true], [false, true, true, true, true], [false, true, true, false, false], [false, false, false, false, false]]
+                ],
+                "targetGrid": [
+                    [[false, true, true, true, true], [false, true, true, true, true], [false, true, true, true, true], [false, true, true, true, true], [false, true, true, false, false]]
+                ],
+                "correctSquares": "4",
+                "correctExpression": "4n+2"
+            },
+            {
+                "givenGrids": [
+                    [[false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [true, false, false, false, false]],
+                    [[false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [true, false, false, false, false], [true, true, false, false, false]],
+                    [[false, false, false, false, false], [false, false, false, false, false], [true, false, false, false, false], [true, false, false, false, false], [true, true, true, false, false]]
+                ],
+                "targetGrid": [
+                    [[false, false, false, false, false], [true, false, false, false, false], [true, false, false, false, false], [true, false, false, false, false], [true, true, true, true, false]]
+                ],
+                "correctSquares": "2",
+                "correctExpression": "2n-1"
+            },
+            {
+                "givenGrids": [
+                    [[false, false, false, false, true], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false]],
+                    [[false, false, false, true, true], [false, false, false, true, true], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false]],
+                    [[false, false, true, true, true], [false, false, false, true, true], [false, false, true, false, true], [false, false, false, false, false], [false, false, false, false, false]]
+                ],
+                "targetGrid": [
+                    [[false, true, true, true, true], [false, false, false, true, true], [false, false, true, false, true], [false, true, false, false, true], [false, false, false, false, false]]
+                ],
+                "correctSquares": "3",
+                "correctExpression": "3n-2"
+            },
+            {
+                "givenGrids": [
+                    [[false, false, true, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false]],
+                    [[false, false, true, false, false], [true, true, false, true, true], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false]],
+                    [[false, false, true, false, false], [true, true, false, true, true], [true, true, false, true, true], [false, false, false, false, false], [false, false, false, false, false]]
+                ],
+                "targetGrid": [
+                    [[false, false, true, false, false], [true, true, false, true, true], [true, true, false, true, true], [true, true, false, true, true], [false, false, false, false, false]]
+                ],
+                "correctSquares": "4",
+                "correctExpression": "4n-3"
+            },
+            {
+                "givenGrids": [
+                    [[true, false, false, false, true], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [true, false, false, false, true]],
+                    [[true, false, false, false, true], [true, false, false, false, true], [false, false, false, false, false], [false, false, false, false, true], [true, true, false, false, true]],
+                    [[true, false, true, true, true], [true, false, false, false, false], [true, false, false, false, true], [false, false, false, false, true], [true, true, true, false, true]]
+                ],
+                "targetGrid": [
+                    [[true, true, true, true, true], [true, false, false, false, true], [true, false, false, false, true], [true, false, false, false, true], [true, true, true, true, true]]
+                ],
+                "correctSquares": "4",
+                "correctExpression": "4n"
+            },
+            {
+                "givenGrids": [
+                    [[true, false, false, false, false], [false, false, false, false, false], [false, false, true, false, false], [false, false, false, false, false], [false, false, false, false, true]],
+                    [[true, true, false, false, false], [true, false, false, false, false], [false, false, true, false, false], [false, false, false, false, true], [false, false, false, true, true]],
+                    [[true, true, true, false, false], [true, false, false, false, false], [true, false, true, false, true], [false, false, false, false, true], [false, false, true, true, true]]
+                ],
+                "targetGrid": [
+                    [[true, true, true, true, false], [true, false, false, false, true], [true, false, true, false, true], [true, false, false, false, true], [false, true, true, true, true]]
+                ],
+                "correctSquares": "2",
+                "correctExpression": "2n+1"
+            },
+            {
+                "givenGrids": [
+                    [[false, false, false, false, false], [false, false, true, true, false], [false, true, false, true, false], [false, true, true, true, false], [false, false, false, false, false]],
+                    [[false, false, false, false, false], [false, true, true, true, false], [false, true, false, true, false], [false, false, true, true, false], [false, false, false, false, false]],
+                    [[false, false, false, false, false], [false, true, true, true, false], [false, true, false, true, false], [false, true, true, false, false], [false, false, false, false, false]]
+                ],
+                "targetGrid": [
+                    [[false, false, false, false, false], [false, true, true, false, false], [false, true, false, true, false], [false, true, true, true, false], [false, false, false, false, false]]
+                ],
+                "correctSquares": "0",
+                "correctExpression": "7"
+            },
+            {
+                "givenGrids": [
+                    [[false, false, false, false, true], [false, false, false, false, false], [false, false, false, false, true], [false, false, false, false, false], [false, false, false, false, true]],
+                    [[false, false, false, true, true], [false, false, false, false, false], [false, false, false, true, false], [false, false, false, false, false], [false, false, false, true, true]],
+                    [[false, false, true, true, true], [false, false, false, false, false], [false, false, true, false, false], [false, false, false, false, false], [false, false, true, true, true]]
+                ],
+                "targetGrid": [
+                    [[false, true, true, true, true], [false, false, false, false, false], [false, true, false, false, false], [false, false, false, false, false], [false, true, true, true, true]]
+                ],
+                "correctSquares": "2",
+                "correctExpression": "2n+1"
+            },
+            {
+                "givenGrids": [
+                    [[true, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false]],
+                    [[false, false, false, false, false], [true, true, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false]],
+                    [[false, false, false, false, false], [false, false, false, false, false], [true, true, true, false, false], [false, false, false, false, false], [false, false, false, false, false]]
+                ],
+                "targetGrid": [
+                    [[false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [true, true, true, true, false], [false, false, false, false, false]]
+                ],
+                "correctSquares": "1",
+                "correctExpression": "n"
+            },
+            {
+                "givenGrids": [
+                    [[true, false, false, false, false], [true, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false]],
+                    [[false, false, false, false, false], [true, true, false, false, false], [true, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false]],
+                    [[false, false, false, false, false], [false, false, false, false, false], [true, true, true, false, false], [true, false, false, false, false], [false, false, false, false, false]]
+                ],
+                "targetGrid": [
+                    [[false, false, false, false, false], [false, false, false, false, false], [false, false, false, false, false], [true, true, true, true, false], [true, false, false, false, false]]
+                ],
+                "correctSquares": "1",
+                "correctExpression": "n+1"
+            }
+        ];
+
+        // Ensure targetGrid structures from the user code above are deeply nested properly to match givenGrids array structure format 
+        // Note: The provided targetGrid arrays above were structurally flat compared to givenGrids (1D array of 5 rows, instead of a direct 2D matrix) 
+        // Re-formatting targetGrid to match 2D array matrix indexing.
+        quizQuestions.forEach(q => {
+             if (q.targetGrid.length === 1 && q.targetGrid[0].length === 5) {
+                 q.targetGrid = q.targetGrid[0];
+             }
+        });
+
+        let currentQuestionIndex = 0;
+        let appGrid = []; // Dynamic tracking array for student's current interactive board
+        const gridWidth = 5;
+        const gridHeight = 5;
+
+        // Run setup when the page finishes loading
+        window.onload = function () {
+            loadQuestion(currentQuestionIndex);
+        };
+
+        // UI Builder for rendering grids dynamically
+        function loadQuestion(index) {
+            const question = quizQuestions[index];
+
+            // Update structural layout texts
+            document.getElementById("progress").innerText = `שאלה ${index + 1} מתוך ${quizQuestions.length}`;
+            document.getElementById("submit-btn").style.display = "block";
+            document.getElementById("next-btn").style.display = "none";
+
+            // Clear prior feedback
+            resetFeedback();
+
+            // Setup tracking layout array matching grid dimensions 
+            appGrid = Array.from({ length: gridHeight }, () => new Array(gridWidth).fill(false));
+
+            const container = document.getElementById("structures-container");
+            container.innerHTML = ""; // Empty previous elements
+
+            // 1. Build and append the static given structures
+            question.givenGrids.forEach((gridData, i) => {
+                const card = document.createElement("div");
+                card.className = "structure-card";
+                card.innerHTML = `<h3>מבנה ${i + 1}</h3>`;
+                card.appendChild(createGridHTML(gridData, false));
+                container.appendChild(card);
+            });
+
+            // 2. Build and append the Interactive Board (Structure 4)
+            const targetCard = document.createElement("div");
+            targetCard.className = "structure-card interactive";
+            targetCard.innerHTML = `<h3>מבנה 4: השלימו אותי!</h3>`;
+
+            const interactiveGridElement = createGridHTML(appGrid, true);
+            targetCard.appendChild(interactiveGridElement);
+            container.appendChild(targetCard);
+        }
+
+        // Creates a visual CSS Grid from a 2D array matrix representation
+        function createGridHTML(matrix, isInteractive) {
+            const gridDom = document.createElement("div");
+            gridDom.className = "grid-container";
+
+            // Loop through our dimensional layout matching your column/row system mapping
+            for (let r = 0; r < gridHeight; r++) {
+                for (let c = 0; c < gridWidth; c++) {
+                    const cell = document.createElement("div");
+                    cell.className = "grid-cell";
+                    if (matrix[r][c]) cell.classList.add("filled");
+
+                    if (isInteractive) {
+                        // Register modern standard click events seamlessly without coordinate math!
+                        cell.addEventListener("click", () => {
+                            matrix[r][c] = !matrix[r][c]; // Flip boolean flag
+                            cell.classList.toggle("filled"); // Visual presentation toggle
+                        });
+                    } 
+                    gridDom.appendChild(cell);
+                }
+            }
+            return gridDom;
+        }
+
+        function submitAnswer() {
+            const question = quizQuestions[currentQuestionIndex];
+            let gridCorrect = true;
+
+            // 1. Validate Interactive Grid
+            for (let r = 0; r < gridHeight; r++) {
+                for (let c = 0; c < gridWidth; c++) {
+                    if (appGrid[r][c] !== question.targetGrid[r][c]) {
+                        gridCorrect = false;
+                        break;
+                    }
+                }
+            }
+
+            const targetCard = document.querySelector(".structure-card.interactive");
+            if (gridCorrect) {
+                targetCard.style.borderColor = "var(--success)";
+            } else {
+                targetCard.style.borderColor = "var(--secondary)";
+            }
+
+            // 2. Validate Question Inputs Independently
+            const squaresInput = document.getElementById("num-of-squares").value.trim();
+            const squaresFeedback = document.getElementById("squares-feedback");
+            if (squaresInput === question.correctSquares) {
+                squaresFeedback.innerText = "נכון!";
+                squaresFeedback.className = "feedback-msg correct";
+            } else {
+                squaresFeedback.innerText = "נסו שוב...";
+                squaresFeedback.className = "feedback-msg wrong";
+            }
+
+            // Removes whitespace for processing comparison rules accurately
+            const exprInput = document.getElementById("algebraic-expression").value.replace(/\s+/g, "");
+            const exprFeedback = document.getElementById("expression-feedback");
+            if (exprInput === question.correctExpression) {
+                exprFeedback.innerText = "נכון!";
+                exprFeedback.className = "feedback-msg correct";
+            } else {
+                exprFeedback.innerText = "נסו שוב..."; 
+                exprFeedback.className = "feedback-msg wrong";
+            }
+
+            // Combined validation checking rule
+            if (gridCorrect && squaresInput === question.correctSquares && exprInput === question.correctExpression) {
+                document.getElementById("submit-btn").style.display = "none";
+                document.getElementById("next-btn").style.display = "block";
+
+                // Shoot a small round of confetti for a correct level solve!
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizQuestions.length) {
+                loadQuestion(currentQuestionIndex);
+            } else {
+                // Finale Celebration Trigger
+                showEndGameScreen();
+            }
+        }
+
+        function resetFeedback() {
+            document.getElementById("num-of-squares").value = "";
+            document.getElementById("algebraic-expression").value = "";
+            document.getElementById("squares-feedback").className = "feedback-msg";
+            document.getElementById("expression-feedback").className = "feedback-msg";
+        }
+
+        function showEndGameScreen() {
+            const wrapper = document.getElementById("quiz-wrapper");
+            wrapper.innerHTML = `
+                <div class="quiz-finished">
+                    <h2>עבודה מצוינת! 🌟</h2>
+                    <p style="font-size:1.5rem;">גיליתם את הכוח של ביטויים אלגבריים!</p>
+                </div>
+            `;
+            // Infinite confetti blast!
+            let duration = 3 * 1000;
+            let end = Date.now() + duration;
+
+            (function frame() {
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 } });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 } });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+    </script>
+</body>
+
+</html>

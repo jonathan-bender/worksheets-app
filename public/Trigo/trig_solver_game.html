@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Trig Solver Game</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body { 
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+      background-color: #f8fafc;
+      /* Prevent pull-to-refresh on mobile */
+      overscroll-behavior-y: none;
+    }
+    .katex-display {
+      margin: 0.2em 0 !important;
+    }
+    .katex {
+      font-size: 1.08em;
+    }
+    .math-ltr {
+      direction: ltr !important;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-indigo-500 selection:text-white">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // --- STREAMING_CHUNK:Initializing Translations ---
+    const TRANSLATIONS = {
+      en: {
+        title: "Trig Solver",
+        levelPrefix: "Level",
+        identitiesBtn: "Identities Reference",
+        calcBtn: "Scientific Calculator",
+        initialProb: "Initial Problem",
+        stepPrefix: "Step",
+        revealBtn: "Reveal Next Step",
+        levelSolved: "Solved! 🎉",
+        greatWork: "Great work! You applied the identities correctly.",
+        nextLevel: "Next Level",
+        allDone: "You completed all levels in the course!",
+        answered: "Answered",
+        submit: "Submit",
+        skip: "Skip",
+        errOption: "Incorrect option. Re-check the identities and try again!",
+        errResult: "Incorrect result. Tip: Use the calculator button in the header!",
+        degMode: "Degrees Mode",
+        identitiesRef: "Trig Identities Reference"
+      },
+      he: {
+        title: "משוואות טריגונומטריות",
+        levelPrefix: "שלב",
+        identitiesBtn: "הזהויות הטריגונומטריות",
+        calcBtn: "מחשבון מדעי",
+        initialProb: "המשוואה הנתונה",
+        stepPrefix: "צעד",
+        revealBtn: "הצג צעד הבא",
+        levelSolved: "נפתר! 🎉",
+        greatWork: "עבודה מצוינת! השתמשת בזהויות נכון.",
+        nextLevel: "השלב הבא",
+        allDone: "סיימת את כל השלבים בקורס!",
+        answered: "נענה",
+        submit: "הגש",
+        skip: "דלג",
+        errOption: "אפשרות שגויה. בדוק שוב את הזהויות ונסה שוב!",
+        errResult: "תוצאה שגויה. טיפ: השתמש בכפתור המחשבון בכותרת!",
+        degMode: "מצב מעלות",
+        identitiesRef: "הזהויות הטריגונומטריות"
+      }
+    };
+
+    const IDENTITIES = [
+      "\\sin^2(\\alpha) + \\cos^2(\\alpha) = 1",
+      "\\sin(2\\alpha) = 2\\sin(\\alpha)\\cos(\\alpha)",
+      "\\cos(2\\alpha) = \\cos^2(\\alpha) - \\sin^2(\\alpha)",
+      "\\tan(\\alpha) = \\frac{\\sin(\\alpha)}{\\cos(\\alpha)}",
+      "\\sin(-\\alpha) = -\\sin(\\alpha)",
+      "\\cos(-\\alpha) = \\cos(\\alpha)",
+      "\\sin(180^\\circ - \\alpha) = \\sin(\\alpha)",
+      "\\cos(180^\\circ - \\alpha) = -\\cos(\\alpha)",
+      "\\sin(\\alpha + \\beta) = \\sin(\\alpha)\\cos(\\beta) + \\cos(\\alpha)\\sin(\\beta)",
+      "\\cos(\\alpha - \\beta) = \\cos(\\alpha)\\cos(\\beta) + \\sin(\\alpha)\\sin(\\beta)",
+      "\\sin(90^\\circ - \\alpha) = \\cos(\\alpha)"
+    ];
+
+    // --- STREAMING_CHUNK:Defining English Levels Data (8 Levels) ---
+    const LEVELS_EN = [
+      {
+        initialEquation: "2\\cos^2(x) + 3\\sin(x) = 3",
+        steps: [
+          { type: "question", qType: "mc", text: "Which identity relates $\\cos^2(x)$ and $\\sin^2(x)$?", options: ["$\\cos^2(x) = 1 + \\sin^2(x)$", "$\\cos^2(x) = 1 - \\sin^2(x)$", "$\\cos^2(x) = \\tan(x)$"], answer: [1] },
+          { type: "step", label: "Substitute identity", equation: "2(1 - \\sin^2(x)) + 3\\sin(x) = 3", explanation: "We convert all terms to sine using $\\cos^2(\\alpha) = 1 - \\sin^2(\\alpha)$." },
+          { type: "step", label: "Expand parentheses", equation: "2 - 2\\sin^2(x) + 3\\sin(x) = 3", explanation: "Distribute the factor of $2$ into the parentheses." },
+          { type: "step", label: "Rearrange to quadratic form", equation: "2\\sin^2(x) - 3\\sin(x) + 1 = 0", explanation: "Move terms to RHS to obtain $2u^2 - 3u + 1 = 0$ where $u = \\sin(x)$." },
+          { type: "question", qType: "mc", text: "What are the values of $\\sin(x)$ from this quadratic?", options: ["$0.5$ and $1$", "$-0.5$ and $-1$", "$1$ and $2$"], answer: [0] },
+          { type: "step", label: "Solve quadratic for sin(x)", equation: "\\sin(x) = 0.5 \\quad \\text{or} \\quad \\sin(x) = 1", explanation: "Factoring $(2\\sin(x) - 1)(\\sin(x) - 1) = 0$ yields these two cases." },
+          { type: "question", qType: "type", text: "Find the smallest positive angle $x$ in degrees for $\\sin(x) = 0.5$:", answer: "30" },
+          { type: "step", label: "Find angles", equation: "x = 30^\\circ \\quad \\text{or} \\quad x = 90^\\circ", explanation: "Calculating $\\arcsin(0.5) = 30^\\circ$ and $\\arcsin(1) = 90^\\circ$." }
+        ]
+      },
+      {
+        initialEquation: "\\sin(2x) = \\tan(x)",
+        steps: [
+          { type: "question", qType: "mc", text: "How can we expand both sides?", options: ["Use $\\sin(2\\alpha) = 2\\sin(\\alpha)\\cos(\\alpha)$ and $\\tan(\\alpha) = \\frac{\\sin(\\alpha)}{\\cos(\\alpha)}$", "Use $\\sin(2\\alpha) = \\cos^2(\\alpha) - \\sin^2(\\alpha)$"], answer: [0] },
+          { type: "step", label: "Apply identities", equation: "2\\sin(x)\\cos(x) = \\frac{\\sin(x)}{\\cos(x)}", explanation: "Applying the double-angle identity and quotient identity." },
+          { type: "question", qType: "mc", text: "What is the next logical algebraic step?", options: ["Divide by $\\sin(x)$", "Multiply both sides by $\\cos(x)$"], answer: [1] },
+          { type: "step", label: "Multiply by cos(x)", equation: "2\\sin(x)\\cos^2(x) = \\sin(x)", explanation: "Clear the fraction by multiplying both sides by $\\cos(x)$." },
+          { type: "step", label: "Move to LHS", equation: "2\\sin(x)\\cos^2(x) - \\sin(x) = 0", explanation: "Subtract $\\sin(x)$ from both sides to prepare for factoring." },
+          { type: "question", qType: "mc", text: "How should we factor this?", options: ["Factor out $\\cos(x)$", "Factor out $\\sin(x)$"], answer: [1] },
+          { type: "step", label: "Factor out sine", equation: "\\sin(x)(2\\cos^2(x) - 1) = 0", explanation: "Extracting the common factor $\\sin(x)$." },
+          { type: "question", qType: "type", text: "Solve $2\\cos^2(x) - 1 = 0 \\implies \\cos(x) = \\frac{1}{\\sqrt{2}}$. Find $x$ in degrees:", answer: "45" },
+          { type: "step", label: "Solve for x", equation: "x = 0^\\circ \\quad \\text{or} \\quad x = 45^\\circ", explanation: "Solving $\\sin(x) = 0 \\implies x=0^\\circ$ and $\\arccos(\\frac{1}{\\sqrt{2}}) = 45^\\circ$." }
+        ]
+      },
+      {
+        initialEquation: "\\cos(2x) + \\sin(x) = 0",
+        steps: [
+          { type: "question", qType: "mc", text: "Which expression replaces $\\cos(2x)$ in terms of sine?", options: ["$1 - 2\\sin^2(x)$", "$2\\cos^2(x) - 1$", "$\\cos^2(x) - \\sin^2(x)$"], answer: [0] },
+          { type: "step", label: "Substitute double-angle identity", equation: "1 - 2\\sin^2(x) + \\sin(x) = 0", explanation: "Using $\\cos(2\\alpha) = 1 - 2\\sin^2(\\alpha)$ to get all terms in sine." },
+          { type: "step", label: "Rearrange quadratic", equation: "2\\sin^2(x) - \\sin(x) - 1 = 0", explanation: "Multiply by $-1$ and rearrange terms in descending order." },
+          { type: "question", qType: "mc", text: "What are the roots for $\\sin(x)$?", options: ["$0.5$ and $-1$", "$-0.5$ and $1$"], answer: [1] },
+          { type: "step", label: "Solve quadratic", equation: "\\sin(x) = -0.5 \\quad \\text{or} \\quad \\sin(x) = 1", explanation: "Factoring yields $(2\\sin(x)+1)(\\sin(x)-1) = 0$." },
+          { type: "question", qType: "type", text: "Find $x$ in degrees for $\\sin(x) = 1$:", answer: "90" },
+          { type: "step", label: "Find angles", equation: "x = 90^\\circ \\quad \\text{or} \\quad x = -30^\\circ", explanation: "Calculating $\\arcsin(1) = 90^\\circ$ and $\\arcsin(-0.5) = -30^\\circ$." }
+        ]
+      },
+      {
+        initialEquation: "\\sin(x + 45^\\circ) = \\frac{\\sqrt{2}}{2}\\cos(x)",
+        steps: [
+          { type: "question", qType: "mc", text: "How do we expand $\\sin(\\alpha + \\beta)$?", options: ["$\\sin(\\alpha)\\cos(\\beta) + \\cos(\\alpha)\\sin(\\beta)$", "$\\sin(\\alpha)\\sin(\\beta) - \\cos(\\alpha)\\cos(\\beta)$"], answer: [0] },
+          { type: "step", label: "Expand sum formula", equation: "\\sin(x)\\cos(45^\\circ) + \\cos(x)\\sin(45^\\circ) = \\frac{\\sqrt{2}}{2}\\cos(x)", explanation: "Apply the angle addition identity." },
+          { type: "step", label: "Evaluate known angles", equation: "\\frac{\\sqrt{2}}{2}\\sin(x) + \\frac{\\sqrt{2}}{2}\\cos(x) = \\frac{\\sqrt{2}}{2}\\cos(x)", explanation: "Substitute $\\cos(45^\\circ) = \\frac{\\sqrt{2}}{2}$ and $\\sin(45^\\circ) = \\frac{\\sqrt{2}}{2}$." },
+          { type: "question", qType: "mc", text: "Subtract $\\frac{\\sqrt{2}}{2}\\cos(x)$ from both sides. What is left?", options: ["$\\frac{\\sqrt{2}}{2}\\sin(x) = 0$", "$\\sin(x) + \\cos(x) = 0$"], answer: [0] },
+          { type: "step", label: "Simplify equation", equation: "\\frac{\\sqrt{2}}{2}\\sin(x) = 0", explanation: "Subtracting identical terms from both sides." },
+          { type: "step", label: "Divide by coefficient", equation: "\\sin(x) = 0", explanation: "Multiply both sides by $\\frac{2}{\\sqrt{2}}$." },
+          { type: "question", qType: "type", text: "Solve for $x$ in degrees (principal value):", answer: "0" },
+          { type: "step", label: "Find angle", equation: "x = 0^\\circ", explanation: "Calculating $\\arcsin(0) = 0^\\circ$." }
+        ]
+      },
+{
+  initialEquation: "\\cos^4(\\frac{x}{2}) - \\sin^4(\\frac{x}{2}) = \\sin(2x)",
+  steps: [
+    { type: "question", qType: "mc", text: "How can we factor the left-hand side using the difference of squares pattern $a^4 - b^4 = (a^2 - b^2)(a^2 + b^2)$?", options: ["$(\\cos^2(\\frac{x}{2}) - \\sin^2(\\frac{x}{2}))(\\cos^2(\\frac{x}{2}) + \\sin^2(\\frac{x}{2}))$", "$(\\cos(\\frac{x}{2}) - \\sin(\\frac{x}{2}))^4$"], answer: [0] },
+    { type: "step", label: "Factor LHS", equation: "(\\cos^2(\\frac{x}{2}) - \\sin^2(\\frac{x}{2}))(\\cos^2(\\frac{x}{2}) + \\sin^2(\\frac{x}{2})) = \\sin(2x)", explanation: "Applying the algebraic difference of squares formula where $a = \\cos(\\frac{x}{2})$ and $b = \\sin(\\frac{x}{2})$." },
+    { type: "question", qType: "mc", text: "According to the Pythagorean identity, what does the factor $\\cos^2(\\frac{x}{2}) + \\sin^2(\\frac{x}{2})$ evaluate to?", options: ["$1$", "$0$", "$\\cos(x)$"], answer: [0] },
+    { type: "step", label: "Apply Pythagorean identity", equation: "\\cos^2(\\frac{x}{2}) - \\sin^2(\\frac{x}{2}) = \\sin(2x)", explanation: "Since $\\sin^2(\\alpha) + \\cos^2(\\alpha) = 1$, the second parenthesis simplifies to $1$." },
+    { type: "question", qType: "mc", text: "Which trigonometric identity can we apply to simplify the remaining expression on the LHS?", options: ["Double-angle identity for cosine, resulting in $\\cos(x)$", "Half-angle identity, resulting in $\\sin(x)$"], answer: [0] },
+    { type: "step", label: "Apply double-angle identity for cosine", equation: "\\cos(x) = \\sin(2x)", explanation: "Using the identity $\\cos(2\\alpha) = \\cos^2(\\alpha) - \\sin^2(\\alpha)$ with $\\alpha = \\frac{x}{2}$ gives us $\\cos(2 \\cdot \\frac{x}{2}) = \\cos(x)$." },
+    { type: "step", label: "Apply double-angle identity for sine", equation: "\\cos(x) = 2\\sin(x)\\cos(x)", explanation: "Expand the right-hand side using $\\sin(2\\alpha) = 2\\sin(\\alpha)\\cos(\\alpha)$." },
+    { type: "step", label: "Move all terms to one side", equation: "2\\sin(x)\\cos(x) - \\cos(x) = 0", explanation: "Subtract $\\cos(x)$ from both sides to set the equation to zero." },
+    { type: "question", qType: "mc", text: "How should we factor the current equation $2\\sin(x)\\cos(x) - \\cos(x) = 0$?", options: ["Factor out the common term $\\cos(x)$", "Divide both sides by $\\cos(x)$"], answer: [0] },
+    { type: "step", label: "Factor out cosine", equation: "\\cos(x)(2\\sin(x) - 1) = 0", explanation: "Extracting the common factor $\\cos(x)$. Never divide by a variable term to avoid losing valid solutions!" },
+    { type: "question", qType: "type", text: "Solve $\\cos(x) = 0$. Find the smallest positive angle $x$ in degrees:", answer: "90" },
+    { type: "question", qType: "type", text: "Solve $2\\sin(x) - 1 = 0 \\implies \\sin(x) = 0.5$. Find the smallest positive angle $x$ in degrees:", answer: "30" },
+    { type: "step", label: "Final principal solutions", equation: "x = 90^\\circ \\quad \\text{or} \\quad x = 30^\\circ", explanation: "The principal solutions are obtained from $\\arccos(0) = 90^\\circ$ and $\\arcsin(0.5) = 30^\\circ$." }
+  ]
+},
+{
+  initialEquation: "\\text{Given } k>0, \\sin(x)>0, \\cos(x)>0:\\quad \\frac{k}{2\\cos(x)} = \\frac{4k\\sin(x)}{3\\sin(4x)}",
+  steps: [
+    { type: "question", qType: "mc", text: "Since we are given that $k > 0$, what can we safely divide both sides by to simplify the equation?", options: ["$k$", "$2\\cos(x)$", "$3\\sin(4x)$"], answer: [0] },
+    { type: "step", label: "Divide by k", equation: "\\frac{1}{2\\cos(x)} = \\frac{4\\sin(x)}{3\\sin(4x)}", explanation: "Because $k \\neq 0$, dividing both sides by $k$ safely removes the constant without losing solutions." },
+    { type: "step", label: "Multiply by denominators", equation: "3\\sin(4x) = 4\\sin(x) \\cdot 2\\cos(x)", explanation: "Cross-multiply to eliminate the fractions." },
+    { type: "step", label: "Simplify right-hand side", equation: "3\\sin(4x) = 8\\sin(x)\\cos(x)", explanation: "Multiply the constants $4 \\cdot 2 = 8$." },
+    { type: "question", qType: "mc", text: "How should we expand $\\sin(4x)$ using the double-angle identity?", options: ["$2\\sin(2x)\\cos(2x)$", "$4\\sin(x)\\cos(x)$", "$\\sin^2(2x) - \\cos^2(2x)$"], answer: [0] },
+    { type: "step", label: "Apply double-angle identity", equation: "3(2\\sin(2x)\\cos(2x)) = 8\\sin(x)\\cos(x)", explanation: "Expand $\\sin(4x)$ using $\\sin(2\\alpha) = 2\\sin(\\alpha)\\cos(\\alpha)$ where $\\alpha = 2x$." },
+    { type: "step", label: "Simplify left-hand side", equation: "6\\sin(2x)\\cos(2x) = 8\\sin(x)\\cos(x)", explanation: "Multiply the constants $3 \\cdot 2 = 6$." },
+    { type: "question", qType: "mc", text: "How should we expand $\\sin(2x)$ to match the terms on the right-hand side?", options: ["$2\\sin(x)\\cos(x)$", "$\\cos^2(x) - \\sin^2(x)$"], answer: [0] },
+    { type: "step", label: "Apply double-angle identity again", equation: "6(2\\sin(x)\\cos(x))\\cos(2x) = 8\\sin(x)\\cos(x)", explanation: "Expand $\\sin(2x)$ into $2\\sin(x)\\cos(x)$." },
+    { type: "step", label: "Simplify left-hand side", equation: "12\\sin(x)\\cos(x)\\cos(2x) = 8\\sin(x)\\cos(x)", explanation: "Multiply the constants $6 \\cdot 2 = 12$." },
+    { type: "question", qType: "mc", text: "Since we are given that $\\sin(x) > 0$ and $\\cos(x) > 0$, what can we divide both sides by without losing any valid solutions?", options: ["$\\sin(x)\\cos(x)$", "$\\cos(2x)$", "$12$"], answer: [0] },
+    { type: "step", label: "Divide by common terms", equation: "12\\cos(2x) = 8", explanation: "Since $\\sin(x)$ and $\\cos(x)$ are strictly positive (not zero), we can divide both sides by $\\sin(x)\\cos(x)$." },
+    { type: "step", label: "Divide by 12", equation: "\\cos(2x) = \\frac{8}{12} = \\frac{2}{3}", explanation: "Divide by 12 to isolate the trigonometric function." },
+    { type: "question", qType: "type", text: "Solve for $2x$ in degrees (round to one decimal place):", answer: "48.2" },
+    { type: "step", label: "Solve for 2x", equation: "2x \\approx 48.2^{\\circ}", explanation: "Calculate the inverse cosine: $\\arccos(2/3) \\approx 48.19^{\\circ}$." },
+    { type: "step", label: "Solve for x", equation: "x \\approx 24.1^{\\circ}", explanation: "Divide by 2 to find the final angle $x$." }
+  ]
+},
+      {
+        initialEquation: "\\sin^2(x) = \\cos(x)",
+        steps: [
+          { type: "question", qType: "mc", text: "Which identity relates $\\sin^2(x)$ and $\\cos(x)$?", options: ["$\\sin^2(x) = 1 - \\cos^2(x)$", "$\\sin^2(x) = 1 + \\cos^2(x)$"], answer: [0] },
+          { type: "step", label: "Substitute identity", equation: "1 - \\cos^2(x) = \\cos(x)", explanation: "Replace $\\sin^2(x)$ to get an equation entirely in terms of cosine." },
+          { type: "question", qType: "mc", text: "What form is this equation?", options: ["Linear", "Quadratic in terms of $\\cos(x)$"], answer: [1] },
+          { type: "step", label: "Rearrange terms", equation: "\\cos^2(x) + \\cos(x) - 1 = 0", explanation: "Move everything to one side to form $u^2 + u - 1 = 0$." },
+          { type: "step", label: "Quadratic formula", equation: "\\cos(x) = \\frac{-1 \\pm \\sqrt{1 - 4(1)(-1)}}{2} = \\frac{-1 \\pm \\sqrt{5}}{2}", explanation: "Apply $x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$." },
+          { type: "question", qType: "type", text: "What is the approximate value of the positive root (3 decimal places)?", answer: "0.618" },
+          { type: "step", label: "Select valid root", equation: "\\cos(x) \\approx 0.618", explanation: "The other root is approx $-1.618$, which is outside the $[-1, 1]$ range of cosine." },
+          { type: "question", qType: "type", text: "Solve for $x$ in degrees (1 decimal place):", answer: "51.8" },
+          { type: "step", label: "Solve for x", equation: "x = 51.8^\\circ", explanation: "Calculate $\\arccos(0.618)$." }
+        ]
+      },
+      {
+        initialEquation: "\\tan^2(x) = -1 + 2\\tan(-x)",
+        steps: [
+          { type: "question", qType: "mc", text: "What is the identity for $\\tan(-x)$?", options: ["$\\tan(x)$", "$-\\tan(x)$"], answer: [1] },
+          { type: "step", label: "Apply odd identity", equation: "\\tan^2(x) = -1 - 2\\tan(x)", explanation: "Tangent is an odd function, so $\\tan(-\\alpha) = -\\tan(\\alpha)$." },
+          { type: "step", label: "Rearrange to quadratic", equation: "\\tan^2(x) + 2\\tan(x) + 1 = 0", explanation: "Move all terms to the left side." },
+          { type: "question", qType: "mc", text: "How can this quadratic be factored?", options: ["Perfect square $(a+b)^2=0$", "Difference of squares"], answer: [0] },
+          { type: "step", label: "Factor perfect square", equation: "(\\tan(x) + 1)^2 = 0", explanation: "The quadratic is of the form $u^2 + 2u + 1 = (u+1)^2$." },
+          { type: "step", label: "Isolate tangent", equation: "\\tan(x) = -1", explanation: "Take the square root of both sides and subtract 1." },
+          { type: "question", qType: "type", text: "Find the principal value of $x$ in degrees:", answer: "-45" },
+          { type: "step", label: "Solve for x", equation: "x = -45^\\circ", explanation: "Calculate $\\arctan(-1)$." }
+        ]
+      },
+      {
+        initialEquation: "\\tan^5(x) = \\tan(x)",
+        steps: [
+          { type: "step", label: "Rearrange terms", equation: "\\tan^5(x) - \\tan(x) = 0", explanation: "Move all terms to the left side." },
+          { type: "question", qType: "mc", text: "What is the first step to factor this?", options: ["Divide by $\\tan(x)$", "Factor out $\\tan(x)$"], answer: [1] },
+          { type: "step", label: "Factor out tangent", equation: "\\tan(x)(\\tan^4(x) - 1) = 0", explanation: "Never divide by a variable expression as you might lose solutions (where it equals 0)." },
+          { type: "question", qType: "mc", text: "How can we factor $\\tan^4(x) - 1$?", options: ["Difference of squares", "Perfect square"], answer: [0] },
+          { type: "step", label: "Difference of squares", equation: "\\tan(x)(\\tan^2(x) - 1)(\\tan^2(x) + 1) = 0", explanation: "Using $a^2 - b^2 = (a-b)(a+b)$ where $a = \\tan^2(x)$ and $b = 1$." },
+          { type: "step", label: "Analyze factors", equation: "\\tan^2(x) + 1 = 0 \\implies \\text{No real solution}", explanation: "A squared real number cannot be negative." },
+          { type: "step", label: "Remaining cases", equation: "\\tan(x) = 0 \\quad \\text{or} \\quad \\tan^2(x) = 1", explanation: "Set the remaining factors to zero." },
+          { type: "question", qType: "type", text: "Find the smallest positive angle for $\\tan(x) = 1$:", answer: "45" },
+          { type: "step", label: "Find principal solutions", equation: "x = 0^\\circ \\quad \\text{or} \\quad x = \\pm 45^\\circ", explanation: "Solving $\\tan(x)=0$ and $\\tan(x)=\\pm 1$." }
+        ]
+      }
+    ];
+
+    // --- STREAMING_CHUNK:Defining Hebrew Levels Data (8 Levels) ---
+    const LEVELS_HE = [
+      {
+        initialEquation: "2\\cos^2(x) + 3\\sin(x) = 3",
+        steps: [
+          { type: "question", qType: "mc", text: "איזו זהות קושרת בין $\\cos^2(x)$ ל- $\\sin^2(x)$?", options: ["$\\cos^2(x) = 1 + \\sin^2(x)$", "$\\cos^2(x) = 1 - \\sin^2(x)$", "$\\cos^2(x) = \\tan(x)$"], answer: [1] },
+          { type: "step", label: "הצב זהות", equation: "2(1 - \\sin^2(x)) + 3\\sin(x) = 3", explanation: "אנו ממירים את כל האיברים לסינוס באמצעות $\\cos^2(\\alpha) = 1 - \\sin^2(\\alpha)$." },
+          { type: "step", label: "פתח סוגריים", equation: "2 - 2\\sin^2(x) + 3\\sin(x) = 3", explanation: "מכפילים את הגורם 2 לתוך הסוגריים." },
+          { type: "step", label: "סדר מחדש לצורה ריבועית", equation: "2\\sin^2(x) - 3\\sin(x) + 1 = 0", explanation: "מעבירים איברים לאגף ימין לקבלת $2u^2 - 3u + 1 = 0$ כאשר $u = \\sin(x)$." },
+          { type: "question", qType: "mc", text: "מהם הערכים של $\\sin(x)$ ממשוואה ריבועית זו?", options: ["$0.5$ ו- $1$", "$-0.5$ ו- $-1$", "$1$ ו- $2$"], answer: [0] },
+          { type: "step", label: "פתור משוואה ריבועית עבור sin(x)", equation: "\\sin(x) = 0.5 \\quad \\text{או} \\quad \\sin(x) = 1", explanation: "פירוק לגורמים $(2\\sin(x) - 1)(\\sin(x) - 1) = 0$ מניב שני מקרים אלו." },
+          { type: "question", qType: "type", text: "מצא את הזווית החיובית הקטנה ביותר $x$ במעלות שעבורה $\\sin(x) = 0.5$:", answer: "30" },
+          { type: "step", label: "מצא זוויות", equation: "x = 30^\\circ \\quad \\text{או} \\quad x = 90^\\circ", explanation: "חישוב $\\arcsin(0.5) = 30^\\circ$ ו- $\\arcsin(1) = 90^\\circ$." }
+        ]
+      },
+      {
+        initialEquation: "\\sin(2x) = \\tan(x)",
+        steps: [
+          { type: "question", qType: "mc", text: "כיצד נוכל לפתח את שני האגפים?", options: ["באמצעות $\\sin(2\\alpha) = 2\\sin(\\alpha)\\cos(\\alpha)$ ו- $\\tan(\\alpha) = \\frac{\\sin(\\alpha)}{\\cos(\\alpha)}$", "באמצעות $\\sin(2\\alpha) = \\cos^2(\\alpha) - \\sin^2(\\alpha)$"], answer: [0] },
+          { type: "step", label: "השתמש בזהויות", equation: "2\\sin(x)\\cos(x) = \\frac{\\sin(x)}{\\cos(x)}", explanation: "יישום זהות זווית כפולה וזהות מנה." },
+          { type: "question", qType: "mc", text: "מהו הצעד האלגברי ההגיוני הבא?", options: ["חלק ב- $\\sin(x)$", "הכפל את שני האגפים ב- $\\cos(x)$"], answer: [1] },
+          { type: "step", label: "הכפל ב- cos(x)", equation: "2\\sin(x)\\cos^2(x) = \\sin(x)", explanation: "הכפלת שני האגפים ב-$\\cos(x)$ כדי להיפטר מהשבר (בהנחה ש- $\\cos(x) \\neq 0$)." },
+          { type: "step", label: "העבר לאגף שמאל", equation: "2\\sin(x)\\cos^2(x) - \\sin(x) = 0", explanation: "החסרת $\\sin(x)$ משני האגפים כהכנה לפירוק לגורמים." },
+          { type: "question", qType: "mc", text: "כיצד עלינו לפרק לגורמים?", options: ["הוצא $\\cos(x)$ כגורם משותף", "הוצא $\\sin(x)$ כגורם משותף"], answer: [1] },
+          { type: "step", label: "הוצא סינוס כגורם משותף", equation: "\\sin(x)(2\\cos^2(x) - 1) = 0", explanation: "הוצאת הגורם המשותף $\\sin(x)$." },
+          { type: "question", qType: "type", text: "פתור $2\\cos^2(x) - 1 = 0 \\implies \\cos(x) = \\frac{1}{\\sqrt{2}}$. מצא את $x$ במעלות:", answer: "45" },
+          { type: "step", label: "פתור עבור x", equation: "x = 0^\\circ \\quad \\text{או} \\quad x = 45^\\circ", explanation: "פתרון $\\sin(x) = 0 \\implies x=0^\\circ$ ו- $\\arccos(\\frac{1}{\\sqrt{2}}) = 45^\\circ$." }
+        ]
+      },
+      {
+        initialEquation: "\\cos(2x) + \\sin(x) = 0",
+        steps: [
+          { type: "question", qType: "mc", text: "איזה ביטוי מחליף את $\\cos(2x)$ במונחים של סינוס?", options: ["$1 - 2\\sin^2(x)$", "$2\\cos^2(x) - 1$", "$\\cos^2(x) - \\sin^2(x)$"], answer: [0] },
+          { type: "step", label: "הצב זהות זווית כפולה", equation: "1 - 2\\sin^2(x) + \\sin(x) = 0", explanation: "שימוש ב- $\\cos(2\\alpha) = 1 - 2\\sin^2(\\alpha)$ כדי לקבל את כל האיברים בסינוס." },
+          { type: "step", label: "סדר משוואה ריבועית", equation: "2\\sin^2(x) - \\sin(x) - 1 = 0", explanation: "הכפלה ב-1- וסידור מחדש של האיברים בסדר יורד." },
+          { type: "question", qType: "mc", text: "מהם השורשים עבור $\\sin(x)$?", options: ["$0.5$ ו- $-1$", "$-0.5$ ו- $1$"], answer: [1] },
+          { type: "step", label: "פתור משוואה ריבועית", equation: "\\sin(x) = -0.5 \\quad \\text{או} \\quad \\sin(x) = 1", explanation: "פירוק לגורמים נותן $(2\\sin(x)+1)(\\sin(x)-1) = 0$." },
+          { type: "question", qType: "type", text: "מצא את $x$ במעלות עבור $\\sin(x) = 1$:", answer: "90" },
+          { type: "step", label: "מצא זוויות", equation: "x = 90^\\circ \\quad \\text{או} \\quad x = -30^\\circ", explanation: "חישוב $\\arcsin(1) = 90^\\circ$ ו- $\\arcsin(-0.5) = -30^\\circ$." }
+        ]
+      },
+      {
+        initialEquation: "\\sin(x + 45^\\circ) = \\frac{\\sqrt{2}}{2}\\cos(x)",
+        steps: [
+          { type: "question", qType: "mc", text: "כיצד נפתח את הביטוי $\\sin(\\alpha + \\beta)$?", options: ["$\\sin(\\alpha)\\cos(\\beta) + \\cos(\\alpha)\\sin(\\beta)$", "$\\sin(\\alpha)\\sin(\\beta) - \\cos(\\alpha)\\cos(\\beta)$"], answer: [0] },
+          { type: "step", label: "פתח נוסחת סכום", equation: "\\sin(x)\\cos(45^\\circ) + \\cos(x)\\sin(45^\\circ) = \\frac{\\sqrt{2}}{2}\\cos(x)", explanation: "יישום זהות חיבור זוויות $\\sin(\\alpha+\\beta) = \\sin(\\alpha)\\cos(\\beta) + \\cos(\\alpha)\\sin(\\beta)$." },
+          { type: "step", label: "חשב זוויות ידועות", equation: "\\frac{\\sqrt{2}}{2}\\sin(x) + \\frac{\\sqrt{2}}{2}\\cos(x) = \\frac{\\sqrt{2}}{2}\\cos(x)", explanation: "הצבת $\\cos(45^\\circ) = \\frac{\\sqrt{2}}{2}$ ו- $\\sin(45^\\circ) = \\frac{\\sqrt{2}}{2}$." },
+          { type: "question", qType: "mc", text: "החסר $\\frac{\\sqrt{2}}{2}\\cos(x)$ משני האגפים. מה נשאר?", options: ["$\\frac{\\sqrt{2}}{2}\\sin(x) = 0$", "$\\sin(x) + \\cos(x) = 0$"], answer: [0] },
+          { type: "step", label: "פשט משוואה", equation: "\\frac{\\sqrt{2}}{2}\\sin(x) = 0", explanation: "החסרת איברים זהים משני האגפים." },
+          { type: "step", label: "חלק במקדם", equation: "\\sin(x) = 0", explanation: "הכפלת שני האגפים ב- $\\frac{2}{\\sqrt{2}}$." },
+          { type: "question", qType: "type", text: "פתור עבור $x$ במעלות (הערך הראשי):", answer: "0" },
+          { type: "step", label: "מצא זווית", equation: "x = 0^\\circ", explanation: "חישוב $\\arcsin(0) = 0^\\circ$." }
+        ]
+      },
+{
+  initialEquation: "\\cos^4(\\frac{x}{2}) - \\sin^4(\\frac{x}{2}) = \\sin(2x)",
+  steps: [
+    { type: "question", qType: "mc", text: "כיצד נוכל לפרק את אגף שמאל לפי תבנית הפרש ריבועים $a^4 - b^4 = (a^2 - b^2)(a^2 + b^2)$?", options: ["$(\\cos^2(\\frac{x}{2}) - \\sin^2(\\frac{x}{2}))(\\cos^2(\\frac{x}{2}) + \\sin^2(\\frac{x}{2}))$", "$(\\cos(\\frac{x}{2}) - \\sin(\\frac{x}{2}))^4$"], answer: [0] },
+    { type: "step", label: "פירוק אגף שמאל", equation: "(\\cos^2(\\frac{x}{2}) - \\sin^2(\\frac{x}{2}))(\\cos^2(\\frac{x}{2}) + \\sin^2(\\frac{x}{2})) = \\sin(2x)", explanation: "יישום נוסחת הכפל המקוצר (הפרש ריבועים) כאשר $a = \\cos(\\frac{x}{2})$ ו- $b = \\sin(\\frac{x}{2})$." },
+    { type: "question", qType: "mc", text: "לפי הזהות הפיתגורית, למה שווה הגורם $\\cos^2(\\frac{x}{2}) + \\sin^2(\\frac{x}{2})$?", options: ["$1$", "$0$", "$\\cos(x)$"], answer: [0] },
+    { type: "step", label: "יישום זהות פיתגורית", equation: "\\cos^2(\\frac{x}{2}) - \\sin^2(\\frac{x}{2}) = \\sin(2x)", explanation: "מכיוון ש- $\\sin^2(\\alpha) + \\cos^2(\\alpha) = 1$, הסוגריים השניים מצטמצמים ל-1." },
+    { type: "question", qType: "mc", text: "איזו זהות טריגונומטרית ניתן להפעיל כדי לפשט את הביטוי שנותר באגף שמאל?", options: ["זהות זווית כפולה לקוסינוס, שתיתן $\\cos(x)$", "זהות חצי זווית, שתיתן $\\sin(x)$"], answer: [0] },
+    { type: "step", label: "יישום זהות זווית כפולה לקוסינוס", equation: "\\cos(x) = \\sin(2x)", explanation: "שימוש בזהות $\\cos(2\\alpha) = \\cos^2(\\alpha) - \\sin^2(\\alpha)$ עם $\\alpha = \\frac{x}{2}$ נותן לנו $\\cos(2 \\cdot \\frac{x}{2}) = \\cos(x)$." },
+    { type: "step", label: "יישום זהות זווית כפולה לסינוס", equation: "\\cos(x) = 2\\sin(x)\\cos(x)", explanation: "פיתוח אגף ימין באמצעות $\\sin(2\\alpha) = 2\\sin(\\alpha)\\cos(\\alpha)$." },
+    { type: "step", label: "העברת איברים לאגף אחד", equation: "2\\sin(x)\\cos(x) - \\cos(x) = 0", explanation: "החסרת $\\cos(x)$ משני האגפים כדי להשוות את המשוואה לאפס." },
+    { type: "question", qType: "mc", text: "כיצד עלינו לפרק לגורמים את המשוואה הנוכחית $2\\sin(x)\\cos(x) - \\cos(x) = 0$?", options: ["להוציא גורם משותף $\\cos(x)$", "לחלק את שני האגפים ב- $\\cos(x)$"], answer: [0] },
+    { type: "step", label: "הוצאת קוסינוס כגורם משותף", equation: "\\cos(x)(2\\sin(x) - 1) = 0", explanation: "הוצאת הגורם המשותף $\\cos(x)$. לעולם אל תחלק בביטוי עם נעלם כדי לא לאבד פתרונות אפשריים!" },
+    { type: "question", qType: "type", text: "פתור את $\\cos(x) = 0$. מצא את הזווית החיובית הקטנה ביותר במעלות:", answer: "90" },
+    { type: "question", qType: "type", text: "פתור את $2\\sin(x) - 1 = 0 \\implies \\sin(x) = 0.5$. מצא את הזווית החיובית הקטנה ביותר במעלות:", answer: "30" },
+    { type: "step", label: "פתרונות ראשיים סופיים", equation: "x = 90^\\circ \\quad \\text{או} \\quad x = 30^\\circ", explanation: "הפתרונות הראשיים מתקבלים מחישוב $\\arccos(0) = 90^\\circ$ ו- $\\arcsin(0.5) = 30^\\circ$." }
+  ]
+},
+{
+  initialEquation: "\ \\quad \\frac{k}{2\\cos(x)} = \\frac{4k\\sin(x)}{3\\sin(4x)}",
+  steps: [
+    { type: "question", qType: "mc", text: "מכיוון שנתון לנו כי $k > 0$, במה נוכל לחלק את שני האגפים בבטחה כדי לפשט את המשוואה?", options: ["$k$", "$2\\cos(x)$", "$3\\sin(4x)$"], answer: [0] },
+    { type: "step", label: "חלוקה ב- k", equation: "\\frac{1}{2\\cos(x)} = \\frac{4\\sin(x)}{3\\sin(4x)}", explanation: "מכיוון ש- $k \\neq 0$, חלוקת שני האגפים ב- $k$ מסירה את הקבוע מבלי לאבד פתרונות." },
+    { type: "step", label: "כפל במכנים", equation: "3\\sin(4x) = 4\\sin(x) \\cdot 2\\cos(x)", explanation: "כפל בהצלבה כדי להיפטר מהשברים." },
+    { type: "step", label: "פישוט אגף ימין", equation: "3\\sin(4x) = 8\\sin(x)\\cos(x)", explanation: "הכפלת הקבועים $4 \\cdot 2 = 8$." },
+    { type: "question", qType: "mc", text: "כיצד עלינו לפתח את $\\sin(4x)$ באמצעות זהות זווית כפולה?", options: ["$2\\sin(2x)\\cos(2x)$", "$4\\sin(x)\\cos(x)$", "$\\sin^2(2x) - \\cos^2(2x)$"], answer: [0] },
+    { type: "step", label: "יישום זהות זווית כפולה", equation: "3(2\\sin(2x)\\cos(2x)) = 8\\sin(x)\\cos(x)", explanation: "פיתוח $\\sin(4x)$ בעזרת $\\sin(2\\alpha) = 2\\sin(\\alpha)\\cos(\\alpha)$ כאשר $\\alpha = 2x$." },
+    { type: "step", label: "פישוט אגף שמאל", equation: "6\\sin(2x)\\cos(2x) = 8\\sin(x)\\cos(x)", explanation: "הכפלת הקבועים $3 \\cdot 2 = 6$." },
+    { type: "question", qType: "mc", text: "כיצד עלינו לפתח את $\\sin(2x)$ כדי להתאים לאיברים באגף ימין?", options: ["$2\\sin(x)\\cos(x)$", "$\\cos^2(x) - \\sin^2(x)$"], answer: [0] },
+    { type: "step", label: "יישום זהות זווית כפולה פעם נוספת", equation: "6(2\\sin(x)\\cos(x))\\cos(2x) = 8\\sin(x)\\cos(x)", explanation: "פיתוח $\\sin(2x)$ ל- $2\\sin(x)\\cos(x)$." },
+    { type: "step", label: "פישוט אגף שמאל", equation: "12\\sin(x)\\cos(x)\\cos(2x) = 8\\sin(x)\\cos(x)", explanation: "הכפלת הקבועים $6 \\cdot 2 = 12$." },
+    { type: "question", qType: "mc", text: "בהינתן ש- $\\sin(x) > 0$ ו- $\\cos(x) > 0$, במה נוכל לחלק את שני האגפים מבלי לאבד פתרונות אפשריים?", options: ["$\\sin(x)\\cos(x)$", "$\\cos(2x)$", "$12$"], answer: [0] },
+    { type: "step", label: "חלוקה באיברים משותפים", equation: "12\\cos(2x) = 8", explanation: "כיוון שנתון ש- $\\sin(x)$ ו- $\\cos(x)$ חיוביים ממש (לא אפס), מותר לחלק את שני האגפים ב- $\\sin(x)\\cos(x)$." },
+    { type: "step", label: "חלוקה ב- 12", equation: "\\cos(2x) = \\frac{8}{12} = \\frac{2}{3}", explanation: "חלוקה ב-12 לבידוד הפונקציה הטריגונומטרית." },
+    { type: "question", qType: "type", text: "פתור את $2x$ במעלות (עגל למקום עשרוני אחד):", answer: "48.2" },
+    { type: "step", label: "מציאת 2x", equation: "2x \\approx 48.2^{\\circ}", explanation: "חישוב הפונקציה ההפוכה: $\\arccos(2/3) \\approx 48.19^{\\circ}$." },
+    { type: "step", label: "מציאת x", equation: "x \\approx 24.1^{\\circ}", explanation: "חלוקה ב-2 לקבלת הזווית הסופית $x$." }
+  ]
+},
+      {
+        initialEquation: "\\sin^2(x) = \\cos(x)",
+        steps: [
+          { type: "question", qType: "mc", text: "איזו זהות קושרת בין $\\sin^2(x)$ ל- $\\cos(x)$?", options: ["$\\sin^2(x) = 1 - \\cos^2(x)$", "$\\sin^2(x) = 1 + \\cos^2(x)$"], answer: [0] },
+          { type: "step", label: "הצב זהות", equation: "1 - \\cos^2(x) = \\cos(x)", explanation: "החלפת $\\sin^2(x)$ לקבלת משוואה כולה במונחי קוסינוס." },
+          { type: "question", qType: "mc", text: "מאיזו צורה המשוואה הזו?", options: ["לינארית", "ריבועית במונחים של $\\cos(x)$"], answer: [1] },
+          { type: "step", label: "סדר איברים", equation: "\\cos^2(x) + \\cos(x) - 1 = 0", explanation: "העברת הכל לאגף אחד לקבלת $u^2 + u - 1 = 0$." },
+          { type: "step", label: "נוסחת השורשים", equation: "\\cos(x) = \\frac{-1 \\pm \\sqrt{1 - 4(1)(-1)}}{2} = \\frac{-1 \\pm \\sqrt{5}}{2}", explanation: "הפעלת $x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$." },
+          { type: "question", qType: "type", text: "מהו הערך המקורב של השורש החיובי (3 מקומות עשרוניים)?", answer: "0.618" },
+          { type: "step", label: "בחר שורש חוקי", equation: "\\cos(x) \\approx 0.618", explanation: "השורש השני הוא בערך $-1.618$, מחוץ לטווח הקוסינוס $[-1, 1]$." },
+          { type: "question", qType: "type", text: "פתור עבור $x$ במעלות (מקום עשרוני אחד):", answer: "51.8" },
+          { type: "step", label: "פתור עבור x", equation: "x = 51.8^\\circ", explanation: "חישוב $\\arccos(0.618)$." }
+        ]
+      },
+      {
+        initialEquation: "\\tan^2(x) = -1 + 2\\tan(-x)",
+        steps: [
+          { type: "question", qType: "mc", text: "מהי הזהות עבור $\\tan(-x)$?", options: ["$\\tan(x)$", "$-\\tan(x)$"], answer: [1] },
+          { type: "step", label: "יישם זהות זוגיות", equation: "\\tan^2(x) = -1 - 2\\tan(x)", explanation: "טנגנס היא פונקציה אי-זוגית, לכן $\\tan(-\\alpha) = -\\tan(\\alpha)$." },
+          { type: "step", label: "סדר למשוואה ריבועית", equation: "\\tan^2(x) + 2\\tan(x) + 1 = 0", explanation: "העברת כל האיברים לאגף שמאל." },
+          { type: "question", qType: "mc", text: "כיצד ניתן לפרק משוואה ריבועית זו?", options: ["ריבוע שלם $(a+b)^2=0$", "הפרש ריבועים"], answer: [0] },
+          { type: "step", label: "פרק ריבוע שלם", equation: "(\\tan(x) + 1)^2 = 0", explanation: "המשוואה הריבועית היא מהצורה $u^2 + 2u + 1 = (u+1)^2$." },
+          { type: "step", label: "בודד את הטנגנס", equation: "\\tan(x) = -1", explanation: "הוצאת שורש ריבועי משני האגפים והחסרת 1." },
+          { type: "question", qType: "type", text: "מצא את הערך הראשי של $x$ במעלות:", answer: "-45" },
+          { type: "step", label: "פתור עבור x", equation: "x = -45^\\circ", explanation: "חישוב $\\arctan(-1)$." }
+        ]
+      },
+      {
+        initialEquation: "\\tan^5(x) = \\tan(x)",
+        steps: [
+          { type: "step", label: "סדר איברים", equation: "\\tan^5(x) - \\tan(x) = 0", explanation: "העברת כל האיברים לאגף שמאל." },
+          { type: "question", qType: "mc", text: "מהו הצעד הראשון בפירוק לגורמים?", options: ["נחלק ב- $\\tan(x)$", "נוציא את $\\tan(x)$ כגורם משותף"], answer: [1] },
+          { type: "step", label: "הוצא טנגנס כגורם", equation: "\\tan(x)(\\tan^4(x) - 1) = 0", explanation: "לעולם אל תחלק בביטוי הכולל משתנה, שכן אתה עלול לאבד פתרונות." },
+          { type: "question", qType: "mc", text: "כיצד ניתן לפרק את $\\tan^4(x) - 1$?", options: ["הפרש ריבועים", "ריבוע שלם"], answer: [0] },
+          { type: "step", label: "הפרש ריבועים", equation: "\\tan(x)(\\tan^2(x) - 1)(\\tan^2(x) + 1) = 0", explanation: "שימוש ב- $a^2 - b^2 = (a-b)(a+b)$ כאשר $a = \\tan^2(x)$ ו- $b = 1$." },
+          { type: "step", label: "נתח גורמים", equation: "\\tan^2(x) + 1 = 0 \\implies \\text{אין פתרון ממשי}", explanation: "מספר ממשי בריבוע אינו יכול להיות שלילי." },
+          { type: "step", label: "מקרים נותרים", equation: "\\tan(x) = 0 \\quad \\text{או} \\quad \\tan^2(x) = 1", explanation: "השוואת הגורמים הנותרים לאפס." },
+          { type: "question", qType: "type", text: "מצא את הזווית החיובית הקטנה ביותר עבור $\\tan(x) = 1$:", answer: "45" },
+          { type: "step", label: "מצא פתרונות ראשיים", equation: "x = 0^\\circ \\quad \\text{או} \\quad x = \\pm 45^\\circ", explanation: "פתרון $\\tan(x)=0$ ו- $\\tan(x)=\\pm 1$." }
+        ]
+      }
+    ];
+
+    // --- STREAMING_CHUNK:KaTeX Math Parser Component ---
+    const MathText = ({ text, block = false }) => {
+      if (!text) return null;
+      if (!text.includes('$')) {
+        if (block) {
+          try {
+            const html = window.katex.renderToString(text, { displayMode: true, throwOnError: false });
+            return <span className="math-ltr" dangerouslySetInnerHTML={{ __html: html }} />;
+          } catch (e) {
+            return <span className="math-ltr">{text}</span>;
+          }
+        }
+        return <span>{text}</span>;
+      }
+
+      const parts = text.split('$');
+      return (
+        <span>
+          {parts.map((part, i) => {
+            if (i % 2 === 1) {
+              try {
+                const html = window.katex.renderToString(part, { displayMode: false, throwOnError: false });
+                return <span key={i} className="math-ltr" dangerouslySetInnerHTML={{ __html: html }} />;
+              } catch (e) {
+                return <span key={i} className="math-ltr">{part}</span>;
+              }
+            }
+            return <span key={i}>{part}</span>;
+          })}
+        </span>
+      );
+    };
+
+    // --- STREAMING_CHUNK:Header Icons ---
+    const FormulaBookIcon = () => (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+    );
+    const CalculatorIcon = () => (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+    );
+    const CheckIcon = () => (
+      <svg className="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
+    );
+    const CloseIcon = () => (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    );
+
+    // --- STREAMING_CHUNK:Main App Component ---
+    function App() {
+      const [lang, setLang] = useState('he');
+      const [currentLevel, setCurrentLevel] = useState(0);
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const [completedQuestions, setCompletedQuestions] = useState({});
+      const [showIdentities, setShowIdentities] = useState(false);
+      const [showCalculator, setShowCalculator] = useState(false);
+      const endRef = useRef(null);
+
+      const t = TRANSLATIONS[lang];
+      const activeLevels = lang === 'he' ? LEVELS_HE : LEVELS_EN;
+
+      const levelData = activeLevels[currentLevel].steps;
+      const initialEq = activeLevels[currentLevel].initialEquation;
+      const isLevelFinished = currentIndex === levelData.length;
+
+      // Ensure user answers current question before progressing
+      const lastVisibleItem = currentIndex > 0 ? levelData[currentIndex - 1] : null;
+      const mustAnswerToContinue = lastVisibleItem && lastVisibleItem.type === 'question' && !completedQuestions[currentIndex - 1];
+
+      useEffect(() => {
+        setTimeout(() => endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 120);
+        if (isLevelFinished) triggerConfetti();
+      }, [currentIndex, currentLevel, isLevelFinished]);
+
+      const triggerConfetti = () => {
+        try {
+          window.confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+        } catch (e) {}
+      };
+
+      const advance = () => {
+        if (currentIndex < levelData.length) setCurrentIndex(prev => prev + 1);
+      };
+
+      const handleQuestionComplete = (idx) => {
+        setCompletedQuestions(prev => ({ ...prev, [idx]: true }));
+        advance();
+      };
+
+      const handleLevelChange = (e) => {
+        setCurrentLevel(Number(e.target.value));
+        setCurrentIndex(0);
+        setCompletedQuestions({});
+      };
+
+      const handleNextLevel = () => {
+        if (currentLevel < activeLevels.length - 1) {
+          setCurrentLevel(prev => prev + 1);
+          setCurrentIndex(0);
+          setCompletedQuestions({});
+        }
+      };
+
+      const isRTL = lang === 'he';
+
+      return (
+        <div className={`min-h-screen bg-slate-100 text-slate-800 pb-28 ${isRTL ? 'font-hebrew' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
+          <header className="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+            <div className="max-w-2xl mx-auto px-4 py-2.5 flex justify-between items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-lg font-bold text-indigo-600 tracking-tight whitespace-nowrap">{t.title}</h1>
+                <select 
+                  value={currentLevel} 
+                  onChange={handleLevelChange}
+                  className="py-1 px-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500 transition max-w-[140px] sm:max-w-xs truncate"
+                >
+                  {activeLevels.map((lvl, i) => (
+                    <option key={i} value={i}>{t.levelPrefix} {i + 1}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => setLang(prev => prev === 'en' ? 'he' : 'en')} className="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs rounded-lg border border-slate-300 transition">
+                  {lang === 'en' ? 'עברית' : 'EN'}
+                </button>
+                <button onClick={() => setShowIdentities(!showIdentities)} title={t.identitiesBtn} className={`p-2 rounded-lg border transition ${showIdentities ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'}`}>
+                  <FormulaBookIcon />
+                </button>
+                <button onClick={() => setShowCalculator(!showCalculator)} title={t.calcBtn} className={`p-2 rounded-lg border transition ${showCalculator ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'}`}>
+                  <CalculatorIcon />
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-2xl mx-auto p-3 sm:p-4 space-y-3">
+            <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 p-4 rounded-xl shadow-sm text-center">
+              <span className="text-[11px] font-bold tracking-wider text-indigo-500 uppercase bg-indigo-100/60 px-2.5 py-0.5 rounded-full">{t.initialProb}</span>
+              <div className="text-xl sm:text-2xl font-semibold text-slate-800 my-2 overflow-x-auto py-1">
+                <MathText text={initialEq} block />
+              </div>
+            </div>
+
+            {levelData.slice(0, currentIndex).map((item, idx) => (
+              <React.Fragment key={idx}>
+                {item.type === 'step' && (
+                  <div className="bg-white p-3.5 sm:p-4 rounded-xl shadow-sm border border-slate-200/80 transition-all flex flex-col space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wide">
+                        {t.stepPrefix} {idx + 1 - Object.keys(completedQuestions).filter(k => k < idx).length}: {item.label}
+                      </span>
+                    </div>
+                    <div className="text-center text-lg sm:text-xl py-1 text-slate-900 font-medium overflow-x-auto">
+                      <MathText text={item.equation} block />
+                    </div>
+                    {item.explanation && (
+                      <div className="text-xs sm:text-sm text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 leading-relaxed">
+                        <MathText text={item.explanation} />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {item.type === 'question' && (
+                  <QuestionCard 
+                    item={item} 
+                    isCompleted={completedQuestions[idx]} 
+                    onComplete={() => handleQuestionComplete(idx)}
+                    t={t}
+                    isRTL={isRTL}
+                  />
+                )}
+              </React.Fragment>
+            ))}
+
+            {!isLevelFinished && !mustAnswerToContinue && (
+              <div className="pt-2 flex justify-center">
+                <button onClick={advance} className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                  <span>{t.revealBtn}</span>
+                  <svg className={`w-4 h-4 `} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+              </div>
+            )}
+
+            {isLevelFinished && (
+              <div className="bg-emerald-50 border border-emerald-200 p-5 rounded-xl text-center space-y-3 shadow-sm animate-fade-in">
+                <div className="text-emerald-700 font-bold text-lg">{t.levelPrefix} {currentLevel + 1} {t.levelSolved}</div>
+                <p className="text-xs sm:text-sm text-emerald-600">{t.greatWork}</p>
+                {currentLevel < activeLevels.length - 1 ? (
+                  <button onClick={handleNextLevel} className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-lg shadow transition active:scale-95 inline-flex items-center gap-2">
+                    <span>{t.nextLevel}</span>
+                    <svg className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                  </button>
+                ) : (
+                  <div className="text-xs font-semibold text-emerald-800 bg-emerald-100 py-1.5 px-3 rounded-lg inline-block">{t.allDone}</div>
+                )}
+              </div>
+            )}
+            <div ref={endRef} />
+          </main>
+
+          {showIdentities && (
+            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[82vh] flex flex-col overflow-hidden">
+                <div className="p-3.5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                  <h2 className="font-bold text-slate-800 text-base flex items-center gap-2"><FormulaBookIcon /> {t.identitiesRef}</h2>
+                  <button onClick={() => setShowIdentities(false)} className="text-slate-400 hover:text-slate-700 p-1 rounded-lg"><CloseIcon /></button>
+                </div>
+                <div className="p-4 overflow-y-auto space-y-2.5">
+                  {IDENTITIES.map((id, i) => (
+                    <div key={i} className="text-center bg-slate-50 py-2.5 px-3 rounded-lg border border-slate-200/70 overflow-x-auto text-sm sm:text-base" dir="ltr">
+                      <MathText text={id} block />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showCalculator && <CalculatorModal onClose={() => setShowCalculator(false)} t={t} />}
+        </div>
+      );
+    }
+
+    // --- STREAMING_CHUNK:Interactive Question Card Component ---
+    function QuestionCard({ item, isCompleted, onComplete, t, isRTL }) {
+      const [numInput, setNumInput] = useState('');
+      const [selectedOption, setSelectedOption] = useState(null);
+      const [errorMessage, setErrorMessage] = useState('');
+
+      if (isCompleted) {
+        return (
+          <div className="bg-emerald-50/80 border border-emerald-200 py-1.5 px-3 rounded-lg flex items-center justify-between text-emerald-800 text-xs sm:text-sm shadow-xs transition-all">
+            <div className="flex items-center gap-2 truncate">
+              <CheckIcon />
+              <span className="font-medium truncate"><MathText text={item.text} /></span>
+            </div>
+            <span className={`font-bold text-[11px] text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded ${isRTL ? 'mr-2' : 'ml-2'}`}>{t.answered}</span>
+          </div>
+        );
+      }
+
+      const submitMC = () => {
+        if (selectedOption === null) return;
+        if (item.answer.includes(selectedOption)) {
+          setErrorMessage('');
+          onComplete();
+        } else {
+          setErrorMessage(t.errOption);
+        }
+      };
+
+      const checkNumber = () => {
+        const val = parseFloat(numInput);
+        const expected = parseFloat(item.answer);
+        if (!isNaN(val) && Math.abs(val - expected) <= 0.2) {
+          setErrorMessage('');
+          onComplete();
+        } else {
+          setErrorMessage(t.errResult);
+        }
+      };
+
+      return (
+        <div className="bg-amber-50/80 p-4 rounded-xl shadow-xs border border-amber-200 transition-all">
+          <div className="text-amber-950 font-semibold mb-3 flex items-start gap-2.5 text-sm sm:text-base">
+            <span className="bg-amber-200 text-amber-900 w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-xs font-bold mt-0.5">?</span>
+            <span><MathText text={item.text} /></span>
+          </div>
+
+          {item.qType === 'mc' && (
+            <div className="space-y-2">
+              {item.options.map((opt, i) => (
+                <button 
+                  key={i} 
+                  onClick={() => { setSelectedOption(i); setErrorMessage(''); }}
+                  className={`w-full ${isRTL ? 'text-right' : 'text-left'} px-3.5 py-2.5 bg-white border ${selectedOption === i ? 'border-indigo-500 bg-indigo-50 shadow-md' : 'border-amber-200/80'} rounded-lg hover:border-indigo-400 transition font-medium text-xs sm:text-sm text-slate-800`}
+                >
+                  <MathText text={opt} />
+                </button>
+              ))}
+              <div className="pt-2">
+                <button 
+                  onClick={submitMC} 
+                  disabled={selectedOption === null} 
+                  className={`w-full py-2 rounded-lg font-medium text-xs sm:text-sm transition shadow-xs ${selectedOption !== null ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-200 text-slate-400'}`}
+                >
+                  {t.submit}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {(item.qType === 'number' || item.qType === 'type') && (
+            <div className="space-y-2.5">
+              <input 
+                type="number" step="any" value={numInput} 
+                onChange={e => { setNumInput(e.target.value); setErrorMessage(''); }} 
+                className="w-full p-2.5 bg-white rounded-lg border border-amber-300 outline-none focus:ring-2 focus:ring-indigo-500 text-sm" dir="ltr"
+              />
+              <div className="flex gap-2">
+                <button onClick={checkNumber} className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition font-medium text-xs sm:text-sm shadow-xs">{t.submit}</button>
+                <button onClick={onComplete} className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition font-medium text-xs sm:text-sm">{t.skip}</button>
+              </div>
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className="mt-2.5 text-xs text-rose-600 bg-rose-50 border border-rose-200 p-2 rounded-md font-medium">{errorMessage}</div>
+          )}
+        </div>
+      );
+    }
+
+    // --- STREAMING_CHUNK:Scientific Calculator Component ---
+    function CalculatorModal({ onClose, t }) {
+      const [display, setDisplay] = useState('');
+      const append = (str) => setDisplay(prev => prev + str);
+      const clear = () => setDisplay('');
+      const backspace = () => setDisplay(prev => prev.slice(0, -1));
+
+      const evaluate = () => {
+        if (!display.trim()) return;
+        try {
+          let raw = display.replace(/arcsin/g, 'ASIN').replace(/arccos/g, 'ACOS').replace(/arctan/g, 'ATAN').replace(/sin/g, 'DSIN').replace(/cos/g, 'DCOS').replace(/tan/g, 'DTAN').replace(/sqrt/g, 'SQRT').replace(/\^/g, '**');
+          const d2r = Math.PI / 180;
+          const r2d = 180 / Math.PI;
+          const scope = {
+            ASIN: (x) => Math.asin(x) * r2d, ACOS: (x) => Math.acos(x) * r2d, ATAN: (x) => Math.atan(x) * r2d,
+            DSIN: (x) => Math.sin(x * d2r), DCOS: (x) => Math.cos(x * d2r), DTAN: (x) => Math.tan(x * d2r),
+            SQRT: Math.sqrt
+          };
+          const calcFunc = new Function(...Object.keys(scope), 'return ' + raw);
+          const result = calcFunc(...Object.values(scope));
+          if (typeof result !== 'number' || isNaN(result) || !isFinite(result)) throw new Error('Invalid');
+          setDisplay(Number(result.toFixed(4)).toString());
+        } catch (e) {
+          setDisplay('Error');
+          setTimeout(() => setDisplay(''), 900);
+        }
+      };
+
+      const btns = ['sin(', 'cos(', 'tan(', '(', ')', 'arcsin(', 'arccos(', 'arctan(', 'sqrt(', '/', '7', '8', '9', '*', '-', '4', '5', '6', '+', 'C', '1', '2', '3', '<', '=', '0', '.', ''];
+
+      return (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 p-4 rounded-2xl w-full max-w-xs text-white flex flex-col gap-3 shadow-2xl border border-slate-700" dir="ltr">
+            <div className="flex justify-between items-center" dir="rtl">
+              <button onClick={onClose} className="text-slate-400 hover:text-white p-1 bg-slate-800 rounded-full"><CloseIcon /></button>
+              <span className="text-[10px] font-bold uppercase tracking-widest bg-indigo-900/80 text-indigo-300 px-2 py-0.5 rounded border border-indigo-700/50">{t.degMode}</span>
+            </div>
+            <div className="bg-slate-950 p-2.5 rounded-xl text-right text-xl h-14 flex items-center justify-end overflow-hidden whitespace-nowrap border border-slate-800 font-mono tracking-wide text-indigo-300 shadow-inner">
+              {display || '0'}
+            </div>
+            <div className="grid grid-cols-5 gap-1.5" dir="ltr">
+              {btns.map((b, i) => (
+                <button key={i} onClick={() => { if (b === 'C') clear(); else if (b === '<') backspace(); else if (b === '=') evaluate(); else if (b) append(b); }} className={`p-2 rounded-lg text-xs font-semibold flex items-center justify-center transition active:scale-95 ${!b ? 'invisible' : ''} ${b === '=' ? 'bg-indigo-600 hover:bg-indigo-500 text-white col-span-1' : ['C','<'].includes(b) ? 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/30' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/50'}`}>
+                  {b === 'sqrt(' ? '√' : b}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

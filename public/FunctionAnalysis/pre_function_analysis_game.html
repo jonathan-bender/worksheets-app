@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pre-Function Analysis Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            touch-action: pan-y;
+        }
+        #game-canvas {
+            touch-action: none; /* Crucial for drawing on mobile */
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+        .step-hidden {
+            display: none;
+        }
+        .step-collapsed {
+            padding: 12px 20px !important;
+            opacity: 0.7;
+        }
+        .step-collapsed h3 {
+            margin-bottom: 0 !important;
+            font-size: 1rem !important;
+        }
+        .step-collapsed .step-content {
+            display: none;
+        }
+        .check-icon {
+            display: none;
+        }
+        .step-collapsed .check-icon {
+            display: block;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col" dir="rtl">
+
+<div class="max-w-4xl mx-auto w-full p-4 flex-1 flex flex-col relative">
+    
+    <!-- Language Selector -->
+    <div class="absolute top-4 end-4">
+        <select id="lang-selector" onchange="changeLanguage(this.value)" class="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2 shadow-sm">
+            <option value="he" selected>עברית</option>
+            <option value="en">English</option>
+        </select>
+    </div>
+
+    <header class="text-center mb-6 mt-10 md:mt-0">
+        <h1 class="text-3xl font-bold text-indigo-600 mb-2" id="t-title">ניתוח קדם-פונקציה</h1>
+        <div id="level-indicator" class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">שלב 1 מתוך 8</div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 inline-block px-8" dir="ltr">
+            <h2 class="text-2xl font-bold text-slate-700" id="function-display">f(x) = (x+3)(x-2)</h2>
+        </div>
+    </header>
+
+    <div class="flex flex-col md:flex-row md:items-start gap-6 flex-1">
+        <!-- Canvas Section -->
+        <div class="flex-1 bg-white rounded-2xl shadow-md border border-slate-200 p-2 flex flex-col relative w-full md:sticky md:top-4">
+            <canvas id="game-canvas" class="w-full aspect-square md:aspect-[4/3] rounded-xl bg-slate-50 cursor-crosshair"></canvas>
+            <!-- Root Type Menu (Hidden by default) -->
+            <div id="root-type-menu" class="absolute hidden bg-white shadow-lg border border-slate-200 rounded-lg p-2 z-10 text-sm flex flex-col gap-1 w-48">
+                <div class="text-xs font-bold text-slate-400 uppercase mb-1" id="t-root-menu-title">התנהגות שורש</div>
+                <button class="text-start px-3 py-1.5 hover:bg-indigo-50 rounded" onclick="selectRootType('intersection')" id="t-root-int">חיתוך (חוצה)</button>
+                <button class="text-start px-3 py-1.5 hover:bg-indigo-50 rounded" onclick="selectRootType('extremum')" id="t-root-ext">קיצון (משיק/קופץ)</button>
+                <button class="text-start px-3 py-1.5 hover:bg-indigo-50 rounded" onclick="selectRootType('inflection')" id="t-root-infl">פיתול (משתטח)</button>
+            </div>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="w-full md:w-80 flex flex-col gap-4">
+            
+            <!-- Step 1 -->
+            <div id="step-1" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 transition-all duration-300">
+                <h3 class="font-bold text-lg mb-2 text-indigo-600 flex justify-between items-center">
+                    <span id="t-step1-title">שלב 1: נקודות חיתוך עם ציר x</span>
+                    <svg class="w-5 h-5 text-green-500 check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </h3>
+                <div class="step-content">
+                    <p class="text-sm text-slate-600 mb-4" id="t-step1-desc">הקש על ציר ה-x כדי למקם את שורשי הפונקציה.</p>
+                    <button id="btn-check-1" class="w-full bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition" onclick="checkStep1()"><span id="t-step1-btn">בדוק שורשים</span></button>
+                    <div id="feedback-1" class="text-sm font-medium mt-2 hidden text-center"></div>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div id="step-2" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 step-hidden opacity-50 transition-all duration-300">
+                <h3 class="font-bold text-lg mb-2 text-indigo-600 flex justify-between items-center">
+                    <span id="t-step2-title">שלב 2: התנהגות השורשים</span>
+                    <svg class="w-5 h-5 text-green-500 check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </h3>
+                <div class="step-content">
+                    <p class="text-sm text-slate-600 mb-4" id="t-step2-desc">הקש על כל נקודת שורש שמיקמת כדי לקבוע את התנהגותה לפי החזקה שלה.</p>
+                    <button id="btn-check-2" class="w-full bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition" onclick="checkStep2()" disabled><span id="t-step2-btn">בדוק התנהגות</span></button>
+                    <div id="feedback-2" class="text-sm font-medium mt-2 hidden text-center"></div>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div id="step-3" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 step-hidden opacity-50 transition-all duration-300">
+                <h3 class="font-bold text-lg mb-2 text-indigo-600 flex justify-between items-center">
+                    <span id="t-step3-title">שלב 3: התנהגות באינסוף</span>
+                    <svg class="w-5 h-5 text-green-500 check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </h3>
+                <div class="step-content">
+                    <p class="text-sm text-slate-600 mb-3" id="t-step3-desc">כיצד מתנהגת הפונקציה באינסוף?</p>
+                    <div class="grid grid-cols-2 gap-2 mb-4" dir="ltr">
+                        <button class="end-behavior-btn border border-slate-300 py-2 rounded-lg hover:bg-indigo-50 focus:bg-indigo-100 focus:border-indigo-500 transition" onclick="selectEndBehavior('x_even')" id="t-btn-xe">xⁿ (n זוגי)</button>
+                        <button class="end-behavior-btn border border-slate-300 py-2 rounded-lg hover:bg-indigo-50 focus:bg-indigo-100 focus:border-indigo-500 transition" onclick="selectEndBehavior('x_odd')" id="t-btn-xo">xⁿ (n אי זוגי)</button>
+                        <button class="end-behavior-btn border border-slate-300 py-2 rounded-lg hover:bg-indigo-50 focus:bg-indigo-100 focus:border-indigo-500 transition" onclick="selectEndBehavior('-x_even')" id="t-btn-mxe">-xⁿ (n זוגי)</button>
+                        <button class="end-behavior-btn border border-slate-300 py-2 rounded-lg hover:bg-indigo-50 focus:bg-indigo-100 focus:border-indigo-500 transition" onclick="selectEndBehavior('-x_odd')" id="t-btn-mxo">-xⁿ (n אי זוגי)</button>
+                    </div>
+                    <button id="btn-check-3" class="w-full bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition" onclick="checkStep3()" disabled><span id="t-step3-btn">בדוק התנהגות באינסוף</span></button>
+                    <div id="feedback-3" class="text-sm font-medium mt-2 hidden text-center"></div>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div id="step-4" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 step-hidden opacity-50 transition-all duration-300">
+                <h3 class="font-bold text-lg mb-2 text-indigo-600 flex justify-between items-center">
+                    <span id="t-step4-title">שלב 4: סרטוט גרף</span>
+                    <svg class="w-5 h-5 text-green-500 check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </h3>
+                <div class="step-content">
+                    <p class="text-sm text-slate-600 mb-4" id="t-step4-desc">צייר את הפונקציה העוברת דרך השורשים עם ההתנהגות המתאימה.</p>
+                    <div class="flex gap-2 mb-2">
+                        <button class="flex-1 bg-slate-200 text-slate-700 font-medium py-2 rounded-lg hover:bg-slate-300 transition" onclick="clearDrawing()" id="t-step4-clear">נקה</button>
+                        <button id="btn-check-4" class="flex-[2] bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition" onclick="checkStep4()" disabled><span id="t-step4-btn">בדוק סרטוט</span></button>
+                    </div>
+                    <div id="feedback-4" class="text-sm font-medium mt-2 hidden text-center"></div>
+                </div>
+            </div>
+            
+            <button id="btn-next-level" class="w-full bg-green-500 text-white font-bold py-3 rounded-xl hover:bg-green-600 transition shadow-lg hidden mt-2" onclick="nextLevel()"><span id="t-next-level">לשלב הבא</span></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Translations Dictionary
+    const i18n = {
+        he: {
+            title: "קדם אנליזה",
+            level_indicator: (c, t) => `שלב ${c} מתוך ${t}`,
+            step1_title: "שלב 1: נקודות חיתוך עם ציר x",
+            step1_desc: "הקש על ציר ה-x כדי למקם את שורשי הפונקציה.",
+            step1_btn: "בדוק נקודות חיתוך",
+            step2_title: "שלב 2: התנהגות השורשים",
+            step2_desc: "הקש על כל נקודת שורש שמיקמת כדי לקבוע את התנהגותה לפי החזקה שלה.",
+            step2_btn: "בדוק התנהגות",
+            step3_title: "שלב 3: התנהגות באינסוף",
+            step3_desc: "כיצד מתנהגת הפונקציה באינסוף?",
+            btn_xe: "xⁿ (זוגי n)",
+            btn_xo: "xⁿ (אי זוגי n)",
+            btn_mxe: "-xⁿ (זוגי n)",
+            btn_mxo: "-xⁿ (אי זוגי n)",
+            step3_btn: "בדוק התנהגות באינסוף",
+            step4_title: "שלב 4: סרטוט גרף",
+            step4_desc: "צייר את הפונקציה העוברת דרך השורשים עם ההתנהגות המתאימה.",
+            step4_clear: "נקה",
+            step4_btn: "בדוק סרטוט",
+            next_level: "לשלב הבא",
+            course_completed: "הקורס הושלם!",
+            root_menu_title: "התנהגות שורש",
+            root_int: "חיתוך",
+            root_ext: "קיצון",
+            root_infl: "פיתול",
+            short_int: "חיתוך",
+            short_ext: "קיצון",
+            short_infl: "פיתול",
+            fb1_incorrect_count: (c) => `לא נכון. לפונקציה יש ${c} שורש(ים).`,
+            fb1_correct: "כל הכבוד! מצאת את כל נקודות החיתוך.",
+            fb1_incorrect_pos: "חלק מהשורשים חסרים או לא נכונים. נסה שוב.",
+            fb2_missing: "אנא בחר התנהגות לכל שורש על ידי לחיצה עליו.",
+            fb2_correct: "נכון מאוד! ההתנהגויות הותאמו בהצלחה.",
+            fb2_incorrect: "חלק מההתנהגויות אינן נכונות. רמז: בדוק את החזקות.",
+            fb3_missing: "אנא בחר אפשרות קודם.",
+            fb3_correct: "התנהגות נכונה באינסוף!",
+            fb3_incorrect: "לא נכון. התחשב באיבר בעל החזקה הגבוהה ביותר של הפולינום.",
+            fb4_missing: "אנא סרטט את הפונקציה קודם.",
+            fb4_incorrect_end: "התנהגות שגויה באינסוף בסרטוט שלך. היכן הוא מתחיל ומסתיים?",
+            fb4_incorrect_roots: "וודא שהקו עובר בדיוק דרך השורשים שמצאת!",
+            fb4_incorrect_regions: "האזורים החיוביים והשליליים של הפונקציה שסרטטת אינם תואמים. בדוק שוב היכן הגרף מעל ומתחת לציר ה-x.",
+            fb4_correct: "עבודה מצוינת! זה נראה דומה מאוד לגרף האמיתי. (פתרון מדויק מוצג בירוק)"
+        },
+        en: {
+            title: "Pre-Function Analysis",
+            level_indicator: (c, t) => `Level ${c} of ${t}`,
+            step1_title: "Step 1: x-Intercepts",
+            step1_desc: "Tap on the x-axis to place the roots of the function.",
+            step1_btn: "Check Roots",
+            step2_title: "Step 2: Root Behavior",
+            step2_desc: "Tap each root point you placed to set its behavior based on its power.",
+            step2_btn: "Check Behaviors",
+            step3_title: "Step 3: End Behavior",
+            step3_desc: "How does the function behave at infinity?",
+            btn_xe: "xⁿ (n even)",
+            btn_xo: "xⁿ (n odd)",
+            btn_mxe: "-xⁿ (n even)",
+            btn_mxo: "-xⁿ (n odd)",
+            step3_btn: "Check End Behavior",
+            step4_title: "Step 4: Sketch Graph",
+            step4_desc: "Draw the function passing through the roots with correct behaviors.",
+            step4_clear: "Clear",
+            step4_btn: "Check Drawing",
+            next_level: "Next Level",
+            course_completed: "Course Completed!",
+            root_menu_title: "Root Behavior",
+            root_int: "Intersection (crosses)",
+            root_ext: "Extremum (touches/bounces)",
+            root_infl: "Inflection (flattens)",
+            short_int: "Int.",
+            short_ext: "Ext.",
+            short_infl: "Infl.",
+            fb1_incorrect_count: (c) => `Incorrect. The function has ${c} root(s).`,
+            fb1_correct: "Correct! You found all x-intercepts.",
+            fb1_incorrect_pos: "Some roots are incorrect or missing. Try again.",
+            fb2_missing: "Please select a behavior for each root by tapping on them.",
+            fb2_correct: "Correct! Behaviors matched perfectly.",
+            fb2_incorrect: "One or more behaviors are incorrect. Hint: Check powers.",
+            fb3_missing: "Please select an option first.",
+            fb3_correct: "Correct end behavior!",
+            fb3_incorrect: "Incorrect. Consider the highest degree term of the expanded polynomial.",
+            fb4_missing: "Please sketch the function first.",
+            fb4_incorrect_end: "Incorrect end behavior in your sketch. Where does it start and end?",
+            fb4_incorrect_roots: "Make sure your line passes precisely through the roots you found!",
+            fb4_incorrect_regions: "The positive and negative regions of your sketch do not match. Re-check where the graph should be above and below the x-axis.",
+            fb4_correct: "Great job! That looks very similar to the actual graph. (Exact solution shown in green)"
+        }
+    };
+
+    let currentLang = 'he';
+
+    function changeLanguage(lang) {
+        currentLang = lang;
+        document.body.dir = lang === 'he' ? 'rtl' : 'ltr';
+        
+        const t = i18n[lang];
+        document.getElementById('t-title').textContent = t.title;
+        document.getElementById('level-indicator').textContent = t.level_indicator(currentLevel + 1, levels.length);
+        document.getElementById('t-step1-title').textContent = t.step1_title;
+        document.getElementById('t-step1-desc').textContent = t.step1_desc;
+        document.getElementById('t-step1-btn').textContent = t.step1_btn;
+        document.getElementById('t-step2-title').textContent = t.step2_title;
+        document.getElementById('t-step2-desc').textContent = t.step2_desc;
+        document.getElementById('t-step2-btn').textContent = t.step2_btn;
+        document.getElementById('t-step3-title').textContent = t.step3_title;
+        document.getElementById('t-step3-desc').textContent = t.step3_desc;
+        document.getElementById('t-btn-xe').textContent = t.btn_xe;
+        document.getElementById('t-btn-xo').textContent = t.btn_xo;
+        document.getElementById('t-btn-mxe').textContent = t.btn_mxe;
+        document.getElementById('t-btn-mxo').textContent = t.btn_mxo;
+        document.getElementById('t-step3-btn').textContent = t.step3_btn;
+        document.getElementById('t-step4-title').textContent = t.step4_title;
+        document.getElementById('t-step4-desc').textContent = t.step4_desc;
+        document.getElementById('t-step4-clear').textContent = t.step4_clear;
+        document.getElementById('t-step4-btn').textContent = t.step4_btn;
+        
+        if (currentLevel < levels.length - 1 || document.getElementById('btn-next-level').onclick !== null) {
+            document.getElementById('t-next-level').textContent = t.next_level;
+        } else {
+            document.getElementById('t-next-level').textContent = t.course_completed;
+        }
+
+        document.getElementById('t-root-menu-title').textContent = t.root_menu_title;
+        document.getElementById('t-root-int').textContent = t.root_int;
+        document.getElementById('t-root-ext').textContent = t.root_ext;
+        document.getElementById('t-root-infl').textContent = t.root_infl;
+
+        // Clear feedbacks on language change to prevent untranslated text
+        [1,2,3,4].forEach(i => {
+            const fb = document.getElementById(`feedback-${i}`);
+            if(!fb.classList.contains('hidden') && !fb.dataset.persistent) {
+                fb.classList.add('hidden');
+            }
+        });
+
+        drawScene();
+    }
+
+    // Game Data
+    const levels = [
+        {
+            equation: "f(x) = (x-2)(x+2)",
+            roots: [
+                { x: -2, type: 'intersection' },
+                { x: 2, type: 'intersection' }
+            ],
+            endBehavior: 'x_even',
+            hasPowers: false,
+            mathFn: (x) => (x - 2) * (x + 2)
+        },
+        {
+            equation: "f(x) = -(x-1)(x+2)(x-3)",
+            roots: [
+                { x: -2, type: 'intersection' },
+                { x: 1, type: 'intersection' },
+                { x: 3, type: 'intersection' }
+            ],
+            endBehavior: '-x_odd',
+            hasPowers: false,
+            mathFn: (x) => -(x - 1) * (x + 2) * (x - 3)
+        },
+        {
+            equation: "f(x) = (x-2)²(x+3)",
+            roots: [
+                { x: -3, type: 'intersection' },
+                { x: 2, type: 'extremum' }
+            ],
+            endBehavior: 'x_odd',
+            hasPowers: true,
+            mathFn: (x) => Math.pow(x - 2, 2) * (x + 3)
+        },
+        {
+            equation: "f(x) = -(x-1)³(x+2)",
+            roots: [
+                { x: -2, type: 'intersection' },
+                { x: 1, type: 'inflection' }
+            ],
+            endBehavior: '-x_even',
+            hasPowers: true,
+            mathFn: (x) => -Math.pow(x - 1, 3) * (x + 2)
+        },
+        {
+            equation: "f(x) = (x-2)²(x+2)²",
+            roots: [
+                { x: -2, type: 'extremum' },
+                { x: 2, type: 'extremum' }
+            ],
+            endBehavior: 'x_even',
+            hasPowers: true,
+            mathFn: (x) => Math.pow(x - 2, 2) * Math.pow(x + 2, 2)
+        },
+        {
+            equation: "f(x) = x(x-3)²(x+2)",
+            roots: [
+                { x: -2, type: 'intersection' },
+                { x: 0, type: 'intersection' },
+                { x: 3, type: 'extremum' }
+            ],
+            endBehavior: 'x_even',
+            hasPowers: true,
+            mathFn: (x) => x * Math.pow(x - 3, 2) * (x + 2)
+        },
+        {
+            equation: "f(x) = -(x+1)³(x-2)²",
+            roots: [
+                { x: -1, type: 'inflection' },
+                { x: 2, type: 'extremum' }
+            ],
+            endBehavior: '-x_odd',
+            hasPowers: true,
+            mathFn: (x) => -Math.pow(x + 1, 3) * Math.pow(x - 2, 2)
+        },
+        {
+            equation: "f(x) = (x-1)(x+1)(x-3)(x+3)",
+            roots: [
+                { x: -3, type: 'intersection' },
+                { x: -1, type: 'intersection' },
+                { x: 1, type: 'intersection' },
+                { x: 3, type: 'intersection' }
+            ],
+            endBehavior: 'x_even',
+            hasPowers: false,
+            mathFn: (x) => (x - 1) * (x + 1) * (x - 3) * (x + 3)
+        }
+    ];
+
+    // State variables
+    let currentLevel = 0;
+    let currentStep = 1;
+    let placedRoots = []; // {x, y, userType}
+    let selectedEndBehavior = null;
+    let drawingPath = [];
+    let isDrawing = false;
+    let selectedRootIndex = -1; // For step 2 menu
+    let showExactPlot = false;
+
+    // Canvas setup
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    const viewport = {
+        minX: -6, maxX: 6,
+        minY: -10, maxY: 10
+    };
+
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        drawScene();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // Coordinate mapping
+    function mapX(x) { return ((x - viewport.minX) / (viewport.maxX - viewport.minX)) * canvas.width; }
+    function mapY(y) { return canvas.height - ((y - viewport.minY) / (viewport.maxY - viewport.minY)) * canvas.height; }
+    function unmapX(px) { return (px / canvas.width) * (viewport.maxX - viewport.minX) + viewport.minX; }
+    function unmapY(py) { return viewport.minY + ((canvas.height - py) / canvas.height) * (viewport.maxY - viewport.minY); }
+
+    function drawScene() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw Grid
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for(let x = viewport.minX; x <= viewport.maxX; x++) {
+            ctx.moveTo(mapX(x), 0);
+            ctx.lineTo(mapX(x), canvas.height);
+        }
+        for(let y = viewport.minY; y <= viewport.maxY; y+=2) {
+            ctx.moveTo(0, mapY(y));
+            ctx.lineTo(canvas.width, mapY(y));
+        }
+        ctx.stroke();
+
+        // Draw Axes
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, mapY(0)); ctx.lineTo(canvas.width, mapY(0));
+        ctx.moveTo(mapX(0), 0); ctx.lineTo(mapX(0), canvas.height);
+        ctx.stroke();
+
+        // Axis labels
+        ctx.fillStyle = '#64748b';
+        ctx.font = '12px Inter';
+        ctx.direction = 'ltr';
+        for(let x = viewport.minX; x <= viewport.maxX; x++) {
+            if(x !== 0) ctx.fillText(x, mapX(x) - 4, mapY(0) + 15);
+        }
+
+        // Draw Placed Roots
+        const t = i18n[currentLang];
+        placedRoots.forEach((r, idx) => {
+            ctx.beginPath();
+            ctx.arc(mapX(r.x), mapY(0), 6, 0, Math.PI * 2);
+            ctx.fillStyle = (currentStep === 2 && idx === selectedRootIndex) ? '#f59e0b' : '#3b82f6';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Label type if set
+            if(r.userType) {
+                ctx.fillStyle = '#3b82f6';
+                ctx.font = '10px Inter';
+                let shortType = r.userType === 'intersection' ? t.short_int : r.userType === 'extremum' ? t.short_ext : t.short_infl;
+                ctx.fillText(shortType, mapX(r.x) - 10, mapY(0) - 15);
+            }
+        });
+
+        // Draw Path
+        if (drawingPath.length > 0) {
+            ctx.beginPath();
+            ctx.moveTo(mapX(drawingPath[0].x), mapY(drawingPath[0].y));
+            for(let i=1; i<drawingPath.length; i++) {
+                ctx.lineTo(mapX(drawingPath[i].x), mapY(drawingPath[i].y));
+            }
+            ctx.strokeStyle = '#ef4444'; // Red for drawing
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+        }
+
+        drawExactPlot();
+    }
+
+    function drawExactPlot() {
+        if (!showExactPlot) return;
+        const lvl = levels[currentLevel];
+        
+        let maxVal = 0.001;
+        for(let x = viewport.minX; x <= viewport.maxX; x += 0.1) {
+            let y = Math.abs(lvl.mathFn(x));
+            if(lvl.roots.length > 0 && x > Math.min(...lvl.roots.map(r=>r.x)) - 1 && x < Math.max(...lvl.roots.map(r=>r.x)) + 1) {
+                if (y > maxVal) maxVal = y;
+            }
+        }
+        
+        const scaleY = 7 / maxVal;
+
+        ctx.beginPath();
+        let first = true;
+        for(let px = 0; px <= canvas.width; px++) {
+            let rx = unmapX(px);
+            let ry = lvl.mathFn(rx) * scaleY;
+            if (first) {
+                ctx.moveTo(px, mapY(ry));
+                first = false;
+            } else {
+                ctx.lineTo(px, mapY(ry));
+            }
+        }
+        ctx.strokeStyle = '#10b981'; // Emerald 500
+        ctx.lineWidth = 3;
+        ctx.setLineDash([8, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]); 
+    }
+
+    function getPointerPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+            x: unmapX(clientX - rect.left),
+            y: unmapY(clientY - rect.top)
+        };
+    }
+
+    function handlePointerDown(e) {
+        e.preventDefault();
+        document.getElementById('root-type-menu').classList.add('hidden');
+        const pos = getPointerPos(e);
+
+        if (currentStep === 1) {
+            if (Math.abs(pos.y) < 2) { 
+                let snappedX = Math.round(pos.x);
+                if (!placedRoots.find(r => Math.abs(r.x - snappedX) < 0.2)) {
+                    placedRoots.push({ x: snappedX, userType: null });
+                } else {
+                    placedRoots = placedRoots.filter(r => Math.abs(r.x - snappedX) > 0.2);
+                }
+                drawScene();
+            }
+        } 
+        else if (currentStep === 2) {
+            let clickedIdx = placedRoots.findIndex(r => Math.abs(r.x - pos.x) < 0.5 && Math.abs(pos.y) < 2);
+            if (clickedIdx !== -1) {
+                selectedRootIndex = clickedIdx;
+                const menu = document.getElementById('root-type-menu');
+                menu.classList.remove('hidden');
+                
+                const pxX = mapX(placedRoots[clickedIdx].x);
+                const pxY = mapY(0);
+                
+                // Adjust menu position so it doesn't overflow, considering RTL direction isn't strictly mapping coordinates
+                let menuLeft = Math.min(pxX, canvas.width - 150);
+                if(currentLang === 'he' && pxX < 150) {
+                   menuLeft = pxX; 
+                }
+                
+                menu.style.left = menuLeft + 'px';
+                menu.style.top = (pxY + 15) + 'px';
+                drawScene();
+            } else {
+                selectedRootIndex = -1;
+                drawScene();
+            }
+        }
+        else if (currentStep === 4) {
+            isDrawing = true;
+            drawingPath = [];
+            drawingPath.push(pos);
+        }
+    }
+
+    function handlePointerMove(e) {
+        if (!isDrawing || currentStep !== 4) return;
+        e.preventDefault();
+        const pos = getPointerPos(e);
+        drawingPath.push(pos);
+        drawScene();
+    }
+
+    function handlePointerUp(e) {
+        if (currentStep === 4) {
+            isDrawing = false;
+        }
+    }
+
+    canvas.addEventListener('mousedown', handlePointerDown);
+    canvas.addEventListener('mousemove', handlePointerMove);
+    canvas.addEventListener('mouseup', handlePointerUp);
+    canvas.addEventListener('touchstart', handlePointerDown, {passive: false});
+    canvas.addEventListener('touchmove', handlePointerMove, {passive: false});
+    canvas.addEventListener('touchend', handlePointerUp);
+
+    function initLevel() {
+        const lvl = levels[currentLevel];
+        const t = i18n[currentLang];
+        document.getElementById('level-indicator').textContent = t.level_indicator(currentLevel + 1, levels.length);
+        document.getElementById('function-display').textContent = lvl.equation;
+        
+        currentStep = 1;
+        placedRoots = [];
+        drawingPath = [];
+        selectedEndBehavior = null;
+        selectedRootIndex = -1;
+        showExactPlot = false;
+        
+        // Reset UI
+        [1,2,3,4].forEach(i => {
+            const stepDiv = document.getElementById(`step-${i}`);
+            stepDiv.classList.remove('step-collapsed');
+            if(i===1) {
+                stepDiv.classList.remove('step-hidden');
+                stepDiv.classList.remove('opacity-50');
+                document.getElementById(`btn-check-${i}`).disabled = false;
+            } else {
+                stepDiv.classList.add('step-hidden');
+                stepDiv.classList.add('opacity-50');
+                document.getElementById(`btn-check-${i}`).disabled = true;
+            }
+            const fb = document.getElementById(`feedback-${i}`);
+            fb.classList.add('hidden');
+            fb.textContent = '';
+            delete fb.dataset.persistent;
+        });
+        
+        document.querySelectorAll('.end-behavior-btn').forEach(btn => btn.classList.remove('bg-indigo-100', 'border-indigo-500'));
+        document.getElementById('btn-next-level').classList.add('hidden');
+        document.getElementById('root-type-menu').classList.add('hidden');
+
+        if (!lvl.hasPowers) {
+            document.getElementById('step-2').style.display = 'none';
+        } else {
+            document.getElementById('step-2').style.display = 'block';
+        }
+
+        setTimeout(resizeCanvas, 10);
+    }
+
+    function showFeedback(step, msg, isSuccess) {
+        const fb = document.getElementById(`feedback-${step}`);
+        fb.textContent = msg;
+        fb.className = `text-sm font-medium mt-3 text-center ${isSuccess ? 'text-green-600' : 'text-red-500'}`;
+        fb.classList.remove('hidden');
+        if(isSuccess) fb.dataset.persistent = "true";
+    }
+
+    function unlockStep(step) {
+        const stepDiv = document.getElementById(`step-${step}`);
+        if(stepDiv) {
+            stepDiv.classList.remove('step-hidden');
+            setTimeout(() => stepDiv.classList.remove('opacity-50'), 50);
+            const btn = document.getElementById(`btn-check-${step}`);
+            if(btn) btn.disabled = false;
+        }
+        currentStep = step;
+    }
+
+    function checkStep1() {
+        const t = i18n[currentLang];
+        const actual = levels[currentLevel].roots.map(r => r.x).sort((a,b)=>a-b);
+        const placed = placedRoots.map(r => r.x).sort((a,b)=>a-b);
+        
+        if (actual.length !== placed.length) {
+            showFeedback(1, t.fb1_incorrect_count(actual.length), false);
+            return;
+        }
+        
+        let match = true;
+        for(let i=0; i<actual.length; i++) {
+            if(Math.abs(actual[i] - placed[i]) > 0.1) match = false;
+        }
+
+        if (match) {
+            showFeedback(1, t.fb1_correct, true);
+            document.getElementById('btn-check-1').disabled = true;
+            setTimeout(() => document.getElementById('step-1').classList.add('step-collapsed'), 1500);
+            
+            if (levels[currentLevel].hasPowers) {
+                unlockStep(2);
+            } else {
+                unlockStep(3);
+            }
+        } else {
+            showFeedback(1, t.fb1_incorrect_pos, false);
+        }
+    }
+
+    function selectRootType(type) {
+        if(selectedRootIndex > -1) {
+            placedRoots[selectedRootIndex].userType = type;
+            document.getElementById('root-type-menu').classList.add('hidden');
+            selectedRootIndex = -1;
+            drawScene();
+        }
+    }
+
+    function checkStep2() {
+        const t = i18n[currentLang];
+        let allSet = true;
+        let allCorrect = true;
+        const actualRoots = levels[currentLevel].roots;
+
+        placedRoots.forEach(r => {
+            if(!r.userType) allSet = false;
+            const act = actualRoots.find(a => Math.abs(a.x - r.x) < 0.1);
+            if(act && act.type !== r.userType) allCorrect = false;
+        });
+
+        if(!allSet) {
+            showFeedback(2, t.fb2_missing, false);
+            return;
+        }
+        if(allCorrect) {
+            showFeedback(2, t.fb2_correct, true);
+            document.getElementById('btn-check-2').disabled = true;
+            setTimeout(() => document.getElementById('step-2').classList.add('step-collapsed'), 1500);
+            selectedRootIndex = -1; 
+            drawScene();
+            unlockStep(3);
+        } else {
+            showFeedback(2, t.fb2_incorrect, false);
+        }
+    }
+
+    function selectEndBehavior(type) {
+        if(currentStep !== 3) return;
+        selectedEndBehavior = type;
+        document.querySelectorAll('.end-behavior-btn').forEach(btn => {
+            btn.classList.remove('bg-indigo-100', 'border-indigo-500');
+        });
+        event.target.classList.add('bg-indigo-100', 'border-indigo-500');
+    }
+
+    function checkStep3() {
+        const t = i18n[currentLang];
+        if(!selectedEndBehavior) {
+            showFeedback(3, t.fb3_missing, false);
+            return;
+        }
+        if(selectedEndBehavior === levels[currentLevel].endBehavior) {
+            showFeedback(3, t.fb3_correct, true);
+            document.getElementById('btn-check-3').disabled = true;
+            setTimeout(() => document.getElementById('step-3').classList.add('step-collapsed'), 1500);
+            unlockStep(4);
+        } else {
+            showFeedback(3, t.fb3_incorrect, false);
+        }
+    }
+
+    function clearDrawing() {
+        drawingPath = [];
+        drawScene();
+    }
+
+    function checkStep4() {
+        const t = i18n[currentLang];
+        if(drawingPath.length < 10) {
+            showFeedback(4, t.fb4_missing, false);
+            return;
+        }
+
+        const leftPts = drawingPath.slice(0, Math.floor(drawingPath.length/4));
+        const rightPts = drawingPath.slice(Math.floor(drawingPath.length * 3/4));
+        
+        let startY = leftPts[0].y;
+        let endY = rightPts[rightPts.length-1].y;
+
+        const endB = levels[currentLevel].endBehavior;
+        let validStart = false, validEnd = false;
+
+        if(endB === 'x_even') { validStart = (startY > 0); validEnd = (endY > 0); }
+        if(endB === 'x_odd') { validStart = (startY < 0); validEnd = (endY > 0); }
+        if(endB === '-x_even') { validStart = (startY < 0); validEnd = (endY < 0); }
+        if(endB === '-x_odd') { validStart = (startY > 0); validEnd = (endY < 0); }
+
+        let rootsPassed = true;
+        placedRoots.forEach(r => {
+            let passedNear = drawingPath.some(pt => Math.abs(pt.x - r.x) < 0.8 && Math.abs(pt.y) < 2.5);
+            if(!passedNear) rootsPassed = false;
+        });
+
+        let regionsCorrect = true;
+        for (let pt of drawingPath) {
+            // Find distance to the closest root
+            let distToRoot = placedRoots.length > 0 
+                ? Math.min(...placedRoots.map(r => Math.abs(r.x - pt.x))) 
+                : 100;
+            
+            // Only check signs for points that are clearly away from the roots
+            if (distToRoot > 0.8) {
+                let exactY = levels[currentLevel].mathFn(pt.x);
+                // Allow a small drawing margin of 0.5 on the y-axis
+                if (exactY > 0 && pt.y < -0.5) regionsCorrect = false;
+                if (exactY < 0 && pt.y > 0.5) regionsCorrect = false;
+            }
+        }
+
+        if(!validStart || !validEnd) {
+            showFeedback(4, t.fb4_incorrect_end, false);
+        } else if (!rootsPassed) {
+            showFeedback(4, t.fb4_incorrect_roots, false);
+        } else if (!regionsCorrect) {
+            showFeedback(4, t.fb4_incorrect_regions, false);
+        } else {
+            showFeedback(4, t.fb4_correct, true);
+            showExactPlot = true;
+            drawScene();
+            document.getElementById('btn-check-4').disabled = true;
+            if(currentLevel < levels.length - 1) {
+                document.getElementById('btn-next-level').classList.remove('hidden');
+            } else {
+                document.getElementById('t-next-level').textContent = t.course_completed;
+                document.getElementById('btn-next-level').classList.remove('hidden', 'hover:bg-green-600');
+                document.getElementById('btn-next-level').classList.add('cursor-default');
+                document.getElementById('btn-next-level').onclick = null;
+            }
+        }
+    }
+
+    function nextLevel() {
+        if(currentLevel < levels.length - 1) {
+            currentLevel++;
+            initLevel();
+        }
+    }
+
+    // Init first level on load
+    window.onload = () => {
+        changeLanguage('he'); // Force apply initial translation
+        initLevel();
+    };
+
+</script>
+</body>
+</html>
