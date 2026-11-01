@@ -1,0 +1,36 @@
+.site-copyright {
+    box-sizing: border-box;
+    display: block;
+    flex-shrink: 0;
+    width: 100%;
+    margin: 24px auto 0;
+    padding: 16px;
+    border-top: 1px solid #dfe7ff;
+    background: #f5f7ff;
+    color: #475569;
+    text-align: center;
+    font: 12px/1.6 system-ui, sans-serif;
+}
+.site-copyright a { color: #3730a3; text-decoration: underline; }
+.site-copyright a:focus-visible { outline: 3px solid #4f46e5; outline-offset: 3px; }
+.site-copyright .notice-he { display: none; }
+html[lang="he"] .site-copyright .notice-he { display: inline; }
+html[lang="he"] .site-copyright .notice-en { display: none; }
+/* Fullscreen games cannot scroll to a footer. Keep their notice compact. */
+.site-copyright--compact {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    width: auto;
+    max-width: 100%;
+    margin: 0;
+    padding: 2px 8px;
+    border: 1px solid #dfe7ff;
+    border-radius: 0 6px 0 0;
+    font-size: 10px;
+}
+.site-copyright--above-toolbar { bottom: 62px; }
+@media print {
+    .site-copyright--compact { position: static; margin-top: 12px; }
+}

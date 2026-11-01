@@ -1,14 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Math Games Hub</title>
+    <title>פעילויות אינטראקטיביות לליsמוד מתמטיקה</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"
         rel="stylesheet" />
+    <link rel="stylesheet" href="assets/site-notice.css" />
+    <script src="assets/landing.js" defer></script>
     <style>
         :root {
             --bg: #f5f7ff;
@@ -30,7 +32,7 @@
 
         body {
             margin: 0;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', 'Heebo', sans-serif;
             background:
                 radial-gradient(circle at top left, rgba(79, 70, 229, 0.12), transparent 28%),
                 radial-gradient(circle at bottom right, rgba(20, 184, 166, 0.12), transparent 26%),
@@ -42,6 +44,45 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 56px 24px 80px;
+        }
+
+        .language-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+            font-weight: 600;
+        }
+        .language-bar select {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--panel);
+            color: var(--text);
+            font: inherit;
+            cursor: pointer;
+        }
+        a:focus-visible, select:focus-visible {
+            outline: 3px solid var(--primary);
+            outline-offset: 4px;
+        }
+        html[lang="he"] body { font-family: 'Heebo', 'Inter', sans-serif; }
+        html[lang="he"] .eyebrow, html[lang="he"] .badge { letter-spacing: normal; }
+        .license-section {
+            margin-top: 42px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: var(--panel);
+            line-height: 1.7;
+        }
+        .license-section h2 { margin: 0 0 12px; }
+        .license-section p { margin: 8px 0; color: var(--muted); }
+        .license-section a { color: var(--primary-dark); text-underline-offset: 3px; }
+        @media (prefers-reduced-motion: reduce) {
+            .game-card { transition: none; }
+            .game-card:hover { transform: none; }
         }
 
         .hero {
@@ -170,87 +211,102 @@
 
 <body>
     <main class="page">
+        <div class="language-bar">
+            <label for="language-select" data-i18n="language">שפה</label>
+            <select id="language-select">
+                <option value="he" lang="he" selected>עברית</option>
+                <option value="en" lang="en">English</option>
+            </select>
+        </div>
         <section class="hero">
-            <div class="eyebrow">Learning Arcade</div>
-            <h1>Math Games Hub</h1>
-            <p class="subtitle">
-                Choose a challenge and jump into a new math activity. These games cover algebra, geometry,
-                trigonometry, transformations, and function analysis.
-            </p>
+            <div class="eyebrow" data-i18n="eyebrow">לומדים ומשחקים</div>
+            <h1 data-i18n="title">פעילויות אינטראקטיביות ללימוד מתמטיקה</h1>
+            <p class="subtitle" data-i18n="subtitle">משחקים באלגברה, בגאומטריה, בטריגונומטריה, בטרנספורמציות ובחקירת פונקציות.</p>
         </section>
 
-        <h2 class="section-title">Games</h2>
-        <section class="games-grid" aria-label="Game links">
+        <h2 class="section-title" data-i18n="games">משחקים</h2>
+        <section class="games-grid" aria-label="קישורים למשחקים" data-i18n-aria-label="gameLinks">
             <a class="game-card" href="EquationsBuilder/equation_towers_mini_game.html">
-                <span class="badge">Algebra</span>
-                <h2>Equation Towers</h2>
-                <p>Build equations and stack your way through engaging algebra challenges.</p>
+                <span class="badge" data-i18n="algebra">אלגברה</span>
+                <h2 data-i18n="equationsTitle">מגדלי משוואות</h2>
+                <p data-i18n="equationsDesc">בנו משוואות והתקדמו שלב אחר שלב באתגרי אלגברה.</p>
             </a>
 
             <!-- math pelican -->
              <a class="game-card" href="NegativeNumbers/math_pelican.html">
-                <span class="badge">Algebra</span>
-                <h2>Math Pelican</h2>
-                <p>Help the pelican catch the right answers in this fun algebra game.</p>
+                <span class="badge" data-i18n="algebra">אלגברה</span>
+                <h2 data-i18n="pelicanTitle">השקנאי המתמטי</h2>
+                <p data-i18n="pelicanDesc">עזרו לשקנאי לתפוס את התשובות הנכונות במשחק של מספרים מכוונים.</p>
             </a>
 
             <a class="game-card" href="FunctionAnalysis/pre_function_analysis_game.html">
-                <span class="badge">Functions</span>
-                <h2>Pre-Function Analysis</h2>
-                <p>Begin exploring function patterns and relationships step by step.</p>
+                <span class="badge" data-i18n="functions">פונקציות</span>
+                <h2 data-i18n="preTitle">מבוא לחקירת פונקציות</h2>
+                <p data-i18n="preDesc">גלו תכונות וקשרים של פונקציות, צעד אחר צעד.</p>
             </a>
 
             <a class="game-card" href="FunctionAnalysis/advanced_function_analysis_game.html">
-                <span class="badge">Functions</span>
-                <h2>Advanced Function Analysis</h2>
-                <p>Take on deeper function analysis with a more advanced reasoning challenge.</p>
+                <span class="badge" data-i18n="functions">פונקציות</span>
+                <h2 data-i18n="advancedTitle">חקירת פונקציות מתקדמת</h2>
+                <p data-i18n="advancedDesc">העמיקו בחקירת פונקציות והתמודדו עם אתגרי חשיבה מתקדמים.</p>
             </a>
 
             <a class="game-card" href="GeometricConstructions/geometricConstructions.html">
-                <span class="badge">Geometry</span>
-                <h2>Geometric Constructions</h2>
-                <p>Create geometric figures using lines, circles, and construction tools.</p>
+                <span class="badge" data-i18n="geometry">גאומטריה</span>
+                <h2 data-i18n="geometryTitle">בניות גאומטריות</h2>
+                <p data-i18n="geometryDesc">צרו צורות גאומטריות בעזרת ישרים, מעגלים וכלי בנייה.</p>
             </a>
 
             <a class="game-card" href="GeometricConstructions3.0/geometricConstructions.html">
-                <span class="badge">Geometry</span>
-                <h2>Geometric Constructions 3.0</h2>
-                <p>Explore a more polished version of the geometry construction activity.</p>
+                <span class="badge" data-i18n="geometry">גאומטריה</span>
+                <h2 data-i18n="geometry3Title">בניות גאומטריות 3.0</h2>
+                <p data-i18n="geometry3Desc">התנסו בגרסה משופרת של פעילות הבניות הגאומטריות.</p>
             </a>
 
             <a class="game-card" href="Trigo/identity_match.html">
-                <span class="badge">Trigonometry</span>
-                <h2>Trig Identities Matcher</h2>
-                <p>Match trigonometric identities and sharpen your algebraic reasoning.</p>
+                <span class="badge" data-i18n="trigonometry">טריגונומטריה</span>
+                <h2 data-i18n="identitiesTitle">התאמת זהויות טריגונומטריות</h2>
+                <p data-i18n="identitiesDesc">התאימו זהויות טריגונומטריות וחדדו את החשיבה האלגברית.</p>
             </a>
 
             <a class="game-card" href="Trigo/trig_solver_game.html">
-                <span class="badge">Trigonometry</span>
-                <h2>Trig Solver Game</h2>
-                <p>Practice solving trig expressions through a game-based challenge.</p>
+                <span class="badge" data-i18n="trigonometry">טריגונומטריה</span>
+                <h2 data-i18n="solverTitle">פתרון ביטויים טריגונומטריים</h2>
+                <p data-i18n="solverDesc">תרגלו פתרון ביטויים טריגונומטריים באמצעות אתגר משחקי.</p>
             </a>
 
             <a class="game-card" href="UnitCircle/unit_circle_quest-2.html">
-                <span class="badge">Circle</span>
-                <h2>Unit Circle Quest</h2>
-                <p>Use the unit circle to strengthen angle and coordinate understanding.</p>
+                <span class="badge" data-i18n="circle">מעגל היחידה</span>
+                <h2 data-i18n="circleTitle">מסע במעגל היחידה</h2>
+                <p data-i18n="circleDesc">חקרו את מעגל היחידה וחזקו את הבנת הזוויות והקואורדינטות.</p>
             </a>
 
             <a class="game-card" href="Patterns/patterns.html">
-                <span class="badge">Patterns</span>
-                <h2>Pattern Recognition</h2>
-                <p>Identify and extend numerical and geometric patterns.</p>
+                <span class="badge" data-i18n="patterns">חוקיות</span>
+                <h2 data-i18n="patternsTitle">זיהוי חוקיות</h2>
+                <p data-i18n="patternsDesc">זהו והמשיכו דפוסים מספריים וגאומטריים.</p>
             </a>
         </section>
 
-        <h2 class="section-title">Other Learning Activities</h2>
-        <section class="mini-grid" aria-label="Other activities">
+        <h2 class="section-title" data-i18n="activities">פעילויות לימוד נוספות</h2>
+        <section class="mini-grid" aria-label="פעילויות נוספות" data-i18n-aria-label="activityLinks">
             <article class="resource-card">
-                <h3>Function Transformations</h3>
-                <a href="transformations.html">Open worksheet</a>
+                <h3 data-i18n="transformations">טרנספורמציות של פונקציות</h3>
+                <a href="transformations.html" data-i18n="worksheet">פתיחת דף העבודה</a>
             </article>
         </section>
+        <section class="license-section" aria-labelledby="license-heading">
+            <h2 id="license-heading" data-i18n="licenseTitle">שימוש חופשי למטרות לא מסחריות</h2>
+            <p>© 2026 <bdi>יוני בנדר</bdi> · <bdi>PolyForm Noncommercial 1.0.0</bdi></p>
+            <p data-i18n="licenseSummary">אפשר להשתמש, להעתיק, לשנות ולשתף את האפליקציה והקוד למטרות המותרות ברישיון. הרישיון מתיר במפורש שימוש על ידי מוסדות חינוך; שימוש מסחרי מעבר למותר בו דורש אישור נפרד.</p>
+            <p data-i18n="licenseNotices">בשיתוף עותקים יש לשמור את הודעת זכויות היוצרים ולצרף את הרישיון או קישור אליו.</p>
+            <p><a href="license.html" data-i18n="licenseDetails">הסבר על זכויות יוצרים ותנאי השימוש</a> · <a href="LICENSE.txt" data-i18n="licenseFull">לרישיון המלא (באנגלית)</a></p>
+        </section>
     </main>
+    <footer class="site-copyright">
+        <span class="notice-he" lang="he" dir="rtl">© 2026 <bdi>יוני בנדר</bdi> · <a href="license.html">זכויות יוצרים ורישיון</a></span>
+        <span class="notice-en" lang="en" dir="ltr">© 2026 יוני בנדר · <a href="license.html">Copyright &amp; license</a></span>
+    </footer>
 </body>
 
 </html>

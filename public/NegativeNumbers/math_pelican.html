@@ -6,6 +6,7 @@
     <title>Math Pelican: Creature Quest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/site-notice.css">
     <style>
         body {
             font-family: 'Fredoka', sans-serif;
@@ -353,75 +354,102 @@
             maxSpeed: 10,
             hAccel: 0.1, 
             hFriction: 0.4, 
-            maxElevationUI: 600 
+            maxElevationUI: 600,
+            gravity: 0.2,
+            buoyancy: 0.2
         },
         levels: [
             {
+                // Level 1: simple directed numbers with colors
                 level: 1,
                 targetCreature: { name: 'Sunbird', emoji: '🦅', elevation: 150, type: 'sky' },
-                math: { type: 'single', valRange: [15, 50], parenthesis: false, color: true },
+                math: { type: 'single', valRange: [15, 30], parenthesis: false, color: true },
                 spawning: { boxInterval: 2000, foodInterval: 3000, foodBundleMin: 2, foodBundleMax: 4 },
                 physics: { flapPower: 0.2, divePower: 0.2, gravity: 0.05, buoyancy: 0.05, staminaDrain: 0.2, staminaRegen: 0.08, envPenalty: 0.05 }
             },
             {
+                // Level 2: simple directed numbers with colors
                 level: 2,
                 targetCreature: { name: 'Anglerfish', emoji: '🐡', elevation: -200, type: 'sea' },
-                math: { type: 'single', valRange: [50, 100], parenthesis: true, color: false },
+                math: { type: 'single', valRange: [30, 50], parenthesis: false, color: true },
                 spawning: { boxInterval: 1800, foodInterval: 3200, foodBundleMin: 3, foodBundleMax: 5 },
                 physics: { flapPower: 0.2, divePower: 0.2, gravity: 0.06, buoyancy: 0.06, staminaDrain: 0.25, staminaRegen: 0.07, envPenalty: 0.08 }
             },
             {
+                // Level 3: parenthesis, no double negatives, no colors
                 level: 3,
-                targetCreature: { name: 'Space Owl', emoji: '🦉', elevation: 350, type: 'sky' },
-                math: { type: 'bundle', valRange: [70, 120], bundleSize: [2, 3], parenthesis: false, color: true },
-                spawning: { boxInterval: 1600, foodInterval: 3500, foodBundleMin: 3, foodBundleMax: 6 },
+                targetCreature: { name: 'Space Owl', emoji: '🦉', elevation: 250, type: 'sky' },
+                math: { type: 'single', valRange: [30, 70], parenthesis: 'basic', color: false },
+                spawning: { boxInterval: 1800, foodInterval: 3500, foodBundleMin: 3, foodBundleMax: 6 },
                 physics: { flapPower: 0.22, divePower: 0.22, gravity: 0.08, buoyancy: 0.08, staminaDrain: 0.3, staminaRegen: 0.06, envPenalty: 0.1 }
             },
             {
+                // Level 4: connected boxes (max 2), with colors, no parenthesis
                 level: 4,
-                targetCreature: { name: 'Kraken', emoji: '🦑', elevation: -450, type: 'sea' },
-                math: { type: 'bundle', valRange: [100, 150], bundleSize: [2, 3], parenthesis: true, color: false },
-                spawning: { boxInterval: 1500, foodInterval: 3500, foodBundleMin: 2, foodBundleMax: 5 },
+                targetCreature: { name: 'Octopus', emoji: '🐙', elevation: -300, type: 'sea' },
+                math: { type: 'bundle', valRange: [40, 80], bundleSize: [2, 2], parenthesis: false, color: true },
+                spawning: { boxInterval: 1700, foodInterval: 3500, foodBundleMin: 2, foodBundleMax: 5 },
+                physics: { flapPower: 0.24, divePower: 0.24, gravity: 0.09, buoyancy: 0.09, staminaDrain: 0.32, staminaRegen: 0.05, envPenalty: 0.11 }
+            },
+            {
+                // Level 5: like level 3 but with double negatives, no colors
+                level: 5,
+                targetCreature: { name: 'Cloud Ray', emoji: '🪁', elevation: 350, type: 'sky' },
+                math: { type: 'single', valRange: [60, 120], parenthesis: 'all', color: false },
+                spawning: { boxInterval: 1600, foodInterval: 3000, foodBundleMin: 3, foodBundleMax: 5 },
                 physics: { flapPower: 0.25, divePower: 0.25, gravity: 0.1, buoyancy: 0.1, staminaDrain: 0.35, staminaRegen: 0.05, envPenalty: 0.12 }
             },
             {
-                level: 5,
+                // Level 6: connected boxes (max 3), allowing all parenthesis
+                level: 6,
+                targetCreature: { name: 'Kraken', emoji: '🦑', elevation: -450, type: 'sea' },
+                math: { type: 'bundle', valRange: [80, 150], bundleSize: [2, 3], parenthesis: false, color: true },
+                spawning: { boxInterval: 1500, foodInterval: 3000, foodBundleMin: 3, foodBundleMax: 6 },
+                physics: { flapPower: 0.26, divePower: 0.26, gravity: 0.11, buoyancy: 0.11, staminaDrain: 0.38, staminaRegen: 0.05, envPenalty: 0.13 }
+            },
+            {
+                // Level 7 (Old Level 5): multiplication
+                level: 7,
                 targetCreature: { name: 'Megalodon', emoji: '🦈', elevation: -550, type: 'sea' },
-                math: { type: 'multiplication', valRange: [150, 250], parenthesis: true, color: false },
+                math: { type: 'multiplication', valRange: [150, 250], parenthesis: 'all', color: false },
                 spawning: { boxInterval: 1600, foodInterval: 3000, foodBundleMin: 2, foodBundleMax: 5 },
                 physics: { flapPower: 0.26, divePower: 0.26, gravity: 0.11, buoyancy: 0.11, staminaDrain: 0.38, staminaRegen: 0.05, envPenalty: 0.13 }
             },
             {
-                level: 6,
+                // Level 8 (Old Level 6): complex math
+                level: 8,
                 targetCreature: { name: 'Star Dragon', emoji: '🐉', elevation: 550, type: 'sky' },
-                math: { type: 'complex', valRange: [200, 300], parenthesis: true, color: false },
+                math: { type: 'complex', valRange: [200, 300], parenthesis: 'all', color: false },
                 spawning: { boxInterval: 1700, foodInterval: 3000, foodBundleMin: 3, foodBundleMax: 6 },
                 physics: { flapPower: 0.28, divePower: 0.28, gravity: 0.12, buoyancy: 0.12, staminaDrain: 0.4, staminaRegen: 0.04, envPenalty: 0.15 }
             },
             {
-                level: 7,
+                // Level 9 (Old Level 7): mystery target 1
+                level: 9,
                 targetCreature: { name: 'Pegasus', emoji: '🦄', elevation: 400, type: 'sky' },
                 mystery: true,
                 equation: "2 × 🦄 - 200 = 600",
-                math: { type: 'bundle', valRange: [150, 250], bundleSize: [2, 3], parenthesis: true, color: false },
+                math: { type: 'bundle', valRange: [150, 250], bundleSize: [2, 3], parenthesis: 'all', color: false },
                 spawning: { boxInterval: 1700, foodInterval: 3000, foodBundleMin: 3, foodBundleMax: 6 },
                 physics: { flapPower: 0.28, divePower: 0.28, gravity: 0.12, buoyancy: 0.12, staminaDrain: 0.4, staminaRegen: 0.04, envPenalty: 0.15 }
             },
             {
-                level: 8,
+                // Level 10 (Old Level 8): mystery target 2
+                level: 10,
                 targetCreature: { name: 'Leviathan', emoji: '🐋', elevation: -300, type: 'sea' },
                 mystery: true,
                 equation: "-4 × 🐋 - 200 = 1000",
-                math: { type: 'multiplication', valRange: [200, 300], parenthesis: true, color: false },
+                math: { type: 'multiplication', valRange: [200, 300], parenthesis: 'all', color: false },
                 spawning: { boxInterval: 1600, foodInterval: 3000, foodBundleMin: 3, foodBundleMax: 6 },
                 physics: { flapPower: 0.28, divePower: 0.28, gravity: 0.12, buoyancy: 0.12, staminaDrain: 0.4, staminaRegen: 0.04, envPenalty: 0.15 }
             },
             {
-                level: 9,
+                // Level 11 (Old Level 9): mystery target 3
+                level: 11,
                 targetCreature: { name: 'Phoenix', emoji: '🔥', elevation: 600, type: 'sky' },
                 mystery: true,
                 equation: "-3 × 🔥 + 1000 = -800",
-                math: { type: 'complex', valRange: [250, 400], parenthesis: true, color: false },
+                math: { type: 'complex', valRange: [250, 400], parenthesis: 'all', color: false },
                 spawning: { boxInterval: 1700, foodInterval: 3000, foodBundleMin: 3, foodBundleMax: 6 },
                 physics: { flapPower: 0.3, divePower: 0.3, gravity: 0.14, buoyancy: 0.14, staminaDrain: 0.45, staminaRegen: 0.04, envPenalty: 0.15 }
             }
@@ -781,16 +809,20 @@
     }
 
     function formatMath(netValue, useParenthesis) {
+        // If false, straight numbers +5 or -3
         if (!useParenthesis) {
             return netValue > 0 ? `+${netValue}` : `${netValue}`;
         } else {
-            // Randomly choose if it's shown as addition or subtraction of an inner value
+            // 'basic' or 'all' parenthesis rules
             const showAsSub = Math.random() > 0.5;
+            
             if (showAsSub) {
-                // netValue = -(innerValue) => innerValue = -netValue
+                // If it's basic, prevent double negative (e.g. -(-5) when netValue is 5)
+                if (useParenthesis === 'basic' && netValue > 0) {
+                    return `+ (${netValue})`;
+                }
                 return `- (${-netValue})`;
             } else {
-                // netValue = +(innerValue) => innerValue = netValue
                 return `+ (${netValue})`;
             }
         }
@@ -845,7 +877,7 @@
             });
 
         } else if (mathCfg.type === 'multiplication') {
-            // Level 5: e.g., (-2) × (-100)
+            // e.g., (-2) × (-100)
             let f1 = getRandInRange(2, 10) * (Math.random() > 0.5 ? 1 : -1);
             let f2 = Math.round(targetSum / f1);
             let actualSum = f1 * f2; // Real calculate to prevent rounding errors affecting sum
@@ -853,7 +885,7 @@
             entities.boxes.push(new MathBox(startX, baseElev, text, actualSum, mathCfg.color));
 
         } else if (mathCfg.type === 'complex') {
-            // Level 6: e.g., -500 - 3 × (-200)
+            // e.g., -500 - 3 × (-200)
             let B = getRandInRange(2, 6) * (Math.random() > 0.5 ? 1 : -1);
             let C = getRandInRange(10, 50) * (Math.random() > 0.5 ? 1 : -1);
             let product = B * C;
@@ -1059,8 +1091,8 @@
             if (player.elevation <= 0) usingStamina = true; // Diving down in the sea costs stamina
         } else {
             // Gravity/Buoyancy pull to 0
-            if (player.targetElevation > 0.5) player.targetElevation -= physCfg.gravity * (dt/16);
-            else if (player.targetElevation < -0.5) player.targetElevation += physCfg.buoyancy * (dt/16);
+            if (player.targetElevation > 0.5) player.targetElevation -= globalCfg.gravity * (dt/16);
+            else if (player.targetElevation < -0.5) player.targetElevation += globalCfg.buoyancy * (dt/16);
             else player.targetElevation = 0;
         }
 
@@ -1330,5 +1362,9 @@
     drawPlayer();
 
 </script>
+    <footer class="site-copyright site-copyright--compact">
+        <span class="notice-he" lang="he" dir="rtl">© 2026 <bdi>יוני בנדר</bdi> · <a href="../license.html">זכויות יוצרים ורישיון</a></span>
+        <span class="notice-en" lang="en" dir="ltr">© 2026 יוני בנדר · <a href="../license.html">Copyright &amp; license</a></span>
+    </footer>
 </body>
 </html>
