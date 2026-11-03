@@ -48,6 +48,7 @@
         <select id="lang-selector" onchange="changeLanguage(this.value)" class="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2 shadow-sm">
             <option value="he" selected>עברית</option>
             <option value="en">English</option>
+            <option value="ar" lang="ar">العربية</option>
         </select>
     </div>
 
@@ -144,6 +145,42 @@
 <script>
     // Translations Dictionary
     const i18n = {
+        ar: {
+            title: "مقدمة في دراسة الدوال",
+            level_indicator: (c, t) => `المستوى ${c} من ${t}`,
+            step1_title: "الخطوة 1: نقاط تقاطع المنحنى مع محور x",
+            step1_desc: "انقر على محور x لتحديد جذور الدالة.",
+            step1_btn: "تحقق من الجذور",
+            step2_title: "الخطوة 2: سلوك الدالة عند الجذور",
+            step2_desc: "انقر على كل جذر لتحديد سلوك الدالة عنده بحسب أسّ العامل.",
+            step2_btn: "تحقق من السلوك",
+            step3_title: "الخطوة 3: السلوك عند اللانهاية",
+            step3_desc: "كيف تتصرف الدالة عند اللانهاية؟",
+            btn_xe: "xⁿ (n زوجي)", btn_xo: "xⁿ (n فردي)",
+            btn_mxe: "-xⁿ (n زوجي)", btn_mxo: "-xⁿ (n فردي)",
+            step3_btn: "تحقق من السلوك عند اللانهاية",
+            step4_title: "الخطوة 4: رسم المنحنى",
+            step4_desc: "ارسم منحنى الدالة مارًّا بالجذور مع مراعاة السلوك الصحيح عند كل منها.",
+            step4_clear: "مسح", step4_btn: "تحقق من الرسم",
+            next_level: "المستوى التالي", course_completed: "أكملت جميع المستويات!",
+            root_menu_title: "السلوك عند الجذر",
+            root_int: "عبور المحور", root_ext: "ملامسة المحور والارتداد", root_infl: "عبور مع تسطّح",
+            short_int: "عبور", short_ext: "ملامسة", short_infl: "تسطّح",
+            fb1_incorrect_count: (c) => `غير صحيح. عدد جذور الدالة هو ${c}.`,
+            fb1_correct: "أحسنت! حددت جميع نقاط التقاطع مع محور x.",
+            fb1_incorrect_pos: "بعض الجذور غير صحيحة أو مفقودة. حاول مجددًا.",
+            fb2_missing: "اختر سلوك الدالة عند كل جذر بالنقر عليه.",
+            fb2_correct: "صحيح! حددت جميع السلوكيات بدقة.",
+            fb2_incorrect: "بعض السلوكيات غير صحيحة. تلميح: تحقق من الأسس.",
+            fb3_missing: "اختر إجابة أولًا.",
+            fb3_correct: "السلوك عند اللانهاية صحيح!",
+            fb3_incorrect: "غير صحيح. انظر إلى الحد ذي أعلى درجة في كثيرة الحدود بعد نشرها.",
+            fb4_missing: "ارسم منحنى الدالة أولًا.",
+            fb4_incorrect_end: "السلوك عند اللانهاية في رسمك غير صحيح. أين يبدأ المنحنى وأين ينتهي؟",
+            fb4_incorrect_roots: "تأكد من مرور المنحنى بدقة عبر الجذور التي حددتها!",
+            fb4_incorrect_regions: "مناطق الإشارة الموجبة والسالبة في رسمك غير صحيحة. تحقق من مواضع المنحنى فوق محور x وتحته.",
+            fb4_correct: "عمل رائع! رسمك قريب جدًا من المنحنى الحقيقي. (يظهر الحل الدقيق باللون الأخضر)"
+        },
         he: {
             title: "קדם אנליזה",
             level_indicator: (c, t) => `שלב ${c} מתוך ${t}`,
@@ -237,10 +274,14 @@
     let currentLang = 'he';
 
     function changeLanguage(lang) {
+        const previous = i18n[currentLang];
         currentLang = lang;
-        document.body.dir = lang === 'he' ? 'rtl' : 'ltr';
+        document.documentElement.lang = lang;
+        document.documentElement.dir = document.body.dir = ['he', 'ar'].includes(lang) ? 'rtl' : 'ltr';
+        document.getElementById('lang-selector').setAttribute('aria-label', { he: 'שפה', en: 'Language', ar: 'اللغة' }[lang]);
         
         const t = i18n[lang];
+        document.title = t.title;
         document.getElementById('t-title').textContent = t.title;
         document.getElementById('level-indicator').textContent = t.level_indicator(currentLevel + 1, levels.length);
         document.getElementById('t-step1-title').textContent = t.step1_title;
@@ -275,6 +316,8 @@
         // Clear feedbacks on language change to prevent untranslated text
         [1,2,3,4].forEach(i => {
             const fb = document.getElementById(`feedback-${i}`);
+            const key = Object.keys(previous).find(key => typeof previous[key] === 'string' && previous[key] === fb.textContent);
+            if (key) fb.textContent = t[key];
             if(!fb.classList.contains('hidden') && !fb.dataset.persistent) {
                 fb.classList.add('hidden');
             }
@@ -826,8 +869,9 @@
 
 </script>
     <footer class="site-copyright">
-        <span class="notice-he" lang="he" dir="rtl">© 2026 <bdi>יוני בנדר</bdi> · <a href="../license.html">זכויות יוצרים ורישיון</a></span>
-        <span class="notice-en" lang="en" dir="ltr">© 2026 יוני בנדר · <a href="../license.html">Copyright &amp; license</a></span>
+        <span class="notice-he" lang="he" dir="rtl"><a href="../license.html">רישיון ותנאי שימוש</a></span>
+        <span class="notice-en" lang="en" dir="ltr"><a href="../license.html">License &amp; terms</a></span>
+        <span class="notice-ar" lang="ar" dir="rtl"><a href="../license.html">الترخيص وشروط الاستخدام</a></span>
     </footer>
 </body>
 </html>

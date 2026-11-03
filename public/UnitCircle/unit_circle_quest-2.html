@@ -113,6 +113,7 @@
         <select id="lang-select" onchange="setLanguage(this.value)" class="bg-slate-900 border border-slate-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2 cursor-pointer">
           <option value="he" selected>עברית</option>
           <option value="en">English</option>
+          <option value="ar" lang="ar">العربية</option>
         </select>
       </div>
 
@@ -243,6 +244,24 @@
   <script>
     // I18N Dictionary
     const i18n = {
+      ar: {
+        title: "رحلة دائرة الوحدة", subtitle: "الرياضيات للصف الحادي عشر",
+        tab_free: "تدريب حر", tab_lvl1: "المستوى 1", tab_lvl2: "المستوى 2", tab_lvl3: "المستوى 3", tab_lvl4: "المستوى 4",
+        btn_deg: "درجات", btn_rad: "راديان", btn_reset: "إعادة ضبط",
+        desc_free: "اسحب بحرية في وضع الدرجات، أو انتقل بين مضاعفات π/12 في وضع الراديان.",
+        desc_lvl1: "حدد الموضع الصحيح للزاوية الأساسية المعطاة (من 0° إلى 360°).",
+        desc_lvl2: "حدد الموضع الصحيح. يشمل ذلك زوايا سالبة ودورات إضافية!",
+        desc_lvl3: "حدد الزاوية من قيم الجيب وجيب التمام الدقيقة في الربع الأول.",
+        desc_lvl4: "حدد الزاوية الصحيحة من القيم الدقيقة الموجبة والسالبة في جميع الأرباع!",
+        title_free: "تدريب حر", title_lvl1: "المستوى 1: الزوايا الأساسية", title_lvl2: "المستوى 2: دورات متقدمة",
+        title_lvl3: "المستوى 3: القيم الدقيقة (الربع الأول)", title_lvl4: "المستوى 4: إتقان القيم المثلثية",
+        find_angle: "حدد هذه الزاوية", btn_submit: "تحقق من الموضع",
+        modal_correct: "صحيح!", modal_correct_msg: "أحسنت! موضع الزاوية صحيح تمامًا.",
+        modal_wrong: "حاول مجددًا", modal_wrong_msg1: "زاويتك حاليًّا عند:", modal_wrong_msg2: "واصل البحث!",
+        btn_next_q: "السؤال التالي", btn_finish_lvl: "إنهاء المستوى", btn_keep_trying: "حاول مجددًا",
+        lvl_complete: "اكتمل المستوى!", lvl_complete_msg: "عمل رائع! أجبت بنجاح عن جميع الأسئلة الخمسة في هذا المستوى.",
+        btn_menu: "القائمة", btn_next_lvl: "المستوى التالي", q_prefix: "س"
+      },
       en: {
         title: "Unit Circle Quest",
         subtitle: "11th Grade Mathematics",
@@ -361,11 +380,12 @@
 
     function setLanguage(langCode) {
       state.lang = langCode;
+      document.getElementById('lang-select').setAttribute('aria-label', { he: 'שפה', en: 'Language', ar: 'اللغة' }[langCode]);
       const htmlTag = document.documentElement;
       
-      if (langCode === 'he') {
+      if (['he', 'ar'].includes(langCode)) {
         htmlTag.setAttribute('dir', 'rtl');
-        htmlTag.setAttribute('lang', 'he');
+        htmlTag.setAttribute('lang', langCode);
       } else {
         htmlTag.setAttribute('dir', 'ltr');
         htmlTag.setAttribute('lang', 'en');
@@ -373,11 +393,15 @@
 
       updateTranslations();
       updateModeTextUI();
+      document.title = i18n[state.lang].title;
+      if (!document.getElementById('feedback-modal').classList.contains('hidden')) {
+        showModal(document.getElementById('feedback-content').dataset.correct === 'true');
+      }
       
       // Update Arrow Direction in Next Level Button
       const icon = document.querySelector('#next-level-btn i');
       if(icon) {
-        if(langCode === 'he') {
+        if(['he', 'ar'].includes(langCode)) {
           icon.className = 'fa-solid fa-arrow-left';
         } else {
           icon.className = 'fa-solid fa-arrow-right';
@@ -408,7 +432,7 @@
       
       const qPrefix = document.getElementById('t-q-prefix');
       qPrefix.textContent = t.q_prefix;
-      if (state.lang === 'en') qPrefix.classList.remove('hidden');
+      if (state.lang !== 'he') qPrefix.classList.remove('hidden');
       else qPrefix.classList.add('hidden'); // Hebrew uses plain number naturally
     }
 
@@ -944,8 +968,9 @@
     };
   </script>
     <footer class="site-copyright">
-        <span class="notice-he" lang="he" dir="rtl">© 2026 <bdi>יוני בנדר</bdi> · <a href="../license.html">זכויות יוצרים ורישיון</a></span>
-        <span class="notice-en" lang="en" dir="ltr">© 2026 יוני בנדר · <a href="../license.html">Copyright &amp; license</a></span>
+        <span class="notice-he" lang="he" dir="rtl"><a href="../license.html">רישיון ותנאי שימוש</a></span>
+        <span class="notice-en" lang="en" dir="ltr"><a href="../license.html">License &amp; terms</a></span>
+        <span class="notice-ar" lang="ar" dir="rtl"><a href="../license.html">الترخيص وشروط الاستخدام</a></span>
     </footer>
 </body>
 </html>

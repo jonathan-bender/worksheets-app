@@ -14,8 +14,13 @@
 .site-copyright a { color: #3730a3; text-decoration: underline; }
 .site-copyright a:focus-visible { outline: 3px solid #4f46e5; outline-offset: 3px; }
 .site-copyright .notice-he { display: none; }
+.site-copyright .notice-ar { display: none; }
 html[lang="he"] .site-copyright .notice-he { display: inline; }
 html[lang="he"] .site-copyright .notice-en { display: none; }
+html[lang="ar"] .site-copyright .notice-ar { display: inline; }
+html[lang="ar"] .site-copyright .notice-en { display: none; }
+html[lang="ar"] body { font-family: Tahoma, Arial, sans-serif; }
+.math-ltr { unicode-bidi: isolate; }
 /* Fullscreen games cannot scroll to a footer. Keep their notice compact. */
 .site-copyright--compact {
     position: fixed;

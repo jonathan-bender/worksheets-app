@@ -6,7 +6,7 @@
         en: {
             brand: 'Geometric Constructions', help: 'How to play', language: 'Language', challenge: 'YOUR CHALLENGE',
             step1: 'Choose a line or a circle.', step2: 'Tap two points to construct it.', step3: 'Use intersections to keep building.',
-            restart: 'Start over', license: 'Copyright & license', board: 'CONSTRUCTION BOARD', fit: 'Center',
+            restart: 'Start over', license: 'License & terms', board: 'CONSTRUCTION BOARD', fit: 'Center',
             solved: 'Beautifully constructed!', solvedDetail: 'Your construction checks out.', next: 'Next challenge',
             line: 'Line', circle: 'Circle', move: 'Move', undo: 'Undo', redo: 'Redo',
             gesture: 'Drag the background to pan · Scroll or pinch with two fingers to zoom',
@@ -31,7 +31,7 @@
         he: {
             brand: 'בניות גאומטריות', help: 'איך משחקים', language: 'שפה', challenge: 'האתגר שלכם',
             step1: 'בחרו ישר או מעגל.', step2: 'הקישו על שתי נקודות כדי לבנות.', step3: 'השתמשו בנקודות החיתוך להמשך הבנייה.',
-            restart: 'התחלה מחדש', license: 'זכויות יוצרים ורישיון', board: 'לוח הבנייה', fit: 'מרכוז',
+            restart: 'התחלה מחדש', license: 'רישיון ותנאי שימוש', board: 'לוח הבנייה', fit: 'מרכוז',
             solved: 'הצלחתם!', solvedDetail: 'הבנייה שלכם מדויקת.', next: 'האתגר הבא',
             line: 'ישר', circle: 'מעגל', move: 'הזזה', undo: 'ביטול', redo: 'שחזור',
             gesture: 'גררו את הרקע להזזה · גללו או צבטו בשתי אצבעות להגדלה',

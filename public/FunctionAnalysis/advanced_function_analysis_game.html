@@ -59,6 +59,7 @@
             <select id="lang-select" onchange="changeLang(this.value)" class="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-1.5 shadow-sm">
                 <option value="he" selected>עברית</option>
                 <option value="en">English</option>
+                <option value="ar" lang="ar">العربية</option>
             </select>
         </div>
 
@@ -204,6 +205,41 @@
 
 <script>
     const dict = {
+        ar: {
+            title: "دراسة متقدمة للدوال", level: "المستوى",
+            s1_title: "1. نقاط التقاطع مع محور x (الجذور)",
+            s1_desc: "انقر على محور x لتحديد جذور الدالة.", s1_btn: "تحقق من الجذور",
+            s2_title: "2. زوجية الدالة وفرديتها", s2_desc: "هل الدالة زوجية أم فردية أم ليست أيًّا منهما؟",
+            s2_even: "زوجية", s2_odd: "فردية", s2_neither: "ليست أيًّا منهما", s2_btn: "تحقق من الإجابة",
+            s3_title: "3. خطوط التقارب الأفقية",
+            s3_desc: "انقر على محور y لتحديد خطوط التقارب الأفقية. (إذا لم توجد، انقر على تحقق فقط).",
+            s3_btn: "تحقق من خطوط التقارب",
+            s4_title: "4. خطوط التقارب العمودية",
+            s4_desc: "انقر على محور x لتحديد خطوط التقارب العمودية. (إذا لم توجد، انقر على تحقق فقط).",
+            s4_btn: "تحقق من خطوط التقارب",
+            s5_title: "5. النقاط القصوى (f'(x) = 0)",
+            s5_desc: "حدد قيم x التي تحقق f'(x) = 0 بالنقر على محور x.",
+            s5_btn1: "تحقق من النقاط القصوى", s5_btn2: "تخطَّ واعرض الحل",
+            s6_title: "6. رسم منحنى الدالة", s6_desc: "ارسم منحنى الدالة f(x) مارًّا بدقة عبر الجذور والنقاط القصوى.",
+            btn_clear: "مسح", btn_skip: "تخطٍّ", btn_validate: "تحقق", btn_continue: "متابعة",
+            s7_title: "7. تحويلات الدالة", s7_desc: "بالاعتماد على منحنى f(x) (بالأخضر)، ارسم:",
+            btn_next_level: "المستوى التالي", course_completed: "أكملت جميع المستويات!",
+            fb1_correct: "الجذور صحيحة!", fb1_incorrect: "الجذور غير صحيحة. حاول مجددًا.",
+            fb2_select: "اختر إجابة أولًا.", fb2_correct: "إجابتك عن زوجية الدالة صحيحة!", fb2_incorrect: "غير صحيح. ادرس f(-x).",
+            fb3_correct: "خطوط التقارب الأفقية صحيحة!", fb3_incorrect: "خطوط التقارب الأفقية غير صحيحة. ادرس السلوك عندما x→±∞.",
+            fb4_correct: "خطوط التقارب العمودية صحيحة!", fb4_incorrect: "خطوط التقارب العمودية غير صحيحة. تحقق من مجال تعريف المقام.",
+            fb5_correct: "مواضع النقاط القصوى صحيحة!", fb5_incorrect: "قيم x للنقاط القصوى غير صحيحة.", fb5_skip: "تم عرض الإجابات.",
+            fb6_draw: "ارسم منحنى الدالة أولًا.", fb6_undef: "رسمت داخل منطقة لا تكون فيها الدالة معرّفة.",
+            fb6_cross: "عبرت محور x في موضع غير صحيح.", fb6_miss_root: "لم يمر المنحنى بنقطة التقاطع عند الجذر x=",
+            fb6_miss_ext: "لم يمر المنحنى بالنقطة القصوى عند x=", fb6_miss_va: "تنقص رسمك تفاصيل قرب خط التقارب العمودي x=",
+            fb6_sign: "رسمت جزءًا من الدالة في الجانب غير الصحيح من محور x.",
+            fb6_ha: "تأكد من اقتراب المنحنى من خطوط التقارب الأفقية من الجانب الصحيح.",
+            fb6_success: "أحسنت! الشكل العام صحيح. يُعرض الآن المنحنى الدقيق.", fb6_skip: "تم عرض المنحنى.",
+            fb7_draw: "ارسم منحنى الدالة بعد التحويل أولًا.", fb7_undef: "رسمت داخل منطقة غير معرّفة.",
+            fb7_more: "ارسم جزءًا أكبر من منحنى الدالة.", fb7_success: "تحويل ممتاز!",
+            fb7_incorrect: "التحويل غير صحيح. تحقق من المنحنى بعناية.", fb7_skip: "تم عرض التحويل.",
+            fb7_sign: "رسمت جزءًا من الدالة بعد التحويل في الجانب غير الصحيح من محور x."
+        },
         en: {
             title: "Advanced Function Analysis",
             level: "Level",
@@ -527,7 +563,12 @@
     function changeLang(lang) {
         currentLang = lang;
         document.documentElement.lang = lang;
-        document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+        document.documentElement.dir = ['he', 'ar'].includes(lang) ? 'rtl' : 'ltr';
+        document.getElementById('lang-select').setAttribute('aria-label', { he: 'שפה', en: 'Language', ar: 'اللغة' }[lang]);
+        document.title = t('title');
+        document.querySelectorAll('[data-feedback-key]').forEach(el => {
+            el.textContent = t(el.dataset.feedbackKey) + (el.dataset.feedbackSuffix || '');
+        });
         
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
@@ -799,11 +840,15 @@
         const fb = document.getElementById(`fb-${step}`);
         let message = t(msgKey) + dynamicSuffix;
         fb.textContent = message;
+        fb.dataset.feedbackKey = msgKey;
+        fb.dataset.feedbackSuffix = dynamicSuffix;
         fb.className = `font-medium mt-3 text-center text-sm ${success ? 'text-green-600' : 'text-red-500'}`;
         fb.classList.remove('hidden');
         
         const popMsg = document.getElementById('canvas-overlay-msg');
         popMsg.textContent = message;
+        popMsg.dataset.feedbackKey = msgKey;
+        popMsg.dataset.feedbackSuffix = dynamicSuffix;
         popMsg.style.backgroundColor = success ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)';
         popMsg.classList.remove('opacity-0');
         setTimeout(() => popMsg.classList.add('opacity-0'), 2500);
@@ -1086,8 +1131,9 @@
     };
 </script>
     <footer class="site-copyright site-copyright--compact">
-        <span class="notice-he" lang="he" dir="rtl">© 2026 <bdi>יוני בנדר</bdi> · <a href="../license.html">זכויות יוצרים ורישיון</a></span>
-        <span class="notice-en" lang="en" dir="ltr">© 2026 יוני בנדר · <a href="../license.html">Copyright &amp; license</a></span>
+        <span class="notice-he" lang="he" dir="rtl"><a href="../license.html">רישיון ותנאי שימוש</a></span>
+        <span class="notice-en" lang="en" dir="ltr"><a href="../license.html">License &amp; terms</a></span>
+        <span class="notice-ar" lang="ar" dir="rtl"><a href="../license.html">الترخيص وشروط الاستخدام</a></span>
     </footer>
 </body>
 </html>
