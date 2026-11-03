@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>GC4 engine regression checks</title>
+<style>body{font:16px/1.6 system-ui;max-width:850px;margin:40px auto;padding:0 20px;background:#f7f8f4;color:#203832}li{margin:8px 0}.pass{color:#087f72}.fail{color:#b3261e}</style></head>
+<body><h1>Geometric Constructions 4.0 regression checks</h1><p id="summary">Running…</p><ol id="results"></ol>
+<script src="../public/GeometricConstructions4.0/geometry.js"></script><script src="geometric-constructions4.test.js"></script>
+<script>
+const failed = gc4TestResults.filter(r => !r.pass);
+document.getElementById('summary').textContent = `${gc4TestResults.length - failed.length}/${gc4TestResults.length} passed`;
+document.getElementById('summary').className = failed.length ? 'fail' : 'pass';
+for (const result of gc4TestResults) {
+    const li = document.createElement('li'); li.className = result.pass ? 'pass' : 'fail';
+    li.textContent = `${result.pass ? '✓' : '✕'} ${result.name}${result.error ? ': ' + result.error : ''}`;
+    document.getElementById('results').appendChild(li);
+}
+</script></body></html>

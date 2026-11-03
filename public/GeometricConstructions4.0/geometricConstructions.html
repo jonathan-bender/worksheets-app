@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#f7f8f4">
+    <title>Geometric Constructions 4.0</title>
+    <link rel="stylesheet" href="game.css">
+    <script src="geometry.js" defer></script>
+    <script src="game.js" defer></script>
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="../index.html" aria-label="Math Games Hub"><span class="brand-mark" aria-hidden="true">△</span><span data-t="brand">בניות גאומטריות</span><small>4.0</small></a>
+        <div class="header-actions">
+            <button id="help" class="quiet" data-t="help">איך משחקים</button>
+            <label class="sr-only" for="language" data-t="language">שפה</label>
+            <select id="language"><option value="he">עברית</option><option value="en">English</option></select>
+        </div>
+    </header>
+    <main class="workspace">
+        <aside class="brief" aria-labelledby="goal-title">
+            <div class="level-picker"><label for="level" data-t="challenge">האתגר שלכם</label><select id="level"></select></div>
+            <div id="target-picture" class="target-picture" aria-hidden="true"></div>
+            <div class="goal-copy"><span id="level-count" class="eyebrow"></span><h1 id="goal-title"></h1><p id="goal-description"></p></div>
+            <div class="brief-bottom">
+                <div class="steps"><span class="step-dot">1</span><p data-t="step1">בחרו ישר או מעגל.</p><span class="step-dot">2</span><p data-t="step2">הקישו על שתי נקודות כדי לבנות.</p><span class="step-dot">3</span><p data-t="step3">השתמשו בנקודות החיתוך להמשך הבנייה.</p></div>
+                <button id="restart" class="quiet restart" data-t="restart">התחלה מחדש</button>
+                <footer><a href="../license.html" data-t="license">זכויות יוצרים ורישיון</a></footer>
+            </div>
+        </aside>
+        <section class="drawing-area" aria-label="Construction workspace">
+            <canvas id="board" tabindex="0" aria-label="Geometry drawing board"></canvas>
+            <div class="board-top"><span class="board-tag" data-t="board">לוח הבנייה</span><div class="view-controls"><button id="zoom-out" aria-label="Zoom out">−</button><button id="fit" data-t="fit">מרכוז</button><button id="zoom-in" aria-label="Zoom in">+</button></div></div>
+            <div id="success" class="success" hidden><span class="success-icon" aria-hidden="true">✓</span><div><strong data-t="solved">הצלחתם!</strong><span data-t="solvedDetail">הבנייה שלכם מדויקת.</span></div><button id="next" data-t="next">האתגר הבא</button><button id="dismiss-success" aria-label="Close">✕</button></div>
+            <div class="board-bottom">
+                <p id="status" role="status" aria-live="polite"></p>
+                <nav class="toolbar" aria-label="Drawing tools">
+                    <button id="tool-line" data-tool="line" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 20 4"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/></svg><span data-t="line">ישר</span><kbd>L</kbd></button>
+                    <button id="tool-circle" data-tool="circle" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="1"/><path d="m12 12 6-5"/></svg><span data-t="circle">מעגל</span><kbd>C</kbd></button>
+                    <button id="tool-move" data-tool="move" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg><span data-t="move">הזזה</span><kbd>M</kbd></button>
+                    <span class="divider"></span>
+                    <button id="undo" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5 3 10l5 5M3 10h11a6 6 0 0 1 0 12" transform="translate(0 -2)"/></svg><span data-t="undo">ביטול</span></button>
+                    <button id="redo" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 5 5 5-5 5M21 10H10a6 6 0 0 0 0 12" transform="translate(0 -2)"/></svg><span data-t="redo">שחזור</span></button>
+                </nav>
+                <span class="gesture-tip" data-t="gesture">גררו את הרקע להזזה · גללו או צבטו בשתי אצבעות להגדלה</span>
+            </div>
+        </section>
+    </main>
+    <dialog id="help-dialog">
+        <button class="close-dialog quiet" id="close-help" aria-label="Close">✕</button>
+        <span class="eyebrow" data-t="welcome">מקום לניסוי ולגילוי</span><h2 data-t="helpTitle">שתי נקודות. המון אפשרויות.</h2>
+        <p data-t="helpLine">ישר: הקישו על שתי נקודות. מעגל: הקישו על המרכז, ואז על נקודה שעל ההיקף.</p>
+        <p data-t="helpSnap">נקודות נצמדות לנקודות קיימות, לחיתוכים ולקווים. סימון בצבע טורקיז מראה לאן ההקשה תיצמד.</p>
+        <p data-t="helpMove">בכלי ההזזה אפשר לגרור נקודות חופשיות ואת נקודות ההתחלה. נקודות חיתוך נעות עם הבנייה ולא נגררות בנפרד. אם חיתוך מפסיק להתקיים, החלקים התלויים בו מוסתרים זמנית וחוזרים כשהחיתוך חוזר.</p>
+        <p data-t="helpUndo">כל בנייה וכל גרירה שהושלמה הן צעד אחד לביטול. מעבר בין האתגרים שומר את העבודה. מרכוז מחזיר את הבנייה לתצוגה.</p>
+        <p data-t="helpGoal">בנו בעזרת הקשרים בין הצורות — המשחק בודק שהבנייה נשארת נכונה גם כשנקודות ההתחלה משתנות. אין שעון ואין הגבלת ניסיונות.</p>
+        <p class="shortcut-note" data-t="shortcuts">מקלדת: L ישר · C מעגל · M הזזה · Ctrl/⌘ Z ביטול · Shift Z שחזור · Esc ביטול הנקודה הראשונה.</p>
+        <button id="start" class="primary" data-t="start">בואו נבנה</button>
+    </dialog>
+    <dialog id="restart-dialog"><h2 data-t="resetTitle">להתחיל את האתגר מחדש?</h2><p data-t="resetText">הבנייה באתגר הזה תימחק. שאר האתגרים יישמרו.</p><div class="dialog-actions"><button id="cancel-reset" class="quiet" data-t="cancel">ביטול</button><button id="confirm-reset" class="primary" data-t="restart">התחלה מחדש</button></div></dialog>
+</body>
+</html>
