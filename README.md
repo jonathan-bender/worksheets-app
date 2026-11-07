@@ -51,6 +51,15 @@ for those versions.
 The default Hebrew text is in `public/index.html`. Keep it in sync with the
 Hebrew and English dictionaries in `public/assets/landing.js`. Language changes
 update the page title, text, accessible section labels, and reading direction.
+The gallery styles live in `public/assets/landing.css`. Game cards are static
+HTML links, so the full gallery also works without JavaScript. Subject filters
+and search are provided by `landing.js`; search matches Hebrew and English
+game names regardless of the selected display language.
+
+Game previews are local WebP screenshots in `public/assets/thumbnails/`.
+Replace a preview there when a game's appearance changes. The landing page
+keeps licensing details behind its footer link to `public/license.html`.
+
 Shared copyright styles live in `public/assets/site-notice.css`; notices are
 static HTML so they remain accessible without JavaScript. Fullscreen games use
 a compact notice. The Firebase welcome template, `public/test.html`, is not an

@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Angle Master - 7th Grade Math</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/site-notice.css">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f0fdf4; /* Light emerald background */
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        
+        .bouncy-btn {
+            transition: all 0.15s ease;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+        }
+        .bouncy-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0px 0 rgba(0,0,0,0.2);
+        }
+
+        .tab-active {
+            background-color: #3b82f6;
+            color: white;
+            box-shadow: inset 0 -4px 0 rgba(0,0,0,0.2);
+        }
+        .tab-inactive {
+            background-color: #e2e8f0;
+            color: #64748b;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            max-width: 350px;
+            margin: 0 auto;
+            aspect-ratio: 1 / 1;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            border-radius: 1.5rem;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+            border: 4px solid #e2e8f0;
+        }
+
+        .c3-slot {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px dashed #cbd5e1;
+            background-color: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .c3-slot.active-slot {
+            border-style: solid;
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+        
+        .c3-slot.filled {
+            border-style: solid;
+            border-color: #10b981;
+            background-color: #10b981;
+            color: white;
+            box-shadow: 0 4px 0 #047857;
+        }
+
+        /* Modal animations */
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .modal-animate {
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white shadow-sm p-4 sticky top-0 z-10">
+        <div class="max-w-2xl mx-auto relative">
+            <!-- Language Selector -->
+            <div class="absolute top-0 right-0 sm:m-1 z-20" dir="ltr">
+                <select id="lang-selector" onchange="switchLanguage(this.value)" class="bg-slate-100 border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-1.5 font-bold cursor-pointer outline-none">
+                    <option value="he" selected>עברית</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+
+            <h1 class="text-3xl font-black text-center text-emerald-500 mb-4 tracking-tight mt-8 sm:mt-0" data-i18n="title">📐 אלוף הזוויות!</h1>
+            
+            <div class="flex flex-wrap justify-center gap-2 mb-2" id="tabs">
+                <button onclick="setChallenge(1)" id="tab-1" class="px-4 py-2 rounded-xl font-bold flex-1 min-w-[100px] text-center transition-colors" data-i18n="tab1">שמות זוויות</button>
+                <button onclick="setChallenge(2)" id="tab-2" class="px-4 py-2 rounded-xl font-bold flex-1 min-w-[100px] text-center transition-colors" data-i18n="tab2">בניית זוויות</button>
+                <button onclick="setChallenge(3)" id="tab-3" class="px-4 py-2 rounded-xl font-bold flex-1 min-w-[100px] text-center transition-colors" data-i18n="tab3">קודקודיות וצמודות</button>
+                <button onclick="setChallenge(4)" id="tab-4" class="px-4 py-2 rounded-xl font-bold flex-1 min-w-[100px] text-center transition-colors" data-i18n="tab4">זוגות צמודות</button>
+            </div>
+            
+            <!-- Level Indicators -->
+            <div class="flex justify-center gap-3 mt-4" id="level-nav">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Area -->
+    <main class="flex-1 max-w-2xl w-full mx-auto p-4 flex flex-col">
+        
+        <!-- Challenge 1: Naming Angles -->
+        <div id="c1-view" class="hidden flex-col items-center w-full">
+            <h2 class="text-xl font-bold text-slate-600 mb-4 text-center" data-i18n="c1_prompt">מהו שמה של הזווית המסומנת באות <span class="text-red-500 text-2xl font-serif italic">α</span> ?</h2>
+            
+            <div class="canvas-container mb-6">
+                <canvas id="c1-canvas" width="400" height="400"></canvas>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 w-full max-w-sm" id="c1-options" dir="ltr">
+                <!-- Buttons injected by JS -->
+            </div>
+        </div>
+
+        <!-- Challenge 2: Construct Angles -->
+        <div id="c2-view" class="hidden flex-col items-center w-full">
+            <p class="text-sm text-slate-500 font-bold mb-4 text-center mt-2" data-i18n="c2_prompt">גרור ושחרר זוויות צבעוניות מהמלאי אל הבד כדי לבנות את זווית המטרה האפורה!</p>
+            
+            <div class="canvas-container mb-6 relative">
+                <canvas id="c2-canvas" width="400" height="400" onclick="handleC2CanvasClick(event)"></canvas>
+                <button onclick="clearC2Board()" class="absolute top-4 right-4 bg-rose-100 text-rose-600 px-3 py-1 rounded-full font-bold text-sm shadow hover:bg-rose-200" data-i18n="c2_clear">נקה</button>
+            </div>
+
+            <h3 class="text-lg font-bold text-slate-400 mb-2" data-i18n="c2_inv">מלאי</h3>
+            <div class="flex flex-wrap justify-center gap-2 w-full max-w-md pb-4" id="c2-inventory" dir="ltr">
+                <!-- Inventory injected by JS -->
+            </div>
+        </div>
+
+        <!-- Challenge 3: Vertical Angles -->
+        <div id="c3-view" class="hidden flex-col items-center w-full">
+            <h2 class="text-xl font-bold text-slate-600 mb-2 text-center" data-i18n="c3_title">זוויות קודקודיות וצמודות!</h2>
+            <p class="text-sm text-slate-500 font-bold mb-4 text-center" data-i18n="c3_prompt">בחר זווית מהמלאי, ואז לחץ על חריץ כדי למקם אותה.</p>
+            
+            <div class="canvas-container mb-6 relative" id="c3-container" dir="ltr">
+                <canvas id="c3-canvas" width="400" height="400"></canvas>
+                <!-- Slots placed absolutely via JS -->
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-3 w-full max-w-md" id="c3-inventory" dir="ltr">
+                <!-- Inventory injected by JS -->
+            </div>
+        </div>
+
+        <!-- Challenge 4: Supplementary Pairs -->
+        <div id="c4-view" class="hidden flex-col items-center w-full">
+            <h2 class="text-xl font-bold text-slate-600 mb-2 text-center" data-i18n="c4_title">התאמת זוויות צמודות!</h2>
+            <p class="text-sm text-slate-500 font-bold mb-4 text-center" data-i18n="c4_prompt">גרור זוויות אל הבד. הצמד שתיים יחד כדי ליצור בדיוק 180 מעלות!</p>
+            
+            <div class="canvas-container mb-6 relative">
+                <canvas id="c4-canvas" width="400" height="400"></canvas>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-2 w-full max-w-md pb-4" id="c4-inventory" dir="ltr">
+                <!-- Inventory injected by JS -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Custom Modal -->
+    <div id="msg-modal" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl modal-animate flex flex-col items-center">
+            <div id="msg-icon" class="text-6xl mb-4">⭐</div>
+            <h2 id="msg-title" class="text-3xl font-black mb-2 text-slate-800">Correct!</h2>
+            <p id="msg-desc" class="text-lg text-slate-500 font-bold mb-6">Great job!</p>
+            <div class="flex gap-3 w-full">
+                <button id="msg-review-btn" class="bg-slate-200 text-slate-700 hover:bg-slate-300 font-bold text-lg py-3 px-4 rounded-2xl bouncy-btn flex-1 transition-colors" data-i18n="modal_review_btn">Review</button>
+                <button id="msg-btn" class="bg-emerald-500 text-white hover:bg-emerald-600 font-bold text-lg py-3 px-4 rounded-2xl bouncy-btn flex-1 transition-colors">Next Level</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confetti Canvas -->
+    <canvas id="confetti" class="fixed inset-0 pointer-events-none z-40 hidden"></canvas>
+
+    <script>
+        const translations = {
+            en: {
+                title: "📐 Angle Master!",
+                tab1: "Name Angles",
+                tab2: "Build Angles",
+                tab3: "Vertical & Supp.",
+                tab4: "Supp. Pairs",
+                c1_prompt: "What is the name of the angle marked with <span class='text-red-500 text-2xl font-serif italic'>α</span> ?",
+                c2_prompt: "Drag and drop colorful angles from your inventory into the canvas to build the gray goal angle!",
+                c2_clear: "Clear",
+                c2_inv: "Inventory",
+                c3_title: "Vertical & Supplementary Angles!",
+                c3_prompt: "Select an angle from inventory, then tap a slot to place it.",
+                c4_title: "Pair Supplementary Angles!",
+                c4_prompt: "Drag angles into the canvas. Snap two together to make exactly 180°!",
+                modal_correct_title: "⭐ Correct! ⭐",
+                modal_correct_desc: "Great job! Ready for the next one?",
+                modal_next_btn: "Next Level",
+                modal_review_btn: "Review",
+                modal_try_again: "Try Again",
+                modal_done_title: "🏆 Challenge Complete! 🏆",
+                modal_done_desc: "You mastered all the levels in this challenge!",
+                modal_done_btn: "Awesome!",
+                msg_c1_wrong_title: "Oops!",
+                msg_c1_wrong_desc: "That is not the correct name. Remember, the vertex must be in the middle!",
+                msg_c2_toobig_title: "Too Big!",
+                msg_c2_toobig_desc: "That piece makes the angle too large. Pick a smaller one or clear the board!",
+                msg_c2_okay: "Okay",
+                msg_c3_wrong_title: "Not Quite!",
+                msg_c3_wrong_desc: "That angle doesn't fit there. Think about vertical or supplementary angles.",
+                canvas_supp: "Supplementary",
+                canvas_not180: "Not 180°!"
+            },
+            he: {
+                title: "📐 אלוף הזוויות!",
+                tab1: "שמות זוויות",
+                tab2: "בניית זוויות",
+                tab3: "קודקודיות וצמודות",
+                tab4: "בניית זוגות צמודים",
+                c1_prompt: "מהו שמה של הזווית המסומנת באות <span class='text-red-500 text-2xl font-serif italic'>α</span> ?",
+                c2_prompt: "גרור ושחרר זוויות צבעוניות מהמלאי אל הבד כדי לבנות את זווית המטרה האפורה!",
+                c2_clear: "נקה",
+                c2_inv: "זוויות",
+                c3_title: "זוויות קודקודיות וצמודות!",
+                c3_prompt: "בחר זווית, ואז לחץ על מקום פנוי כדי למקם אותה.",
+                c4_title: "התאמת זוויות צמודות!",
+                c4_prompt: "גרור זוויות אל החלוון. הצמד שתיים יחד כדי ליצור בדיוק 180 מעלות!",
+                modal_correct_title: "⭐ נכון! ⭐",
+                modal_correct_desc: "עבודה מצוינת! מוכנים לשלב הבא?",
+                modal_next_btn: "שלב הבא",
+                modal_review_btn: "חזור",
+                modal_try_again: "נסה שוב",
+                modal_done_title: "🏆 האתגר הושלם! 🏆",
+                modal_done_desc: "שלטת בכל השלבים באתגר זה!",
+                modal_done_btn: "מדהים!",
+                msg_c1_wrong_title: "אופס!",
+                msg_c1_wrong_desc: "זה לא השם הנכון. זכרו, הקודקוד חייב להיות באמצע!",
+                msg_c2_toobig_title: "גדול מדי!",
+                msg_c2_toobig_desc: "החלק הזה הופך את הזווית לגדולה מדי. בחרו חלק קטן יותר או נקו את הלוח!",
+                msg_c2_okay: "בסדר",
+                msg_c3_wrong_title: "לא בדיוק!",
+                msg_c3_wrong_desc: "הזווית הזו לא מתאימה לשם. חשבו על זוויות קודקודיות או צמודות.",
+                canvas_supp: "צמודה",
+                canvas_not180: "לא 180°!"
+            }
+        };
+
+        function switchLanguage(lang) {
+            state.lang = lang;
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+            
+            document.getElementById('lang-selector').value = lang;
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    el.innerHTML = translations[lang][key];
+                }
+            });
+            
+            loadLevel(); // Re-render canvas texts
+        }
+
+        /* --- GAME STATE --- */
+        let state = {
+            challenge: 1,
+            level: 0,
+            lang: 'he',
+            progress: {
+                1: [false, false, false, false, false, false, false, false],
+                2: [false, false, false, false, false, false, false, false],
+                3: [false, false, false, false, false],
+                4: [false, false, false, false, false]
+            },
+            solutions: { 1: {}, 2: {}, 3: {}, 4: {} }
+        };
+
+        /* --- LEVEL DATA --- */
+        const C1_LEVELS = [
+            { // L1: Simple Acute
+                pts: { A: [100, 100], B: [100, 250], C: [300, 250] },
+                lines: [['A', 'B'], ['B', 'C']],
+                alpha: { p1: 'A', center: 'B', p2: 'C' },
+                options: ['ABC', 'ACB', 'BCA', 'CAB'],
+                correct: 'ABC'
+            },
+            { // L2: Simple Obtuse
+                pts: { X: [80, 120], Y: [200, 280], Z: [350, 150] },
+                lines: [['X', 'Y'], ['Y', 'Z']],
+                alpha: { p1: 'X', center: 'Y', p2: 'Z' },
+                options: ['YXZ', 'XYZ', 'ZYX', 'ZXY'],
+                correct: 'XYZ'
+            },
+            { // L3: Adjacent
+                pts: { A: [100, 100], B: [200, 300], C: [350, 300], D: [300, 150] },
+                lines: [['A', 'B'], ['B', 'C'], ['B', 'D']],
+                alpha: { p1: 'D', center: 'B', p2: 'C' },
+                options: ['DBC', 'ABD', 'ABC', 'BDA'],
+                correct: 'DBC'
+            },
+            { // L4: Triangle
+                pts: { P: [200, 80], Q: [80, 300], R: [320, 300] },
+                lines: [['P', 'Q'], ['Q', 'R'], ['R', 'P']],
+                alpha: { p1: 'P', center: 'Q', p2: 'R' },
+                options: ['PQR', 'QPR', 'PRQ', 'RQP'],
+                correct: 'PQR'
+            },
+            { // L5: Quadrilateral with diagonal
+                pts: { A: [120, 100], B: [300, 80], C: [340, 260], D: [80, 300] },
+                lines: [['A', 'B'], ['B', 'C'], ['C', 'D'], ['D', 'A'], ['B', 'D']],
+                alpha: { p1: 'A', center: 'B', p2: 'D' },
+                options: ['ABD', 'ADB', 'DAB', 'BDC'],
+                correct: 'ABD'
+            },
+            { // L6: Square inscribed in Triangle
+                pts: { A: [200, 50], B: [50, 320], C: [350, 320], D: [136, 170], E: [264, 170], F: [136, 320], G: [264, 320] },
+                lines: [['A', 'B'], ['B', 'C'], ['C', 'A'], ['D', 'E'], ['E', 'G'], ['G', 'F'], ['F', 'D']],
+                alpha: { p1: 'F', center: 'D', p2: 'E' },
+                options: ['FDE', 'FDA', 'ADE', 'BDE'],
+                correct: 'FDE'
+            },
+            { // L7: Triangle with external angle
+                pts: { P: [120, 120], Q: [120, 280], R: [280, 280], S: [360, 280] },
+                lines: [['P', 'Q'], ['Q', 'R'], ['R', 'P'], ['R', 'S']],
+                alpha: { p1: 'P', center: 'R', p2: 'S' },
+                options: ['PRS', 'PRQ', 'QRP', 'SRP'],
+                correct: 'PRS'
+            },
+            { // L8: Parallelogram with diagonals
+                pts: { J: [80, 100], K: [280, 100], L: [320, 260], M: [120, 260], N: [200, 180] },
+                lines: [['J', 'K'], ['K', 'L'], ['L', 'M'], ['M', 'J'], ['J', 'L'], ['K', 'M']],
+                alpha: { p1: 'J', center: 'N', p2: 'K' },
+                options: ['JNK', 'JNM', 'KNL', 'MNL'],
+                correct: 'JNK'
+            }
+        ];
+
+        const C2_LEVELS = [
+            { goal: 80, starting: [], inventory: [20, 30, 40, 50, 60] },
+            { goal: 120, starting: [], inventory: [30, 40, 50, 70, 90] },
+            { goal: 150, starting: [], inventory: [20, 40, 60, 90, 110] },
+            { goal: 90, starting: [], inventory: [15, 30, 45, 60, 75] },
+            { goal: 135, starting: [], inventory: [25, 45, 65, 90, 110] },
+            { goal: 110, starting: [], inventory: [30, 40, 50, 60], hideGoalText: true },
+            { goal: 75, starting: [], inventory: [15, 25, 30, 45], hideGoalText: true },
+            { goal: 160, starting: [], inventory: [40, 50, 70, 90], hideGoalText: true }
+        ];
+        let c2_activeAngles = [];
+
+        /* Drag & Drop State for Challenge 2 */
+        let c2_isDragging = false;
+        let c2_dragItem = null;
+        let c2_dragGhost = null;
+
+        document.addEventListener('mousemove', handleDragMove, {passive: false});
+        document.addEventListener('touchmove', handleDragMove, {passive: false});
+        document.addEventListener('mouseup', handleDragEnd);
+        document.addEventListener('touchend', handleDragEnd);
+
+        const C3_LEVELS = [
+            { // L1
+                top: 110, right: 70, bottom: 110, left: 70,
+                given: { slot: 'top' },
+                slots: ['bottom'],
+                inventory: [70, 110, 180],
+                rotation: 0
+            },
+            { // L2
+                top: 120, right: 60, bottom: 120, left: 60,
+                given: { slot: 'left' },
+                slots: ['right'],
+                inventory: [60, 120, 180],
+                rotation: 15
+            },
+            { // L3 - Need all 3
+                top: 130, right: 50, bottom: 130, left: 50,
+                given: { slot: 'top' },
+                slots: ['bottom', 'left', 'right'],
+                inventory: [50, 50, 130, 180],
+                rotation: -20
+            },
+            { // L4
+                top: 135, right: 45, bottom: 135, left: 45,
+                given: { slot: 'right' },
+                slots: ['left', 'top', 'bottom'],
+                inventory: [45, 135, 135, 90],
+                rotation: 10
+            },
+            { // L5
+                top: 100, right: 80, bottom: 100, left: 80,
+                given: { slot: 'bottom' },
+                slots: ['top', 'left', 'right'],
+                inventory: [80, 80, 100, 100],
+                rotation: -35
+            }
+        ];
+        let c3_selectedInventory = null;
+        let c3_placed = {};
+
+        const C4_LEVELS = [
+            { inventory: [100, 80, 90, 90] },
+            { inventory: [120, 60, 150, 30, 90, 90] },
+            { inventory: [110, 70, 45, 135, 10, 170] },
+            { inventory: [105, 75, 85, 95, 160, 20] },
+            { inventory: [50, 130, 65, 115, 25, 155, 90, 90] }
+        ];
+        let c4_activeItems = [];
+        let c4_inventoryItems = [];
+        let c4_isDragging = false;
+        let c4_dragItem = null;
+        let c4_dragGhost = null;
+        let c4_currentLevelLoaded = -1;
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        /* --- INITIALIZATION & ROUTING --- */
+        function init() {
+            // Shuffle options so the correct answer is in a random position each time
+            C1_LEVELS.forEach(lvl => {
+                if (!lvl.shuffled) {
+                    shuffleArray(lvl.options);
+                    lvl.shuffled = true;
+                }
+            });
+            
+            switchLanguage('he');
+            setChallenge(1);
+        }
+
+        function setChallenge(cNum) {
+            state.challenge = cNum;
+            state.level = 0; // Reset to first level when switching tabs
+            
+            // Update Tabs UI
+            for(let i=1; i<=4; i++) {
+                const btn = document.getElementById(`tab-${i}`);
+                if(i === cNum) {
+                    btn.classList.remove('tab-inactive');
+                    btn.classList.add('tab-active');
+                } else {
+                    btn.classList.remove('tab-active');
+                    btn.classList.add('tab-inactive');
+                }
+                document.getElementById(`c${i}-view`).classList.add('hidden');
+                document.getElementById(`c${i}-view`).classList.remove('flex');
+            }
+            
+            document.getElementById(`c${cNum}-view`).classList.remove('hidden');
+            document.getElementById(`c${cNum}-view`).classList.add('flex');
+
+            renderLevelNav();
+            loadLevel();
+        }
+
+        function setLevel(lNum) {
+            state.level = lNum;
+            renderLevelNav();
+            loadLevel();
+        }
+
+        function renderLevelNav() {
+            const nav = document.getElementById('level-nav');
+            nav.innerHTML = '';
+            const totalLevels = state.progress[state.challenge].length;
+            for(let i=0; i<totalLevels; i++) {
+                const isComplete = state.progress[state.challenge][i];
+                const isActive = (state.level === i);
+                
+                const btn = document.createElement('button');
+                btn.onclick = () => setLevel(i);
+                btn.className = `w-10 h-10 rounded-full font-bold flex items-center justify-center transition-all shadow-sm
+                    ${isComplete ? 'bg-emerald-400 text-white' : 'bg-white text-slate-400 border-2 border-slate-200'}
+                    ${isActive ? 'ring-4 ring-sky-300 transform scale-110' : 'hover:bg-slate-50'}`;
+                
+                btn.innerHTML = isComplete ? '✓' : (i + 1);
+                nav.appendChild(btn);
+            }
+        }
+
+        function loadLevel() {
+            if (state.challenge === 1) renderC1();
+            if (state.challenge === 2) renderC2();
+            if (state.challenge === 3) renderC3();
+            if (state.challenge === 4) renderC4();
+        }
+
+        /* --- CANVAS HELPERS --- */
+        function setupCanvas(id) {
+            const cvs = document.getElementById(id);
+            const ctx = cvs.getContext('2d');
+            ctx.clearRect(0, 0, cvs.width, cvs.height);
+            return { cvs, ctx };
+        }
+
+        function drawPoint(ctx, x, y, label) {
+            ctx.beginPath();
+            ctx.arc(x, y, 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#334155';
+            ctx.fill();
+            
+            ctx.font = '900 24px Nunito';
+            ctx.fillStyle = '#0f172a';
+            // Offset logic to prevent drawing over line (simplified)
+            ctx.fillText(label, x + 12, y - 12);
+        }
+
+        /* --- CHALLENGE 1: NAMING ANGLES --- */
+        function renderC1() {
+            const lvl = C1_LEVELS[state.level];
+            const { ctx } = setupCanvas('c1-canvas');
+
+            // Draw Lines
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#64748b';
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            lvl.lines.forEach(pair => {
+                const p1 = lvl.pts[pair[0]];
+                const p2 = lvl.pts[pair[1]];
+                ctx.beginPath();
+                ctx.moveTo(p1[0], p1[1]);
+                ctx.lineTo(p2[0], p2[1]);
+                ctx.stroke();
+            });
+
+            // Draw Angle Arc (Alpha)
+            const cPt = lvl.pts[lvl.alpha.center];
+            const p1Pt = lvl.pts[lvl.alpha.p1];
+            const p2Pt = lvl.pts[lvl.alpha.p2];
+            
+            let a1 = Math.atan2(p1Pt[1] - cPt[1], p1Pt[0] - cPt[0]);
+            let a2 = Math.atan2(p2Pt[1] - cPt[1], p2Pt[0] - cPt[0]);
+            
+            // Normalize and find shortest arc
+            let diff = a2 - a1;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+
+            ctx.beginPath();
+            ctx.arc(cPt[0], cPt[1], 40, a1, a1 + diff, diff < 0);
+            ctx.strokeStyle = '#ef4444'; // Red
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // Label Alpha
+            let midAngle = a1 + diff / 2;
+            let lx = cPt[0] + 65 * Math.cos(midAngle);
+            let ly = cPt[1] + 65 * Math.sin(midAngle);
+            ctx.fillStyle = '#ef4444';
+            ctx.font = 'italic 900 28px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('α', lx, ly);
+
+            // Draw Points
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
+            for (const [name, coords] of Object.entries(lvl.pts)) {
+                drawPoint(ctx, coords[0], coords[1], name);
+            }
+
+            // Build Options
+            const optsContainer = document.getElementById('c1-options');
+            optsContainer.innerHTML = '';
+            const isSolved = state.progress[1][state.level];
+            const savedSolution = state.solutions[1][state.level];
+
+            lvl.options.forEach(opt => {
+                const btn = document.createElement('button');
+                
+                if (isSolved && opt === savedSolution) {
+                    btn.className = 'bg-emerald-500 text-white text-xl font-bold py-4 rounded-2xl bouncy-btn ring-4 ring-emerald-300';
+                } else if (isSolved) {
+                    btn.className = 'bg-slate-300 text-white text-xl font-bold py-4 rounded-2xl opacity-50 cursor-not-allowed';
+                } else {
+                    btn.className = 'bg-sky-400 hover:bg-sky-500 text-white text-xl font-bold py-4 rounded-2xl bouncy-btn';
+                }
+                
+                btn.innerHTML = `<span class="opacity-75">∠</span> ${opt}`;
+                if (!isSolved) {
+                    btn.onclick = () => checkC1(opt, lvl.correct);
+                }
+                optsContainer.appendChild(btn);
+            });
+        }
+
+        function checkC1(selected, correct) {
+            if (selected === correct) {
+                state.solutions[1][state.level] = selected;
+                levelComplete();
+                renderC1(); // re-render to highlight correct
+            } else {
+                showMsg(translations[state.lang].msg_c1_wrong_title, translations[state.lang].msg_c1_wrong_desc, translations[state.lang].modal_try_again, false);
+            }
+        }
+
+        /* --- CHALLENGE 2: CONSTRUCT ANGLES (DRAG & DROP) --- */
+        function renderC2() {
+            const lvl = C2_LEVELS[state.level];
+            const isSolved = state.progress[2][state.level];
+            
+            if (isSolved && state.solutions[2][state.level]) {
+                c2_activeAngles = [...state.solutions[2][state.level]];
+            } else {
+                c2_activeAngles = [...lvl.starting];
+            }
+            
+            drawC2Board();
+
+            const inv = document.getElementById('c2-inventory');
+            inv.innerHTML = '';
+            
+            if (isSolved) return; // Hide inventory if already solved
+
+            const colors = ['#f43f5e', '#a855f7', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
+            
+            lvl.inventory.forEach((val, i) => {
+                const color = colors[i % colors.length];
+                const div = document.createElement('div');
+                div.className = 'cursor-pointer hover:scale-105 transition-transform touch-none';
+                div.innerHTML = getAngleSVG(val, color);
+                
+                div.addEventListener('mousedown', (e) => startDrag(e, val, color));
+                div.addEventListener('touchstart', (e) => startDrag(e, val, color), {passive: false});
+                
+                inv.appendChild(div);
+            });
+        }
+
+        function getAngleSVG(val, color) {
+            let cx = 50, cy = 75; // Vertex
+            let r = 30; // Arc radius
+            let len = 45; // Ray length
+            
+            if (val === 180) {
+                return `<svg width="100" height="90" viewBox="0 0 100 90" style="filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.15));">
+                    <path d="M 5,75 L 95,75" stroke="${color}" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M 80,75 A 30 30 0 0 0 20 75" fill="${color}33" stroke="${color}" stroke-width="3"/>
+                    <circle cx="50" cy="75" r="5" fill="${color}"/>
+                    <text x="50" y="35" fill="${color}" font-weight="900" font-size="18" text-anchor="middle" font-family="Nunito">${val}°</text>
+                </svg>`;
+            }
+            
+            let rad = -val * Math.PI / 180;
+            let endX = cx + len * Math.cos(rad);
+            let endY = cy + len * Math.sin(rad);
+            let arcEndX = cx + r * Math.cos(rad);
+            let arcEndY = cy + r * Math.sin(rad);
+            
+            let mid = -val / 2 * Math.PI / 180;
+            let tx = cx + 42 * Math.cos(mid);
+            let ty = cy + 42 * Math.sin(mid);
+            
+            let wedgeD = `M ${cx},${cy} L ${cx+r},${cy} A ${r} ${r} 0 0 0 ${arcEndX} ${arcEndY} Z`;
+            
+            return `<svg width="100" height="90" viewBox="0 0 100 90" style="filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.15));">
+                <path d="${wedgeD}" fill="${color}33" />
+                <path d="M ${cx},${cy} L ${cx+len},${cy}" stroke="${color}" stroke-width="5" stroke-linecap="round"/>
+                <path d="M ${cx},${cy} L ${endX},${endY}" stroke="${color}" stroke-width="5" stroke-linecap="round"/>
+                <path d="M ${cx+r},${cy} A ${r} ${r} 0 0 0 ${arcEndX} ${arcEndY}" fill="none" stroke="${color}" stroke-width="3"/>
+                <circle cx="${cx}" cy="${cy}" r="5" fill="${color}"/>
+                <text x="${tx}" y="${ty}" fill="${color}" font-weight="900" font-size="16" text-anchor="middle" dominant-baseline="middle" font-family="Nunito">${val}°</text>
+            </svg>`;
+        }
+
+        function startDrag(e, val, color) {
+            e.preventDefault(); 
+            c2_isDragging = true;
+            c2_dragItem = { val, color };
+            
+            c2_dragGhost = document.createElement('div');
+            c2_dragGhost.innerHTML = getAngleSVG(val, color);
+            c2_dragGhost.style.position = 'fixed';
+            c2_dragGhost.style.pointerEvents = 'none';
+            c2_dragGhost.style.zIndex = '9999';
+            c2_dragGhost.style.transform = 'translate(-50%, -50%) scale(1.2)';
+            document.body.appendChild(c2_dragGhost);
+            
+            updateDragPos(e);
+        }
+
+        function updateDragPos(e) {
+            if(!c2_dragGhost) return;
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            if(e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            c2_dragGhost.style.left = clientX + 'px';
+            c2_dragGhost.style.top = clientY + 'px';
+        }
+
+        function handleDragMove(e) {
+            if(c2_isDragging) {
+                e.preventDefault(); 
+                updateDragPos(e);
+            }
+        }
+
+        function handleDragEnd(e) {
+            if(c2_isDragging) {
+                c2_isDragging = false;
+                
+                let clientX = e.clientX;
+                let clientY = e.clientY;
+                if(e.changedTouches && e.changedTouches.length > 0) {
+                    clientX = e.changedTouches[0].clientX;
+                    clientY = e.changedTouches[0].clientY;
+                }
+                
+                let canvas = document.getElementById('c2-canvas');
+                let rect = canvas.getBoundingClientRect();
+                
+                if (clientX >= rect.left && clientX <= rect.right &&
+                    clientY >= rect.top && clientY <= rect.bottom) {
+                    addC2Angle(c2_dragItem);
+                }
+                
+                if(c2_dragGhost) {
+                    c2_dragGhost.remove();
+                    c2_dragGhost = null;
+                }
+            }
+        }
+
+        function drawC2Board() {
+            const lvl = C2_LEVELS[state.level];
+            const { ctx, cvs } = setupCanvas('c2-canvas');
+            const cx = 200;
+            const cy = 260; // Push down slightly to center the angle in canvas
+            const rayLen = 140;
+            const arcRadius = 60;
+
+            // 1. Draw Gray Target Angle Base
+            const goalRad = -lvl.goal * Math.PI / 180;
+            
+            // Fill target area lightly
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + rayLen, cy);
+            ctx.arc(cx, cy, rayLen, 0, goalRad, true); // true = anti-clockwise
+            ctx.closePath();
+            ctx.fillStyle = '#f1f5f9'; // slate-100
+            ctx.fill();
+
+            // Draw target rays
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + rayLen, cy);
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + rayLen * Math.cos(goalRad), cy + rayLen * Math.sin(goalRad));
+            ctx.strokeStyle = '#94a3b8'; // slate-400
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            
+            // Draw target Arc
+            ctx.beginPath();
+            ctx.arc(cx, cy, arcRadius, 0, goalRad, true);
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Draw Target Text
+            if (!lvl.hideGoalText) {
+                let midGoal = goalRad / 2;
+                let tx = cx + (arcRadius + 25) * Math.cos(midGoal);
+                let ty = cy + (arcRadius + 25) * Math.sin(midGoal);
+                ctx.fillStyle = '#64748b';
+                ctx.font = '900 24px Nunito';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                let label = lvl.goal === 180 ? `${translations[state.lang].canvas_supp} (${lvl.goal}°)` : `${lvl.goal}°`;
+                ctx.fillText(label, tx, ty - (lvl.goal === 180 ? 15 : 0));
+            }
+            
+            // 2. Draw Stacked Active Angles (Colorful dropped angles)
+            let currentAngle = 0;
+
+            c2_activeAngles.forEach((item) => {
+                let val = item.val;
+                let color = item.color;
+                let startRad = -currentAngle * Math.PI / 180;
+                currentAngle += val;
+                let endRad = -currentAngle * Math.PI / 180;
+
+                // Wedge Fill
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.arc(cx, cy, rayLen * 0.95, startRad, endRad, true);
+                ctx.closePath();
+                ctx.fillStyle = color + '33';
+                ctx.fill();
+                
+                // Rays
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + rayLen * 0.95 * Math.cos(startRad), cy + rayLen * 0.95 * Math.sin(startRad));
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + rayLen * 0.95 * Math.cos(endRad), cy + rayLen * 0.95 * Math.sin(endRad));
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+
+                // Arc
+                let arcRad = 55;
+                ctx.beginPath();
+                ctx.arc(cx, cy, arcRad, startRad, endRad, true);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                // Vertex Point
+                ctx.beginPath();
+                ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
+
+                // Draw Slice Text
+                let midRad = startRad + (endRad - startRad) / 2;
+                let txtX = cx + (arcRad + 25) * Math.cos(midRad);
+                let txtY = cy + (arcRad + 25) * Math.sin(midRad);
+                ctx.fillStyle = color;
+                ctx.font = '900 20px Nunito';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`${val}°`, txtX, txtY);
+            });
+        }
+
+        function addC2Angle(item) {
+            if (state.progress[2][state.level]) return; // Disable drop if solved
+            const lvl = C2_LEVELS[state.level];
+            let currentTotal = c2_activeAngles.reduce((a,b)=>a+b.val, 0);
+            
+            if (currentTotal + item.val > lvl.goal) {
+                showMsg(translations[state.lang].msg_c2_toobig_title, translations[state.lang].msg_c2_toobig_desc, translations[state.lang].msg_c2_okay, false);
+                return;
+            }
+
+            c2_activeAngles.push(item);
+            drawC2Board();
+
+            currentTotal += item.val;
+            if (currentTotal === lvl.goal) {
+                state.solutions[2][state.level] = [...c2_activeAngles];
+                setTimeout(levelComplete, 300);
+            }
+        }
+
+        function handleC2CanvasClick(e) {
+            if (state.challenge !== 2 || state.progress[2][state.level]) return;
+            const canvas = document.getElementById('c2-canvas');
+            const rect = canvas.getBoundingClientRect();
+            
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            const cx = 200;
+            const cy = 260; // Same center as in drawC2Board
+            const rayLen = 140;
+
+            const dx = x - cx;
+            const dy = y - cy;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+
+            // If click is outside the angle area, ignore
+            if (dist > rayLen) return;
+
+            let clickAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            // clickAngle is negative in the upper quadrants (0 to -180) where we draw
+            if (clickAngle > 0) return; // User clicked the lower half
+
+            let checkAngle = Math.abs(clickAngle);
+            let currentTotal = 0;
+            
+            for (let i = 0; i < c2_activeAngles.length; i++) {
+                let val = c2_activeAngles[i].val;
+                if (checkAngle >= currentTotal && checkAngle <= currentTotal + val) {
+                    c2_activeAngles.splice(i, 1);
+                    drawC2Board();
+                    break;
+                }
+                currentTotal += val;
+            }
+        }
+
+        function clearC2Board() {
+            if (state.progress[2][state.level]) return;
+            renderC2(); // reset to initial state
+        }
+
+        /* --- CHALLENGE 3: VERTICAL ANGLES --- */
+        function renderC3() {
+            const lvl = C3_LEVELS[state.level];
+            const isSolved = state.progress[3][state.level];
+            
+            if (isSolved && state.solutions[3][state.level]) {
+                c3_placed = { ...state.solutions[3][state.level] };
+            } else {
+                c3_placed = {};
+            }
+            c3_selectedInventory = null;
+            
+            const container = document.getElementById('c3-container');
+            // Remove old slots
+            container.querySelectorAll('.c3-slot').forEach(e => e.remove());
+
+            drawC3Board();
+
+            // Setup Inventory
+            const inv = document.getElementById('c3-inventory');
+            inv.innerHTML = '';
+            
+            if (!isSolved) {
+                lvl.inventory.forEach((val, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'c3-inv-btn bg-violet-400 text-white font-bold py-3 px-6 rounded-xl shadow-[0_4px_0_#7c3aed] transition-all text-xl hover:bg-violet-500';
+                    btn.innerText = `${val}°`;
+                    btn.onclick = () => selectC3Item(btn, val, idx);
+                    inv.appendChild(btn);
+                });
+            }
+
+            // Position Slots using Math relative to container (400x400)
+            const cx = 200;
+            const cy = 200;
+            const dist = 90; // distance from center
+
+            const slotPos = {
+                'top': { x: cx, y: cy - dist },
+                'bottom': { x: cx, y: cy + dist },
+                'left': { x: cx - dist, y: cy },
+                'right': { x: cx + dist, y: cy }
+            };
+
+            // Calculate rotation offsets for slots to make them align with the rotated cross visually
+            // Simplified: we just map them slightly based on the visual rotation. 
+            // For 7th grade, visual approximation is enough.
+            
+            // Render Required Slots
+            lvl.slots.forEach(slotKey => {
+                const pos = getRotatedSlotPos(slotKey, lvl.rotation, cx, cy, dist);
+                
+                const slot = document.createElement('div');
+                slot.className = 'c3-slot';
+                if (c3_placed[slotKey]) {
+                    slot.innerText = `${lvl[slotKey]}°`;
+                    slot.classList.add('filled');
+                }
+                slot.style.left = `${(pos.x / 400) * 100}%`;
+                slot.style.top = `${(pos.y / 400) * 100}%`;
+                if (!isSolved) {
+                    slot.onclick = () => placeC3Item(slot, slotKey);
+                }
+                slot.dataset.key = slotKey;
+                container.appendChild(slot);
+            });
+        }
+
+        function getRotatedSlotPos(slotKey, rotDeg, cx, cy, dist) {
+            let baseAngle = 0;
+            if(slotKey === 'right') baseAngle = 0;
+            if(slotKey === 'bottom') baseAngle = 90;
+            if(slotKey === 'left') baseAngle = 180;
+            if(slotKey === 'top') baseAngle = 270;
+
+            let finalRad = (baseAngle + rotDeg) * Math.PI / 180;
+            return {
+                x: cx + dist * Math.cos(finalRad),
+                y: cy + dist * Math.sin(finalRad)
+            };
+        }
+
+        function drawC3Board() {
+            const lvl = C3_LEVELS[state.level];
+            const { ctx } = setupCanvas('c3-canvas');
+            const cx = 200;
+            const cy = 200;
+            const length = 180;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(lvl.rotation * Math.PI / 180);
+
+            // Draw Cross Lines
+            ctx.beginPath();
+            // Line 1 (approx Top-Left to Bottom-Right)
+            ctx.moveTo(-length, -length * 0.5);
+            ctx.lineTo(length, length * 0.5);
+            // Line 2 (approx Bottom-Left to Top-Right)
+            ctx.moveTo(-length, length * 0.5);
+            ctx.lineTo(length, -length * 0.5);
+            
+            ctx.strokeStyle = '#475569'; // slate-600
+            ctx.lineWidth = 5;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Draw "Given" angle wedge
+            // The angles defined in the path above create 4 regions.
+            // Let's draw a nice colored wedge for the given slot.
+            drawC3GivenWedge(ctx, lvl);
+
+            ctx.restore();
+        }
+
+        function drawC3GivenWedge(ctx, lvl) {
+            const slot = lvl.given.slot;
+            let val = lvl[slot];
+            
+            // Determine approximate angles for the wedge based on lines
+            // Line1: angle = atan2(0.5, 1) ≈ 26.5 deg
+            // Line2: angle = atan2(-0.5, 1) ≈ -26.5 deg
+            let a1 = Math.atan2(0.5, 1);
+            let a2 = Math.atan2(-0.5, 1);
+
+            let start, end;
+            if (slot === 'right') { start = a2; end = a1; }
+            if (slot === 'bottom') { start = a1; end = Math.PI + a2; }
+            if (slot === 'left') { start = Math.PI + a2; end = Math.PI + a1; }
+            if (slot === 'top') { start = Math.PI + a1; end = Math.PI*2 + a2; }
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, 50, start, end);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.2)'; // emerald transparent
+            ctx.fill();
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Draw text
+            let mid = start + (end - start)/2;
+            let tx = 75 * Math.cos(mid);
+            let ty = 75 * Math.sin(mid);
+            ctx.fillStyle = '#047857';
+            ctx.font = '900 22px Nunito';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // De-rotate text so it stays upright
+            ctx.save();
+            ctx.translate(tx, ty);
+            ctx.rotate(-lvl.rotation * Math.PI / 180);
+            ctx.fillText(`${val}°`, 0, 0);
+            ctx.restore();
+        }
+
+        function selectC3Item(btnElement, val, idx) {
+            document.querySelectorAll('.c3-inv-btn').forEach(b => {
+                b.classList.remove('ring-4', 'ring-yellow-400', 'scale-110');
+            });
+            btnElement.classList.add('ring-4', 'ring-yellow-400', 'scale-110');
+            
+            c3_selectedInventory = { val, idx, btn: btnElement };
+            
+            // Highlight slots to show they can be clicked
+            document.querySelectorAll('.c3-slot:not(.filled)').forEach(s => {
+                s.classList.add('active-slot');
+            });
+        }
+
+        function placeC3Item(slotElement, slotKey) {
+            if (!c3_selectedInventory || slotElement.classList.contains('filled')) return;
+
+            const lvl = C3_LEVELS[state.level];
+            
+            if (c3_selectedInventory.val === lvl[slotKey]) {
+                // Correct placement
+                slotElement.innerText = `${c3_selectedInventory.val}°`;
+                slotElement.classList.add('filled');
+                slotElement.classList.remove('active-slot');
+                c3_selectedInventory.btn.style.display = 'none'; // hide fully from flow
+                
+                c3_placed[slotKey] = true;
+                
+                // Clear selection
+                c3_selectedInventory = null;
+                document.querySelectorAll('.c3-slot').forEach(s => s.classList.remove('active-slot'));
+
+                // Check Win
+                if (Object.keys(c3_placed).length === lvl.slots.length) {
+                    state.solutions[3][state.level] = { ...c3_placed };
+                    setTimeout(levelComplete, 400);
+                }
+            } else {
+                showMsg(translations[state.lang].msg_c3_wrong_title, translations[state.lang].msg_c3_wrong_desc, translations[state.lang].modal_try_again, false);
+            }
+        }
+
+        /* --- CHALLENGE 4: SUPPLEMENTARY PAIRS --- */
+        function renderC4() {
+            const lvl = C4_LEVELS[state.level];
+            const isSolved = state.progress[4][state.level];
+            
+            if (isSolved && state.solutions[4][state.level]) {
+                c4_activeItems = JSON.parse(JSON.stringify(state.solutions[4][state.level]));
+                c4_inventoryItems = [];
+                c4_currentLevelLoaded = state.level;
+            } else if (c4_currentLevelLoaded !== state.level) {
+                c4_activeItems = [];
+                c4_inventoryItems = [...lvl.inventory];
+                c4_currentLevelLoaded = state.level;
+            }
+            
+            updateC4InventoryUI();
+            drawC4Board();
+        }
+
+        function updateC4InventoryUI() {
+            const inv = document.getElementById('c4-inventory');
+            inv.innerHTML = '';
+            
+            const colors = ['#f43f5e', '#a855f7', '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6'];
+            
+            c4_inventoryItems.forEach((val, i) => {
+                if (val === null) return;
+                const color = colors[i % colors.length];
+                const div = document.createElement('div');
+                div.className = 'cursor-pointer hover:scale-105 transition-transform touch-none';
+                div.innerHTML = getAngleSVG(val, color);
+                
+                div.addEventListener('mousedown', (e) => startDragC4(e, val, color, 'inv', i));
+                div.addEventListener('touchstart', (e) => startDragC4(e, val, color, 'inv', i), {passive: false});
+                
+                inv.appendChild(div);
+            });
+        }
+
+        function drawC4Board() {
+            const { ctx, cvs } = setupCanvas('c4-canvas');
+            
+            c4_activeItems.forEach(item => {
+                if (item.isLocked) {
+                    // Draw paired 180 angle
+                    ctx.save();
+                    ctx.translate(item.x, item.y);
+                    
+                    const r = 40;
+                    const rayLen = 60;
+                    
+                    // First angle
+                    let a1 = -item.val * Math.PI/180;
+                    ctx.beginPath();
+                    ctx.moveTo(0,0);
+                    ctx.arc(0, 0, rayLen, 0, a1, true);
+                    ctx.fillStyle = item.color + '44';
+                    ctx.fill();
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(0,0);
+                    ctx.lineTo(rayLen, 0);
+                    ctx.moveTo(0,0);
+                    ctx.lineTo(rayLen*Math.cos(a1), rayLen*Math.sin(a1));
+                    ctx.strokeStyle = item.color;
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.arc(0,0, r, 0, a1, true);
+                    ctx.strokeStyle = item.color;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    let m1 = a1/2;
+                    ctx.fillStyle = item.color;
+                    ctx.font = '900 16px Nunito';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(`${item.val}°`, (r+15)*Math.cos(m1), (r+15)*Math.sin(m1));
+                    
+                    // Second angle (supplementary pair)
+                    if (item.pairVal) {
+                        let a2 = -(item.val + item.pairVal) * Math.PI/180; // Should be -PI for 180
+                        ctx.beginPath();
+                        ctx.moveTo(0,0);
+                        ctx.arc(0, 0, rayLen, a1, a2, true);
+                        ctx.fillStyle = item.pairColor + '44';
+                        ctx.fill();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(0,0);
+                        ctx.lineTo(rayLen*Math.cos(a2), rayLen*Math.sin(a2));
+                        ctx.strokeStyle = item.pairColor;
+                        ctx.lineWidth = 4;
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.arc(0,0, r, a1, a2, true);
+                        ctx.strokeStyle = item.pairColor;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        
+                        let m2 = a1 + (a2 - a1)/2;
+                        ctx.fillStyle = item.pairColor;
+                        ctx.fillText(`${item.pairVal}°`, (r+15)*Math.cos(m2), (r+15)*Math.sin(m2));
+                    }
+                    
+                    // Center Vertex
+                    ctx.beginPath();
+                    ctx.arc(0,0, 5, 0, Math.PI*2);
+                    ctx.fillStyle = '#334155';
+                    ctx.fill();
+                    
+                    ctx.restore();
+                } else {
+                    // Draw single floating angle
+                    ctx.save();
+                    ctx.translate(item.x, item.y);
+                    
+                    const r = 40;
+                    const rayLen = 60;
+                    let rad = -item.val * Math.PI/180;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(0,0);
+                    ctx.arc(0, 0, rayLen, 0, rad, true);
+                    ctx.fillStyle = item.color + '44';
+                    ctx.fill();
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(0,0);
+                    ctx.lineTo(rayLen, 0);
+                    ctx.moveTo(0,0);
+                    ctx.lineTo(rayLen*Math.cos(rad), rayLen*Math.sin(rad));
+                    ctx.strokeStyle = item.color;
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.arc(0,0, r, 0, rad, true);
+                    ctx.strokeStyle = item.color;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    let mid = rad/2;
+                    ctx.fillStyle = item.color;
+                    ctx.font = '900 16px Nunito';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(`${item.val}°`, (r+15)*Math.cos(mid), (r+15)*Math.sin(mid));
+                    
+                    ctx.beginPath();
+                    ctx.arc(0,0, 5, 0, Math.PI*2);
+                    ctx.fillStyle = item.color;
+                    ctx.fill();
+                    
+                    ctx.restore();
+                }
+            });
+        }
+
+        function startDragC4(e, val, color, source, sourceIdx, x=0, y=0) {
+            if (state.progress[4][state.level]) return;
+            e.preventDefault();
+            
+            c4_isDragging = true;
+            c4_dragItem = { val, color, source, sourceIdx, x, y };
+            
+            c4_dragGhost = document.createElement('div');
+            c4_dragGhost.innerHTML = getAngleSVG(val, color);
+            c4_dragGhost.style.position = 'fixed';
+            c4_dragGhost.style.pointerEvents = 'none';
+            c4_dragGhost.style.zIndex = '9999';
+            c4_dragGhost.style.transform = 'translate(-50%, -50%) scale(1.2)';
+            document.body.appendChild(c4_dragGhost);
+            
+            updateDragPosC4(e);
+            
+            // If dragging from canvas, remove temporarily
+            if (source === 'canvas') {
+                c4_activeItems.splice(sourceIdx, 1);
+                drawC4Board();
+            }
+        }
+
+        function updateDragPosC4(e) {
+            if(!c4_dragGhost) return;
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            if(e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            c4_dragGhost.style.left = clientX + 'px';
+            c4_dragGhost.style.top = clientY + 'px';
+        }
+
+        // Add additional logic to global drag listeners to support C4
+        document.addEventListener('mousemove', (e) => {
+            if(c4_isDragging) { e.preventDefault(); updateDragPosC4(e); }
+        }, {passive: false});
+        
+        document.addEventListener('touchmove', (e) => {
+            if(c4_isDragging) { e.preventDefault(); updateDragPosC4(e); }
+        }, {passive: false});
+        
+        document.addEventListener('mouseup', (e) => {
+            handleDragEndC4(e);
+        });
+        
+        document.addEventListener('touchend', (e) => {
+            handleDragEndC4(e);
+        });
+
+        function handleDragEndC4(e) {
+            if(!c4_isDragging) return;
+            c4_isDragging = false;
+            
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            if(e.changedTouches && e.changedTouches.length > 0) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            }
+            
+            let canvas = document.getElementById('c4-canvas');
+            let rect = canvas.getBoundingClientRect();
+            
+            if (c4_dragGhost) { c4_dragGhost.remove(); c4_dragGhost = null; }
+            
+            if (clientX >= rect.left && clientX <= rect.right &&
+                clientY >= rect.top && clientY <= rect.bottom) {
+                
+                // Dropped on canvas
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const dropX = (clientX - rect.left) * scaleX;
+                const dropY = (clientY - rect.top) * scaleY;
+                
+                if (c4_dragItem.source === 'inv') {
+                    c4_inventoryItems[c4_dragItem.sourceIdx] = null;
+                    updateC4InventoryUI(); // refresh inventory without resetting canvas
+                }
+                
+                c4_activeItems.push({
+                    val: c4_dragItem.val, color: c4_dragItem.color,
+                    x: dropX, y: dropY, isLocked: false
+                });
+                
+                checkC4Snaps();
+                drawC4Board();
+            } else {
+                // Dropped outside canvas
+                if (c4_dragItem.source === 'canvas') {
+                    let emptyIdx = c4_inventoryItems.indexOf(null);
+                    if (emptyIdx !== -1) c4_inventoryItems[emptyIdx] = c4_dragItem.val;
+                    else c4_inventoryItems.push(c4_dragItem.val);
+                    updateC4InventoryUI();
+                    drawC4Board();
+                }
+            }
+        }
+
+        function showFloatingText(text, x, y, color="#10b981") {
+            const container = document.getElementById('c4-view').querySelector('.canvas-container');
+            const el = document.createElement('div');
+            el.innerText = text;
+            el.style.position = 'absolute';
+            el.style.left = (x / 400 * 100) + '%';
+            el.style.top = (y / 400 * 100) + '%';
+            el.style.transform = 'translate(-50%, -50%)';
+            el.style.color = color;
+            el.style.fontWeight = '900';
+            el.style.fontSize = '24px';
+            el.style.pointerEvents = 'none';
+            el.style.textShadow = '0 2px 4px rgba(255,255,255,0.8)';
+            el.style.transition = 'all 1s ease-out';
+            el.style.zIndex = '50';
+            container.appendChild(el);
+            
+            // Trigger reflow for animation
+            void el.offsetWidth;
+            
+            el.style.top = ((y - 60) / 400 * 100) + '%';
+            el.style.opacity = '0';
+            
+            setTimeout(() => el.remove(), 1000);
+        }
+
+        function checkC4Snaps() {
+            for(let i=0; i<c4_activeItems.length; i++) {
+                if(c4_activeItems[i].isLocked) continue;
+                for(let j=i+1; j<c4_activeItems.length; j++) {
+                    if(c4_activeItems[j].isLocked) continue;
+                    
+                    let dx = c4_activeItems[i].x - c4_activeItems[j].x;
+                    let dy = c4_activeItems[i].y - c4_activeItems[j].y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if(dist < 75) {
+                        if (c4_activeItems[i].val + c4_activeItems[j].val === 180) {
+                            // MATCH!
+                            c4_activeItems[i].isLocked = true;
+                            c4_activeItems[i].pairVal = c4_activeItems[j].val;
+                            c4_activeItems[i].pairColor = c4_activeItems[j].color;
+                            
+                            let cx = (c4_activeItems[i].x + c4_activeItems[j].x)/2;
+                            let cy = (c4_activeItems[i].y + c4_activeItems[j].y)/2;
+                            c4_activeItems[i].x = cx; c4_activeItems[i].y = cy;
+                            
+                            c4_activeItems[j].toDelete = true;
+                            
+                            showFloatingText("180°!", cx, cy, "#10b981");
+                        } else {
+                            // REPEL! Bounce apart
+                            let angle = Math.atan2(dy, dx);
+                            c4_activeItems[i].x += Math.cos(angle) * 40;
+                            c4_activeItems[i].y += Math.sin(angle) * 40;
+                            c4_activeItems[j].x -= Math.cos(angle) * 40;
+                            c4_activeItems[j].y -= Math.sin(angle) * 40;
+                            
+                            showFloatingText(translations[state.lang].canvas_not180, (c4_activeItems[i].x + c4_activeItems[j].x)/2, (c4_activeItems[i].y + c4_activeItems[j].y)/2, "#ef4444");
+                        }
+                    }
+                }
+            }
+            
+            c4_activeItems = c4_activeItems.filter(item => !item.toDelete);
+            
+            let invEmpty = c4_inventoryItems.every(i => i === null);
+            let allLocked = c4_activeItems.every(i => i.isLocked) && c4_activeItems.length > 0;
+            
+            if (invEmpty && allLocked) {
+                state.solutions[4][state.level] = JSON.parse(JSON.stringify(c4_activeItems));
+                setTimeout(levelComplete, 400);
+            }
+        }
+
+        // Allow dragging unpaired items already placed on the C4 canvas
+        const c4Canvas = document.getElementById('c4-canvas');
+        c4Canvas.addEventListener('mousedown', handleC4CanvasDown);
+        c4Canvas.addEventListener('touchstart', handleC4CanvasDown, {passive: false});
+
+        function handleC4CanvasDown(e) {
+            if (state.challenge !== 4 || state.progress[4][state.level]) return;
+            
+            let rect = c4Canvas.getBoundingClientRect();
+            const scaleX = c4Canvas.width / rect.width;
+            const scaleY = c4Canvas.height / rect.height;
+            
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            if(e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            
+            const x = (clientX - rect.left) * scaleX;
+            const y = (clientY - rect.top) * scaleY;
+            
+            for(let i=c4_activeItems.length-1; i>=0; i--) {
+                let item = c4_activeItems[i];
+                if (item.isLocked) continue;
+                
+                let dx = x - item.x;
+                let dy = y - item.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist < 60) {
+                    startDragC4(e, item.val, item.color, 'canvas', i, item.x, item.y);
+                    break;
+                }
+            }
+        }
+
+        /* --- GAME LOGIC & MODALS --- */
+        function levelComplete() {
+            state.progress[state.challenge][state.level] = true;
+            
+            // Check if all levels in challenge are done
+            const allDone = state.progress[state.challenge].every(v => v);
+            
+            if (allDone) {
+                showMsg(translations[state.lang].modal_done_title, translations[state.lang].modal_done_desc, translations[state.lang].modal_done_btn, true);
+                fireConfetti();
+            } else {
+                showMsg(translations[state.lang].modal_correct_title, translations[state.lang].modal_correct_desc, translations[state.lang].modal_next_btn, false);
+            }
+            renderLevelNav();
+        }
+
+        function showMsg(title, desc, btnText, isChallengeComplete) {
+            const modal = document.getElementById('msg-modal');
+            document.getElementById('msg-title').innerText = title;
+            document.getElementById('msg-desc').innerText = desc;
+            
+            const btn = document.getElementById('msg-btn');
+            const reviewBtn = document.getElementById('msg-review-btn');
+            
+            btn.innerText = btnText;
+            
+            const totalLevels = state.progress[state.challenge].length;
+            
+            btn.onclick = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                
+                if (title.includes('Correct')) {
+                    if (state.level < totalLevels - 1) {
+                        setLevel(state.level + 1);
+                    }
+                }
+            };
+
+            reviewBtn.onclick = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                // Hides modal and remains on the current screen to inspect the solution!
+            }
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        /* --- CONFETTI EFFECT --- */
+        let confettiCtx;
+        let confettiParticles = [];
+        
+        function fireConfetti() {
+            const canvas = document.getElementById('confetti');
+            canvas.classList.remove('hidden');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            confettiCtx = canvas.getContext('2d');
+            
+            confettiParticles = [];
+            const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#a855f7'];
+            
+            for(let i=0; i<150; i++) {
+                confettiParticles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2 + 100,
+                    r: Math.random() * 6 + 4,
+                    dx: Math.random() * 20 - 10,
+                    dy: Math.random() * -20 - 10,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.random() * 10
+                });
+            }
+            requestAnimationFrame(renderConfetti);
+            
+            // Stop after 4 seconds
+            setTimeout(() => {
+                confettiParticles = [];
+                canvas.classList.add('hidden');
+            }, 4000);
+        }
+
+        function renderConfetti() {
+            if(confettiParticles.length === 0) return;
+            
+            confettiCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            
+            confettiParticles.forEach((p, index) => {
+                p.dy += 0.5; // gravity
+                p.x += p.dx;
+                p.y += p.dy;
+                p.tilt += 0.1;
+                
+                confettiCtx.beginPath();
+                confettiCtx.lineWidth = p.r;
+                confettiCtx.strokeStyle = p.color;
+                confettiCtx.moveTo(p.x + p.tilt + p.r, p.y);
+                confettiCtx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
+                confettiCtx.stroke();
+            });
+            
+            requestAnimationFrame(renderConfetti);
+        }
+
+        // Start game
+        window.onload = init;
+
+    </script>
+    <footer class="site-copyright">
+        <span class="notice-he" lang="he" dir="rtl"><a href="../license.html">רישיון ותנאי שימוש</a></span>
+        <span class="notice-en" lang="en" dir="ltr"><a href="../license.html">License &amp; terms</a></span>
+    </footer>
+</body>
+</html>

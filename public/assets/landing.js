@@ -1,120 +1,97 @@
 (() => {
     'use strict';
     const translations = {
-    "he": {
-        "language": "שפה",
-        "gameLinks": "קישורים למשחקים",
-        "activityLinks": "פעילויות נוספות",
-        "eyebrow": "לומדים ומשחקים",
-        "title": "פעילויות אינטראקטיביות ללימוד מתמטיקה",
-        "subtitle": "בחרו אתגר וצאו לפעילות מתמטית חדשה. כאן תמצאו משחקים באלגברה, בגאומטריה, בטריגונומטריה, בטרנספורמציות ובחקירת פונקציות.",
-        "games": "משחקים",
-        "algebra": "אלגברה",
-        "equationsTitle": "מגדלי משוואות",
-        "equationsDesc": "בנו משוואות והתקדמו שלב אחר שלב באתגרי אלגברה.",
-        "pelicanTitle": "השקנאי המתמטי",
-        "pelicanDesc": "עזרו לשקנאי לתפוס את התשובות הנכונות במשחק של מספרים מכוונים.",
-        "functions": "פונקציות",
-        "preTitle": "מבוא לחקירת פונקציות",
-        "preDesc": "גלו תכונות וקשרים של פונקציות, צעד אחר צעד.",
-        "advancedTitle": "חקירת פונקציות מתקדמת",
-        "advancedDesc": "העמיקו בחקירת פונקציות והתמודדו עם אתגרי חשיבה מתקדמים.",
-        "geometry": "גאומטריה",
-        "geometryTitle": "בניות גאומטריות",
-        "geometryDesc": "צרו צורות גאומטריות בעזרת ישרים, מעגלים וכלי בנייה.",
-        "geometry3Title": "בניות גאומטריות 3.0",
-        "geometry3Desc": "התנסו בגרסה משופרת של פעילות הבניות הגאומטריות.",
-        "geometry4Title": "בניות גאומטריות 4.0",
-        "geometry4Desc": "בנו בעזרת ישרים ומעגלים בשישה אתגרים, עם כלי הזזה, ביטול ושחזור ותמיכה במגע.",
-        "trigonometry": "טריגונומטריה",
-        "identitiesTitle": "התאמת זהויות טריגונומטריות",
-        "identitiesDesc": "התאימו זהויות טריגונומטריות וחדדו את החשיבה האלגברית.",
-        "solverTitle": "פתרון ביטויים טריגונומטריים",
-        "solverDesc": "תרגלו פתרון ביטויים טריגונומטריים באמצעות אתגר משחקי.",
-        "circle": "מעגל היחידה",
-        "circleTitle": "מסע במעגל היחידה",
-        "circleDesc": "חקרו את מעגל היחידה וחזקו את הבנת הזוויות והקואורדינטות.",
-        "patterns": "חוקיות",
-        "patternsTitle": "זיהוי חוקיות",
-        "patternsDesc": "זהו והמשיכו דפוסים מספריים וגאומטריים.",
-        "activities": "פעילויות לימוד נוספות",
-        "transformations": "טרנספורמציות של פונקציות",
-        "worksheet": "פתיחת דף העבודה",
-        "licenseTitle": "שימוש חופשי למטרות לא מסחריות",
-        "licenseSummary": "אפשר להשתמש, להעתיק, לשנות ולשתף את האפליקציה והקוד למטרות המותרות ברישיון. הרישיון מתיר במפורש שימוש על ידי מוסדות חינוך; שימוש מסחרי מעבר למותר בו דורש אישור נפרד.",
-        "licenseNotices": "בשיתוף עותקים יש לשמור את הודעת זכויות היוצרים ולצרף את הרישיון או קישור אליו.",
-        "licenseDetails": "הסבר על זכויות יוצרים ותנאי השימוש",
-        "licenseFull": "לרישיון המלא (באנגלית)"
-    },
-    "en": {
-        "language": "Language",
-        "gameLinks": "Game links",
-        "activityLinks": "Other activities",
-        "eyebrow": "Learning Arcade",
-        "title": "Math Games Hub",
-        "subtitle": "Choose a challenge and jump into a new math activity. These games cover algebra, geometry, trigonometry, transformations, and function analysis.",
-        "games": "Games",
-        "algebra": "Algebra",
-        "equationsTitle": "Equation Towers",
-        "equationsDesc": "Build equations and stack your way through engaging algebra challenges.",
-        "pelicanTitle": "Math Pelican",
-        "pelicanDesc": "Help the pelican catch the right answers in this fun algebra game.",
-        "functions": "Functions",
-        "preTitle": "Pre-Function Analysis",
-        "preDesc": "Begin exploring function patterns and relationships step by step.",
-        "advancedTitle": "Advanced Function Analysis",
-        "advancedDesc": "Take on deeper function analysis with a more advanced reasoning challenge.",
-        "geometry": "Geometry",
-        "geometryTitle": "Geometric Constructions",
-        "geometryDesc": "Create geometric figures using lines, circles, and construction tools.",
-        "geometry3Title": "Geometric Constructions 3.0",
-        "geometry3Desc": "Explore a more polished version of the geometry construction activity.",
-        "geometry4Title": "Geometric Constructions 4.0",
-        "geometry4Desc": "Build with lines and circles across six challenges, with move, undo, redo, and touch controls.",
-        "trigonometry": "Trigonometry",
-        "identitiesTitle": "Trig Identities Matcher",
-        "identitiesDesc": "Match trigonometric identities and sharpen your algebraic reasoning.",
-        "solverTitle": "Trig Solver Game",
-        "solverDesc": "Practice solving trig expressions through a game-based challenge.",
-        "circle": "Circle",
-        "circleTitle": "Unit Circle Quest",
-        "circleDesc": "Use the unit circle to strengthen angle and coordinate understanding.",
-        "patterns": "Patterns",
-        "patternsTitle": "Pattern Recognition",
-        "patternsDesc": "Identify and extend numerical and geometric patterns.",
-        "activities": "Other Learning Activities",
-        "transformations": "Function Transformations",
-        "worksheet": "Open worksheet",
-        "licenseTitle": "Free to use for noncommercial purposes",
-        "licenseSummary": "You may use, copy, modify, and share the app and code for purposes allowed by the license. Educational institutions are explicitly permitted; commercial use beyond the permitted purposes requires separate permission.",
-        "licenseNotices": "When sharing copies, preserve the required copyright notice and include the license or its URL.",
-        "licenseDetails": "Copyright and usage explained",
-        "licenseFull": "Read the full license (English)"
-    }
-};
-    const storageKey = 'math-games-hub-language';
+        he: {
+            brand: 'מתמטיקה במשחק', title: 'מתמטיקה במשחק — בחרו משחק והתחילו לגלות',
+            language: 'שפה', skip: 'דלגו למשחקים', eyebrow: 'תנו לסקרנות לשחק',
+            headline1: 'משחקים קצת.', headline2: 'מגלים המון.',
+            subtitle: 'בחרו משחק. תנו לסקרנות להוביל.', letsPlay: 'בואו נשחק',
+            featured: 'בא לכם אתגר?', playNow: 'שחקו עכשיו', allGames: 'כל המשחקים',
+            all: 'הכול', algebra: 'אלגברה', geometry: 'גאומטריה', functions: 'פונקציות', trigonometry: 'טריגונומטריה', patterns: 'חוקיות',
+            search: 'חיפוש משחק', searchPlaceholder: 'מצאו משחק...', filterLabel: 'סינון לפי נושא', gameLinks: 'קישורים למשחקים',
+            noResults: 'לא מצאנו משחק כזה.', resetFilters: 'הציגו את כל המשחקים',
+            footerNote: 'עוד משחק. עוד גילוי.', license: 'רישיון ותנאי שימוש',
+            pelicanTitle: 'השקנאי המתמטי', equationsTitle: 'מגדלי משוואות', anglesTitle: 'אלוף הזוויות',
+            circleTitle: 'מסע במעגל היחידה', patternsTitle: 'זיהוי חוקיות',
+            geometryTitle: 'בניות גאומטריות', geometry3Title: 'בניות גאומטריות 3.0', geometry4Title: 'בניות גאומטריות 4.0',
+            preTitle: 'מבוא לחקירת פונקציות', advancedTitle: 'חקירת פונקציות מתקדמת',
+            identitiesTitle: 'התאמת זהויות', solverTitle: 'פתרון משוואות טריגו', transformations: 'טרנספורמציות של פונקציות',
+            results: count => `${count} משחקים מוצגים`
+        },
+        en: {
+            brand: 'MATH PLAY', title: 'Math Play — pick a game, discover something new',
+            language: 'Language', skip: 'Skip to games', eyebrow: 'LET CURIOSITY PLAY',
+            headline1: 'Small challenges.', headline2: 'Big discoveries.',
+            subtitle: 'Pick a game. Follow your curiosity.', letsPlay: 'Let’s play',
+            featured: 'UP FOR A CHALLENGE?', playNow: 'Play now', allGames: 'All games',
+            all: 'All', algebra: 'Algebra', geometry: 'Geometry', functions: 'Functions', trigonometry: 'Trigonometry', patterns: 'Patterns',
+            search: 'Search games', searchPlaceholder: 'Find a game...', filterLabel: 'Filter by subject', gameLinks: 'Game links',
+            noResults: 'No games found. Try another search.', resetFilters: 'Show all games',
+            footerNote: 'A little play. A new discovery.', license: 'License & terms',
+            pelicanTitle: 'Math Pelican', equationsTitle: 'Equation Towers', anglesTitle: 'Angle Master',
+            circleTitle: 'Unit Circle Quest', patternsTitle: 'Pattern Quest',
+            geometryTitle: 'Geometric Constructions', geometry3Title: 'Geometric Constructions 3.0', geometry4Title: 'Geometric Constructions 4.0',
+            preTitle: 'Pre-Function Analysis', advancedTitle: 'Advanced Function Analysis',
+            identitiesTitle: 'Identity Match', solverTitle: 'Trig Equation Solver', transformations: 'Function Transformations',
+            results: count => `${count} ${count === 1 ? 'game' : 'games'} shown`
+        }
+    };
     const selector = document.getElementById('language-select');
+    const search = document.getElementById('game-search');
+    const cards = [...document.querySelectorAll('.game-card')];
+    const filters = [...document.querySelectorAll('[data-filter]')];
+    let language = 'he', category = 'all';
+    const normalize = value => value.normalize('NFKD').replace(/[\u0591-\u05c7]/g, '').toLocaleLowerCase().trim();
 
+    function filterGames() {
+        const query = normalize(search.value);
+        let count = 0;
+        cards.forEach(card => {
+            // Search both names, regardless of the currently selected language.
+            const haystack = Object.values(translations).map(t => `${t[card.dataset.titleKey]} ${t[card.dataset.category]}`).join(' ');
+            const visible = (category === 'all' || card.dataset.category === category) && normalize(haystack).includes(query);
+            card.hidden = !visible;
+            if (visible) count++;
+        });
+        document.getElementById('game-count').textContent = count;
+        document.getElementById('empty-state').hidden = count > 0;
+        document.getElementById('results-status').textContent = translations[language].results(count);
+    }
     function applyLanguage(value) {
-        const language = value === 'en' ? 'en' : 'he';
+        language = value === 'en' ? 'en' : 'he';
+        const t = translations[language];
         document.documentElement.lang = language;
         document.documentElement.dir = language === 'he' ? 'rtl' : 'ltr';
-        document.title = translations[language].title;
+        document.title = t.title;
+        document.querySelector('meta[name="description"]').content = t.subtitle;
         selector.value = language;
-        document.querySelectorAll('[data-i18n]').forEach(element => {
-            element.textContent = translations[language][element.dataset.i18n];
-        });
-        document.querySelectorAll('[data-i18n-aria-label]').forEach(element => {
-            element.setAttribute('aria-label', translations[language][element.dataset.i18nAriaLabel]);
-        });
+        document.querySelectorAll('[data-i18n]').forEach(element => { element.textContent = t[element.dataset.i18n]; });
+        document.querySelectorAll('[data-i18n-aria-label]').forEach(element => { element.setAttribute('aria-label', t[element.dataset.i18nAriaLabel]); });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(element => { element.placeholder = t[element.dataset.i18nPlaceholder]; });
+        filterGames();
     }
-
-    // Storage may be unavailable in private browsing or when opening local files.
+    filters.forEach(button => button.addEventListener('click', () => {
+        category = button.dataset.filter;
+        filters.forEach(filter => {
+            const active = filter === button;
+            filter.classList.toggle('active', active);
+            filter.setAttribute('aria-pressed', String(active));
+        });
+        filterGames();
+    }));
+    search.addEventListener('input', filterGames);
+    document.getElementById('clear-search').addEventListener('click', () => {
+        search.value = '';
+        filters[0].click();
+        search.focus();
+    });
+    const storageKey = 'math-games-hub-language';
     let savedLanguage = 'he';
     try { savedLanguage = localStorage.getItem(storageKey) || 'he'; } catch (_) {}
     applyLanguage(savedLanguage);
+    document.documentElement.classList.add('js');
     selector.addEventListener('change', () => {
         applyLanguage(selector.value);
-        try { localStorage.setItem(storageKey, selector.value); } catch (_) {}
+        try { localStorage.setItem(storageKey, language); } catch (_) {}
     });
 })();

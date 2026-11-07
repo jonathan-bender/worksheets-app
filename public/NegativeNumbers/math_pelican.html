@@ -354,6 +354,7 @@
             maxSpeed: 10,
             hAccel: 0.1, 
             hFriction: 0.4, 
+            helpfulBoxChance: 0.25,
             maxElevationUI: 600,
             gravity: 0.2,
             buoyancy: 0.2
@@ -376,10 +377,10 @@
                 physics: { flapPower: 0.2, divePower: 0.2, gravity: 0.06, buoyancy: 0.06, staminaDrain: 0.25, staminaRegen: 0.07, envPenalty: 0.08 }
             },
             {
-                // Level 3: parenthesis, no double negatives, no colors
+                // Level 3: all four outer/inner sign combinations, without color hints
                 level: 3,
                 targetCreature: { name: 'Space Owl', emoji: '🦉', elevation: 250, type: 'sky' },
-                math: { type: 'single', valRange: [30, 70], parenthesis: 'basic', color: false },
+                math: { type: 'single', valRange: [30, 70], parenthesis: 'all', color: false },
                 spawning: { boxInterval: 1800, foodInterval: 3500, foodBundleMin: 3, foodBundleMax: 6 },
                 physics: { flapPower: 0.22, divePower: 0.22, gravity: 0.08, buoyancy: 0.08, staminaDrain: 0.3, staminaRegen: 0.06, envPenalty: 0.1 }
             },
@@ -392,20 +393,20 @@
                 physics: { flapPower: 0.24, divePower: 0.24, gravity: 0.09, buoyancy: 0.09, staminaDrain: 0.32, staminaRegen: 0.05, envPenalty: 0.11 }
             },
             {
-                // Level 5: like level 3 but with double negatives, no colors
+                // Level 5: connected colored boxes before the harder gray bundles
                 level: 5,
-                targetCreature: { name: 'Cloud Ray', emoji: '🪁', elevation: 350, type: 'sky' },
-                math: { type: 'single', valRange: [60, 120], parenthesis: 'all', color: false },
-                spawning: { boxInterval: 1600, foodInterval: 3000, foodBundleMin: 3, foodBundleMax: 5 },
-                physics: { flapPower: 0.25, divePower: 0.25, gravity: 0.1, buoyancy: 0.1, staminaDrain: 0.35, staminaRegen: 0.05, envPenalty: 0.12 }
-            },
-            {
-                // Level 6: connected boxes (max 3), allowing all parenthesis
-                level: 6,
                 targetCreature: { name: 'Kraken', emoji: '🦑', elevation: -450, type: 'sea' },
                 math: { type: 'bundle', valRange: [80, 150], bundleSize: [2, 3], parenthesis: false, color: true },
                 spawning: { boxInterval: 1500, foodInterval: 3000, foodBundleMin: 3, foodBundleMax: 6 },
                 physics: { flapPower: 0.26, divePower: 0.26, gravity: 0.11, buoyancy: 0.11, staminaDrain: 0.38, staminaRegen: 0.05, envPenalty: 0.13 }
+            },
+            {
+                // Level 6: connected gray boxes combining the signed forms from level 3
+                level: 6,
+                targetCreature: { name: 'Cloud Ray', emoji: '🪁', elevation: 350, type: 'sky' },
+                math: { type: 'bundle', valRange: [60, 120], bundleSize: [2, 3], parenthesis: 'all', color: false },
+                spawning: { boxInterval: 1600, foodInterval: 3000, foodBundleMin: 3, foodBundleMax: 5 },
+                physics: { flapPower: 0.25, divePower: 0.25, gravity: 0.1, buoyancy: 0.1, staminaDrain: 0.35, staminaRegen: 0.05, envPenalty: 0.12 }
             },
             {
                 // Level 7 (Old Level 5): multiplication
@@ -809,23 +810,21 @@
     }
 
     function formatMath(netValue, useParenthesis) {
-        // If false, straight numbers +5 or -3
+        // Plain signed numbers remain the introduction in colored levels.
         if (!useParenthesis) {
             return netValue > 0 ? `+${netValue}` : `${netValue}`;
-        } else {
-            // 'basic' or 'all' parenthesis rules
-            const showAsSub = Math.random() > 0.5;
-            
-            if (showAsSub) {
-                // If it's basic, prevent double negative (e.g. -(-5) when netValue is 5)
-                if (useParenthesis === 'basic' && netValue > 0) {
-                    return `+ (${netValue})`;
-                }
-                return `- (${-netValue})`;
-            } else {
-                return `+ (${netValue})`;
-            }
         }
+        // Always show both signs: -(-n), -(+n), +(-n), or +(+n).
+        // Choose the notation independently of the box's evaluated effect.
+        const subtract = Math.random() < 0.5;
+        const inner = subtract ? -netValue : netValue;
+        return `${subtract ? '-' : '+'}(${inner >= 0 ? '+' : ''}${inner})`;
+    }
+
+    function chooseBoxSign(goalElevation, currentElevation) {
+        const towardGoal = Math.sign(goalElevation - currentElevation);
+        if (towardGoal === 0) return Math.random() < 0.5 ? 1 : -1;
+        return Math.random() < GAME_CONFIG.global.helpfulBoxChance ? towardGoal : -towardGoal;
     }
 
     function getBundleParts(targetSum, size) {
@@ -849,7 +848,9 @@
 
         // Determine the target absolute value
         const absTarget = getRandInRange(mathCfg.valRange[0], mathCfg.valRange[1]);
-        const targetSum = Math.random() > 0.5 ? absTarget : -absTarget;
+        // Bias the evaluated effect, not the written signs. For bundles this
+        // is the total applied when any connected box is collected.
+        const targetSum = absTarget * chooseBoxSign(state.config.targetCreature.elevation, player.elevation);
 
         if (mathCfg.type === 'bundle') {
             const size = getRandInRange(mathCfg.bundleSize[0], mathCfg.bundleSize[1]);
