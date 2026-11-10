@@ -64,6 +64,12 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.env.*
+
+# Local deployment checkpoints and CLI/runtime artifacts
+.rollback/
+firepit-log.txt
+.classroom-local/
 
 # dataconnect generated files
 .dataconnect

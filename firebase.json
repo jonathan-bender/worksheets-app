@@ -1,4 +1,6 @@
 {
+  "functions": [{ "source": "functions", "codebase": "classroom", "runtime": "nodejs22", "ignore": ["node_modules", "test", "dev-server.js", "*.log"] }],
+  "database": [{ "target": "classroom", "rules": "database.classroom.rules.json" }],
   "hosting": {
     "public": "public",
     "ignore": [
@@ -7,6 +9,10 @@
       "**/node_modules/**"
     ],
     "rewrites": [
+      {
+        "source": "/api/classroom/**",
+        "function": { "functionId": "classroomApi", "region": "europe-west1", "pinTag": true }
+      },
       {
         "source": "**",
         "destination": "/index.html"

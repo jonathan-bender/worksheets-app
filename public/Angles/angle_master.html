@@ -6,7 +6,6 @@
     <title>Angle Master - 7th Grade Math</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/site-notice.css">
     <style>
         body {
             font-family: 'Nunito', sans-serif;
@@ -114,6 +113,7 @@
                 <button onclick="setChallenge(2)" id="tab-2" class="px-4 py-2 rounded-xl font-bold flex-1 min-w-[100px] text-center transition-colors" data-i18n="tab2">בניית זוויות</button>
                 <button onclick="setChallenge(3)" id="tab-3" class="px-4 py-2 rounded-xl font-bold flex-1 min-w-[100px] text-center transition-colors" data-i18n="tab3">קודקודיות וצמודות</button>
                 <button onclick="setChallenge(4)" id="tab-4" class="px-4 py-2 rounded-xl font-bold flex-1 min-w-[100px] text-center transition-colors" data-i18n="tab4">זוגות צמודות</button>
+                <button onclick="setChallenge(5)" id="tab-5" class="px-4 py-2 rounded-xl font-bold flex-1 min-w-[100px] text-center transition-colors" data-i18n="tab5">תיקון כביש</button>
             </div>
             
             <!-- Level Indicators -->
@@ -183,6 +183,26 @@
             </div>
         </div>
 
+        <!-- Challenge 5: Road Fixer -->
+        <div id="c5-view" class="hidden flex-col items-center w-full">
+            <h2 class="text-xl font-bold text-slate-600 mb-2 text-center" data-i18n="c5_title">תקנו את הכביש!</h2>
+            <p class="text-sm text-slate-500 font-bold mb-4 text-center" data-i18n="c5_prompt">מלאו את הבורות במשולשים. הזווית והבור חייבים להיות צמודים (180°) כדי שהרכב יוכל לעבור!</p>
+            
+            <div class="mb-6 relative w-full max-w-4xl" style="aspect-ratio: 20/9;" id="c5-canvas-container">
+                <canvas id="c5-canvas" width="1000" height="450" class="w-full h-full bg-white rounded-3xl shadow-inner border-4 border-slate-200"></canvas>
+                <button onclick="startC5Drive()" id="c5-drive-btn" class="absolute top-4 right-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-black shadow-lg transition-colors z-10" data-i18n="c5_btn_test">סע!</button>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-2 w-full max-w-2xl pb-4" id="c5-inventory" dir="ltr">
+                <!-- Inventory injected by JS -->
+            </div>
+        </div>
+
+        <!-- Next Level Button Container -->
+        <div id="next-level-container" class="hidden w-full flex-col items-center mt-4 mb-8">
+            <button onclick="goToNextLevel()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xl py-3 px-10 rounded-2xl bouncy-btn shadow-lg transition-colors" data-i18n="modal_next_btn">Next Level</button>
+        </div>
+
     </main>
 
     <!-- Custom Modal -->
@@ -209,6 +229,8 @@
                 tab2: "Build Angles",
                 tab3: "Vertical & Supp.",
                 tab4: "Supp. Pairs",
+                tab5: "Road Fixer",
+                classroom: "🌟 Classroom game — Angle Crew",
                 c1_prompt: "What is the name of the angle marked with <span class='text-red-500 text-2xl font-serif italic'>α</span> ?",
                 c2_prompt: "Drag and drop colorful angles from your inventory into the canvas to build the gray goal angle!",
                 c2_clear: "Clear",
@@ -217,6 +239,10 @@
                 c3_prompt: "Select an angle from inventory, then tap a slot to place it.",
                 c4_title: "Pair Supplementary Angles!",
                 c4_prompt: "Drag angles into the canvas. Snap two together to make exactly 180°!",
+                c5_title: "Fix the Road!",
+                c5_prompt: "Sort triangles to fill the gaps. The triangle and gap must be supplementary (180°) for the car to cross!",
+                c5_btn_test: "Drive!",
+                c5_crash: "Bump!",
                 modal_correct_title: "⭐ Correct! ⭐",
                 modal_correct_desc: "Great job! Ready for the next one?",
                 modal_next_btn: "Next Level",
@@ -236,11 +262,13 @@
                 canvas_not180: "Not 180°!"
             },
             he: {
-                title: "📐 אלוף הזוויות!",
+                title: "📐 חישוב זוויות",
                 tab1: "שמות זוויות",
                 tab2: "בניית זוויות",
                 tab3: "קודקודיות וצמודות",
                 tab4: "בניית זוגות צמודים",
+                tab5: "תיקון כביש",
+                classroom: "🌟 משחק כיתתי — צוות הזוויות",
                 c1_prompt: "מהו שמה של הזווית המסומנת באות <span class='text-red-500 text-2xl font-serif italic'>α</span> ?",
                 c2_prompt: "גרור ושחרר זוויות צבעוניות מהמלאי אל הבד כדי לבנות את זווית המטרה האפורה!",
                 c2_clear: "נקה",
@@ -249,6 +277,10 @@
                 c3_prompt: "בחר זווית, ואז לחץ על מקום פנוי כדי למקם אותה.",
                 c4_title: "התאמת זוויות צמודות!",
                 c4_prompt: "גרור זוויות אל החלוון. הצמד שתיים יחד כדי ליצור בדיוק 180 מעלות!",
+                c5_title: "תקנו את הכביש!",
+                c5_prompt: "מלאו את הבורות במשולשים. הזווית והבור חייבים להיות צמודים (180°) כדי שהרכב יוכל לעבור!",
+                c5_btn_test: "סע!",
+                c5_crash: "בום!",
                 modal_correct_title: "⭐ נכון! ⭐",
                 modal_correct_desc: "עבודה מצוינת! מוכנים לשלב הבא?",
                 modal_next_btn: "שלב הבא",
@@ -295,9 +327,10 @@
                 1: [false, false, false, false, false, false, false, false],
                 2: [false, false, false, false, false, false, false, false],
                 3: [false, false, false, false, false],
-                4: [false, false, false, false, false]
+                4: [false, false, false, false, false],
+                5: [false, false, false, false, false]
             },
-            solutions: { 1: {}, 2: {}, 3: {}, 4: {} }
+            solutions: { 1: {}, 2: {}, 3: {}, 4: {}, 5: {} }
         };
 
         /* --- LEVEL DATA --- */
@@ -313,7 +346,7 @@
                 pts: { X: [80, 120], Y: [200, 280], Z: [350, 150] },
                 lines: [['X', 'Y'], ['Y', 'Z']],
                 alpha: { p1: 'X', center: 'Y', p2: 'Z' },
-                options: ['YXZ', 'XYZ', 'ZYX', 'ZXY'],
+                options: ['YXZ', 'XYZ', 'XZY', 'ZXY'],
                 correct: 'XYZ'
             },
             { // L3: Adjacent
@@ -327,7 +360,7 @@
                 pts: { P: [200, 80], Q: [80, 300], R: [320, 300] },
                 lines: [['P', 'Q'], ['Q', 'R'], ['R', 'P']],
                 alpha: { p1: 'P', center: 'Q', p2: 'R' },
-                options: ['PQR', 'QPR', 'PRQ', 'RQP'],
+                options: ['PQR', 'QPR', 'PRQ', 'RPQ'],
                 correct: 'PQR'
             },
             { // L5: Quadrilateral with diagonal
@@ -348,7 +381,7 @@
                 pts: { P: [120, 120], Q: [120, 280], R: [280, 280], S: [360, 280] },
                 lines: [['P', 'Q'], ['Q', 'R'], ['R', 'P'], ['R', 'S']],
                 alpha: { p1: 'P', center: 'R', p2: 'S' },
-                options: ['PRS', 'PRQ', 'QRP', 'SRP'],
+                options: ['PRS', 'PRQ', 'QRP', 'RSP'],
                 correct: 'PRS'
             },
             { // L8: Parallelogram with diagonals
@@ -462,7 +495,7 @@
             state.level = 0; // Reset to first level when switching tabs
             
             // Update Tabs UI
-            for(let i=1; i<=4; i++) {
+            for(let i=1; i<=5; i++) {
                 const btn = document.getElementById(`tab-${i}`);
                 if(i === cNum) {
                     btn.classList.remove('tab-inactive');
@@ -488,6 +521,13 @@
             loadLevel();
         }
 
+        function goToNextLevel() {
+            const totalLevels = state.progress[state.challenge].length;
+            if (state.level < totalLevels - 1) {
+                setLevel(state.level + 1);
+            }
+        }
+
         function renderLevelNav() {
             const nav = document.getElementById('level-nav');
             nav.innerHTML = '';
@@ -508,10 +548,23 @@
         }
 
         function loadLevel() {
+            // Hide the next level button by default when loading a level
+            document.getElementById('next-level-container').classList.add('hidden');
+            document.getElementById('next-level-container').classList.remove('flex');
+
             if (state.challenge === 1) renderC1();
             if (state.challenge === 2) renderC2();
             if (state.challenge === 3) renderC3();
             if (state.challenge === 4) renderC4();
+            if (state.challenge === 5) renderC5();
+            
+            // If the level is already solved and it's not the last one, show the Next Level button
+            const isSolved = state.progress[state.challenge][state.level];
+            const isLast = state.level === state.progress[state.challenge].length - 1;
+            if (isSolved && !isLast) {
+                document.getElementById('next-level-container').classList.remove('hidden');
+                document.getElementById('next-level-container').classList.add('flex');
+            }
         }
 
         /* --- CANVAS HELPERS --- */
@@ -1504,6 +1557,467 @@
             }
         }
 
+        /* --- CHALLENGE 5: ROAD FIXER --- */
+        const C5_LEVELS = [
+            { gaps: [[120, 120]], inventory: [[60, 60], [50, 70], [70, 50]] },
+            { gaps: [[130, 120], [120, 130]], inventory: [[50, 60], [60, 50], [55, 55], [65, 45]] },
+            { gaps: [[125, 115], [120, 120], [115, 125]], inventory: [[55, 65], [60, 60], [65, 55], [70, 50]] },
+            { gaps: [[135, 115], [125, 125]], inventory: [[45, 65], [55, 55], [65, 45], [50, 60]] },
+            { gaps: [[132, 118], [122, 128], [118, 132]], inventory: [[48, 62], [58, 52], [62, 48], [52, 58]] }
+        ];
+
+        let c5_activeSlots = [];
+        let c5_inventoryItems = [];
+        let c5_isDragging = false;
+        let c5_dragItem = null;
+        let c5_dragGhost = null;
+        let c5_currentLevelLoaded = -1;
+        
+        let c5_carState = 'idle'; // 'idle', 'falling', 'driving', 'crashed'
+        let c5_carX = 80;
+        let c5_fallingY = 80;
+
+        function calcTriangleVertices(a1_deg, a2_deg, width) {
+            let a1 = a1_deg * Math.PI / 180;
+            let a2 = a2_deg * Math.PI / 180;
+            let a3 = Math.PI - a1 - a2;
+            if (a3 < 0.01) a3 = 0.01; // Avoid division by zero issues
+            
+            let sb = width * Math.sin(a2) / Math.sin(a3);
+            let dx = sb * Math.cos(a1);
+            let dy = sb * Math.sin(a1);
+            
+            return { dx, dy };
+        }
+
+        function renderC5() {
+            const lvl = C5_LEVELS[state.level];
+            const isSolved = state.progress[5][state.level];
+            c5_carState = 'idle';
+            c5_carX = 80;
+            c5_fallingY = 80;
+            
+            if (isSolved && state.solutions[5][state.level]) {
+                c5_activeSlots = JSON.parse(JSON.stringify(state.solutions[5][state.level]));
+                c5_inventoryItems = [];
+                c5_currentLevelLoaded = state.level;
+                c5_fallingY = 300; // Already dropped if solved
+            } else if (c5_currentLevelLoaded !== state.level) {
+                c5_activeSlots = new Array(lvl.gaps.length).fill(null);
+                c5_inventoryItems = [...lvl.inventory];
+                c5_currentLevelLoaded = state.level;
+            }
+            
+            updateC5InventoryUI();
+            drawC5Board();
+        }
+
+        function updateC5InventoryUI() {
+            const inv = document.getElementById('c5-inventory');
+            inv.innerHTML = '';
+            
+            const colors = ['#f43f5e', '#a855f7', '#3b82f6', '#10b981', '#f59e0b', '#ec4899'];
+            
+            c5_inventoryItems.forEach((val, i) => {
+                if (val === null) return;
+                const color = colors[i % colors.length];
+                const div = document.createElement('div');
+                div.className = 'cursor-pointer hover:scale-105 transition-transform touch-none mx-2 my-1';
+                div.innerHTML = getC5TriangleSVG(val, color);
+                
+                div.addEventListener('mousedown', (e) => startDragC5(e, val, color, 'inv', i));
+                div.addEventListener('touchstart', (e) => startDragC5(e, val, color, 'inv', i), {passive: false});
+                
+                inv.appendChild(div);
+            });
+        }
+
+        function getC5TriangleSVG(val, color) {
+            let W = 100;
+            let pts = calcTriangleVertices(val[0], val[1], W);
+            
+            // Scale visually if the triangle is too deep
+            let scale = Math.min(1, 80 / Math.max(pts.dy, 30));
+            let topW = W * scale;
+            let bx = pts.dx * scale;
+            let by = pts.dy * scale;
+            let offsetX = (120 - topW) / 2;
+            
+            return `<svg width="120" height="90" viewBox="0 0 120 90" style="filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.15)); overflow: visible;">
+                <g transform="translate(${offsetX}, 5)">
+                    <polygon points="0,0 ${topW},0 ${bx},${by}" fill="${color}"/>
+                    <text x="${topW * 0.25}" y="${Math.min(by * 0.6, 25)}" fill="white" font-weight="900" font-size="14" style="text-shadow: -1px -1px 0 #0f172a, 1px -1px 0 #0f172a, -1px 1px 0 #0f172a, 1px 1px 0 #0f172a;" text-anchor="middle" font-family="Nunito">${val[0]}°</text>
+                    <text x="${topW * 0.75}" y="${Math.min(by * 0.6, 25)}" fill="white" font-weight="900" font-size="14" style="text-shadow: -1px -1px 0 #0f172a, 1px -1px 0 #0f172a, -1px 1px 0 #0f172a, 1px 1px 0 #0f172a;" text-anchor="middle" font-family="Nunito">${val[1]}°</text>
+                </g>
+            </svg>`;
+        }
+
+        function drawC5Text(ctx, text, x, y, size) {
+            ctx.font = `900 ${size}px Nunito`;
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 4;
+            ctx.lineJoin = 'round';
+            ctx.strokeText(text, x, y);
+            ctx.fillStyle = 'white';
+            ctx.fillText(text, x, y);
+        }
+
+        function drawC5Board() {
+            const { ctx, cvs } = setupCanvas('c5-canvas');
+            const lvl = C5_LEVELS[state.level];
+            const spacing = 1000 / (lvl.gaps.length + 1);
+            const gapWidth = 160;
+            const halfG = gapWidth / 2;
+            const roadY = 300;
+
+            // Draw Road
+            ctx.fillStyle = '#64748b'; // slate-500
+            ctx.beginPath();
+            ctx.moveTo(0, roadY);
+            
+            for(let i = 0; i < lvl.gaps.length; i++) {
+                let gx = spacing * (i + 1);
+                
+                // Calculate actual gap depth based on supplementary angles required
+                let a1 = 180 - lvl.gaps[i][0];
+                let a2 = 180 - lvl.gaps[i][1];
+                let pts = calcTriangleVertices(a1, a2, gapWidth);
+                
+                ctx.lineTo(gx - halfG, roadY);
+                ctx.lineTo(gx - halfG + pts.dx, roadY + pts.dy);
+                ctx.lineTo(gx + halfG, roadY);
+            }
+            
+            ctx.lineTo(1000, roadY);
+            ctx.lineTo(1000, 450);
+            ctx.lineTo(0, 450);
+            ctx.fill();
+
+            // Draw Gap Texts inside the road body for contrast
+            ctx.textAlign = 'center';
+            for(let i = 0; i < lvl.gaps.length; i++) {
+                let gx = spacing * (i + 1);
+                drawC5Text(ctx, `${lvl.gaps[i][0]}°`, gx - halfG - 30, roadY + 30, 16);
+                drawC5Text(ctx, `${lvl.gaps[i][1]}°`, gx + halfG + 30, roadY + 30, 16);
+                
+                // Draw slot placeholder
+                if (!c5_activeSlots[i] && c5_carState === 'idle') {
+                    ctx.strokeStyle = '#94a3b8';
+                    ctx.setLineDash([10, 10]);
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(gx - halfG, c5_fallingY);
+                    ctx.lineTo(gx + halfG, c5_fallingY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+
+            // Draw active triangles
+            for(let i = 0; i < c5_activeSlots.length; i++) {
+                let item = c5_activeSlots[i];
+                if(item) {
+                    let gx = spacing * (i + 1);
+                    let pts = calcTriangleVertices(item.val[0], item.val[1], gapWidth);
+                    
+                    ctx.fillStyle = item.color;
+                    ctx.beginPath();
+                    ctx.moveTo(gx - halfG, c5_fallingY);
+                    ctx.lineTo(gx + halfG, c5_fallingY);
+                    ctx.lineTo(gx - halfG + pts.dx, c5_fallingY + pts.dy);
+                    ctx.fill();
+                    
+                    drawC5Text(ctx, `${item.val[0]}°`, gx - halfG + 35, c5_fallingY + Math.min(pts.dy * 0.4 + 10, 30), 16);
+                    drawC5Text(ctx, `${item.val[1]}°`, gx + halfG - 35, c5_fallingY + Math.min(pts.dy * 0.4 + 10, 30), 16);
+                }
+            }
+
+            // Draw Car
+            drawC5Car(ctx, c5_carX, c5_carState === 'crashed' ? roadY + 15 : roadY, c5_carState === 'crashed' ? 0.4 : 0);
+        }
+
+        function drawC5Car(ctx, x, y, tilt) {
+            ctx.save();
+            ctx.translate(x, y - 12);
+            ctx.rotate(tilt);
+            
+            // Spoiler
+            ctx.fillStyle = '#991b1b';
+            ctx.beginPath(); ctx.roundRect(-45, -30, 8, 15, 2); ctx.fill();
+            ctx.beginPath(); ctx.roundRect(-48, -35, 20, 5, 2); ctx.fill();
+
+            // Car Body (bottom)
+            ctx.fillStyle = '#ef4444'; // Red
+            ctx.beginPath();
+            ctx.roundRect(-45, -15, 95, 22, 10);
+            ctx.fill();
+            
+            // Bumpers
+            ctx.fillStyle = '#334155'; 
+            ctx.beginPath(); ctx.roundRect(45, -10, 8, 12, 3); ctx.fill(); // Front
+            ctx.beginPath(); ctx.roundRect(-50, -10, 8, 12, 3); ctx.fill(); // Back
+
+            // Top (roof)
+            ctx.fillStyle = '#dc2626'; 
+            ctx.beginPath();
+            ctx.roundRect(-25, -40, 55, 25, 12);
+            ctx.fill();
+            
+            // Windows
+            ctx.fillStyle = '#bae6fd'; // sky-200
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.roundRect(-20, -35, 20, 18, 4); // Left window
+            ctx.fill(); ctx.stroke();
+            ctx.beginPath();
+            ctx.roundRect(5, -35, 20, 18, 4); // Right window
+            ctx.fill(); ctx.stroke();
+            
+            // Door Handle
+            ctx.fillStyle = '#cbd5e1';
+            ctx.beginPath(); ctx.roundRect(-5, -10, 10, 3, 2); ctx.fill();
+
+            // Headlight
+            ctx.fillStyle = '#fef08a';
+            ctx.shadowColor = '#fef08a';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(46, -4, 5, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0; // reset
+            
+            // Taillight
+            ctx.fillStyle = '#f87171';
+            ctx.beginPath();
+            ctx.arc(-42, -4, 4, 0, Math.PI*2);
+            ctx.fill();
+
+            // Wheels
+            ctx.fillStyle = '#1e293b'; // slate-800
+            ctx.beginPath(); ctx.arc(-25, 8, 12, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(25, 8, 12, 0, Math.PI*2); ctx.fill();
+            
+            // Rims
+            ctx.fillStyle = '#cbd5e1'; 
+            ctx.beginPath(); ctx.arc(-25, 8, 5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(25, 8, 5, 0, Math.PI*2); ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function startDragC5(e, val, color, source, sourceIdx) {
+            if (c5_carState !== 'idle' || state.progress[5][state.level]) return;
+            e.preventDefault();
+            
+            c5_isDragging = true;
+            c5_dragItem = { val, color, source, sourceIdx };
+            
+            c5_dragGhost = document.createElement('div');
+            c5_dragGhost.innerHTML = getC5TriangleSVG(val, color);
+            c5_dragGhost.style.position = 'fixed';
+            c5_dragGhost.style.pointerEvents = 'none';
+            c5_dragGhost.style.zIndex = '9999';
+            c5_dragGhost.style.transform = 'translate(-50%, -10%) scale(1.2)';
+            document.body.appendChild(c5_dragGhost);
+            
+            updateDragPosC5(e);
+            
+            if (source === 'canvas') {
+                c5_activeSlots[sourceIdx] = null;
+                drawC5Board();
+            }
+        }
+
+        function updateDragPosC5(e) {
+            if(!c5_dragGhost) return;
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            if(e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            c5_dragGhost.style.left = clientX + 'px';
+            c5_dragGhost.style.top = clientY + 'px';
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if(c5_isDragging) { e.preventDefault(); updateDragPosC5(e); }
+        }, {passive: false});
+        
+        document.addEventListener('touchmove', (e) => {
+            if(c5_isDragging) { e.preventDefault(); updateDragPosC5(e); }
+        }, {passive: false});
+        
+        document.addEventListener('mouseup', (e) => handleDragEndC5(e));
+        document.addEventListener('touchend', (e) => handleDragEndC5(e));
+
+        function handleDragEndC5(e) {
+            if(!c5_isDragging) return;
+            c5_isDragging = false;
+            
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            if(e.changedTouches && e.changedTouches.length > 0) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            }
+            
+            let canvas = document.getElementById('c5-canvas');
+            let rect = canvas.getBoundingClientRect();
+            
+            if (c5_dragGhost) { c5_dragGhost.remove(); c5_dragGhost = null; }
+            
+            let droppedInSlot = false;
+
+            if (clientX >= rect.left && clientX <= rect.right &&
+                clientY >= rect.top && clientY <= rect.bottom) {
+                
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const dropX = (clientX - rect.left) * scaleX;
+                const dropY = (clientY - rect.top) * scaleY;
+                
+                const lvl = C5_LEVELS[state.level];
+                const spacing = 1000 / (lvl.gaps.length + 1);
+
+                for (let i = 0; i < lvl.gaps.length; i++) {
+                    let gx = spacing * (i + 1);
+                    // Hitbox for the sorting slot above the road
+                    if (Math.abs(dropX - gx) < 70 && dropY > 10 && dropY < 180) {
+                        if (!c5_activeSlots[i]) {
+                            c5_activeSlots[i] = { val: c5_dragItem.val, color: c5_dragItem.color };
+                            if (c5_dragItem.source === 'inv') {
+                                c5_inventoryItems[c5_dragItem.sourceIdx] = null;
+                            }
+                            droppedInSlot = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (!droppedInSlot && c5_dragItem.source === 'canvas') {
+                let emptyIdx = c5_inventoryItems.indexOf(null);
+                if (emptyIdx !== -1) c5_inventoryItems[emptyIdx] = c5_dragItem.val;
+                else c5_inventoryItems.push(c5_dragItem.val);
+            }
+            
+            updateC5InventoryUI();
+            drawC5Board();
+        }
+
+        // Allow picking up pieces from C5 Canvas
+        const c5Canvas = document.getElementById('c5-canvas');
+        c5Canvas.addEventListener('mousedown', handleC5CanvasDown);
+        c5Canvas.addEventListener('touchstart', handleC5CanvasDown, {passive: false});
+
+        function handleC5CanvasDown(e) {
+            if (state.challenge !== 5 || c5_carState !== 'idle' || state.progress[5][state.level]) return;
+            
+            let rect = c5Canvas.getBoundingClientRect();
+            const scaleX = c5Canvas.width / rect.width;
+            const scaleY = c5Canvas.height / rect.height;
+            
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            if(e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            
+            const x = (clientX - rect.left) * scaleX;
+            const y = (clientY - rect.top) * scaleY;
+            
+            const lvl = C5_LEVELS[state.level];
+            const spacing = 1000 / (lvl.gaps.length + 1);
+
+            for (let i = 0; i < c5_activeSlots.length; i++) {
+                if (!c5_activeSlots[i]) continue;
+                let gx = spacing * (i + 1);
+                
+                // Hitbox for the sorted pieces above the road
+                if (Math.abs(x - gx) < 70 && y > c5_fallingY - 20 && y < c5_fallingY + 120) {
+                    startDragC5(e, c5_activeSlots[i].val, c5_activeSlots[i].color, 'canvas', i);
+                    break;
+                }
+            }
+        }
+
+        function startC5Drive() {
+            if(c5_carState !== 'idle' || state.progress[5][state.level]) return;
+            
+            // Check if all gaps have a piece selected, if not car immediately crashes
+            if (c5_activeSlots.includes(null)) {
+                c5_carState = 'crashed';
+                drawC5Board();
+                // We use percentage positions for showFloatingText relative to the canvas
+                showFloatingText("Fill all gaps!", 500, 200, "#ef4444");
+                setTimeout(() => { c5_carState = 'idle'; drawC5Board(); }, 1500);
+                return;
+            }
+            
+            c5_carState = 'falling';
+            c5_fallingY = 80;
+            requestAnimationFrame(c5_fallLoop);
+        }
+
+        function c5_fallLoop() {
+            if(c5_carState !== 'falling') return;
+            
+            c5_fallingY += 8;
+            
+            if (c5_fallingY >= 300) {
+                c5_fallingY = 300;
+                c5_carState = 'driving';
+                requestAnimationFrame(c5_driveLoop);
+            } else {
+                drawC5Board();
+                requestAnimationFrame(c5_fallLoop);
+            }
+        }
+
+        function c5_driveLoop() {
+            if(c5_carState !== 'driving') return;
+            
+            c5_carX += 5;
+            
+            const lvl = C5_LEVELS[state.level];
+            const spacing = 1000 / (lvl.gaps.length + 1);
+            
+            for (let i = 0; i < lvl.gaps.length; i++) {
+                let gx = spacing * (i + 1);
+                // When car front/center is exactly over the gap
+                if (Math.abs(c5_carX - gx) < 8) {
+                    let slot = c5_activeSlots[i];
+                    if (!slot || slot.val[0] + lvl.gaps[i][0] !== 180 || slot.val[1] + lvl.gaps[i][1] !== 180) {
+                        // Crash sequence!
+                        c5_carState = 'crashed';
+                        drawC5Board();
+                        showFloatingText(translations[state.lang].c5_crash, gx / 2.5, 200, "#ef4444"); // Scaled text pos
+                        
+                        setTimeout(() => {
+                            c5_carState = 'idle';
+                            c5_carX = 80;
+                            c5_fallingY = 80; // Reset pieces to top
+                            drawC5Board();
+                        }, 1500);
+                        return;
+                    }
+                }
+            }
+            
+            drawC5Board();
+            
+            if (c5_carX > 1050) {
+                c5_carState = 'idle';
+                state.solutions[5][state.level] = JSON.parse(JSON.stringify(c5_activeSlots));
+                levelComplete();
+            } else {
+                requestAnimationFrame(c5_driveLoop);
+            }
+        }
+
         /* --- GAME LOGIC & MODALS --- */
         function levelComplete() {
             state.progress[state.challenge][state.level] = true;
@@ -1515,7 +2029,9 @@
                 showMsg(translations[state.lang].modal_done_title, translations[state.lang].modal_done_desc, translations[state.lang].modal_done_btn, true);
                 fireConfetti();
             } else {
-                showMsg(translations[state.lang].modal_correct_title, translations[state.lang].modal_correct_desc, translations[state.lang].modal_next_btn, false);
+                // Show the Next Level button instead of a popup
+                document.getElementById('next-level-container').classList.remove('hidden');
+                document.getElementById('next-level-container').classList.add('flex');
             }
             renderLevelNav();
         }
@@ -1529,6 +2045,13 @@
             const reviewBtn = document.getElementById('msg-review-btn');
             
             btn.innerText = btnText;
+            
+            // Hide the review button for failure popups
+            if (isChallengeComplete) {
+                reviewBtn.classList.remove('hidden');
+            } else {
+                reviewBtn.classList.add('hidden');
+            }
             
             const totalLevels = state.progress[state.challenge].length;
             
@@ -1613,9 +2136,5 @@
         window.onload = init;
 
     </script>
-    <footer class="site-copyright">
-        <span class="notice-he" lang="he" dir="rtl"><a href="../license.html">רישיון ותנאי שימוש</a></span>
-        <span class="notice-en" lang="en" dir="ltr"><a href="../license.html">License &amp; terms</a></span>
-    </footer>
 </body>
 </html>

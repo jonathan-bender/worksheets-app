@@ -1,5 +1,6 @@
 {
   "projects": {
     "default": "worksheets-c5d83"
-  }
+  },
+  "targets": { "worksheets-c5d83": { "database": { "classroom": ["worksheets-c5d83-default-rtdb"] } } }
 }

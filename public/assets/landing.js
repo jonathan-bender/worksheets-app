@@ -2,6 +2,7 @@
     'use strict';
     const translations = {
         he: {
+            classroom: '🌟 משחק כיתתי',
             brand: 'מתמטיקה במשחק', title: 'מתמטיקה במשחק — בחרו משחק והתחילו לגלות',
             language: 'שפה', skip: 'דלגו למשחקים', eyebrow: 'תנו לסקרנות לשחק',
             headline1: 'משחקים קצת.', headline2: 'מגלים המון.',
@@ -19,6 +20,7 @@
             results: count => `${count} משחקים מוצגים`
         },
         en: {
+            classroom: '🌟 Classroom game',
             brand: 'MATH PLAY', title: 'Math Play — pick a game, discover something new',
             language: 'Language', skip: 'Skip to games', eyebrow: 'LET CURIOSITY PLAY',
             headline1: 'Small challenges.', headline2: 'Big discoveries.',
