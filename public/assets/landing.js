@@ -15,7 +15,7 @@
             pelicanTitle: 'השקנאי המתמטי', equationsTitle: 'מגדלי משוואות', anglesTitle: 'אלוף הזוויות',
             circleTitle: 'מסע במעגל היחידה', patternsTitle: 'זיהוי חוקיות',
             geometryTitle: 'בניות גאומטריות', geometry3Title: 'בניות גאומטריות 3.0', geometry4Title: 'בניות גאומטריות 4.0',
-            preTitle: 'מבוא לחקירת פונקציות', advancedTitle: 'חקירת פונקציות מתקדמת', explorerTitle: 'חוקר הפונקציות — כיתה י׳',
+            preTitle: 'מבוא לחקירת פונקציות', advancedTitle: 'חקירת פונקציות מתקדמת', explorerTitle: 'חוקר הפונקציות — כיתה י׳', explorer11Title: 'חוקר הפונקציות — כיתה י״א',
             identitiesTitle: 'התאמת זהויות', solverTitle: 'פתרון משוואות טריגו', transformations: 'טרנספורמציות של פונקציות',
             results: count => `${count} משחקים מוצגים`
         },
@@ -33,7 +33,7 @@
             pelicanTitle: 'Math Pelican', equationsTitle: 'Equation Towers', anglesTitle: 'Angle Master',
             circleTitle: 'Unit Circle Quest', patternsTitle: 'Pattern Quest',
             geometryTitle: 'Geometric Constructions', geometry3Title: 'Geometric Constructions 3.0', geometry4Title: 'Geometric Constructions 4.0',
-            preTitle: 'Pre-Function Analysis', advancedTitle: 'Advanced Function Analysis', explorerTitle: 'Function Explorer — Grade 10',
+            preTitle: 'Pre-Function Analysis', advancedTitle: 'Advanced Function Analysis', explorerTitle: 'Function Explorer — Grade 10', explorer11Title: 'Function Explorer — Grade 11',
             identitiesTitle: 'Identity Match', solverTitle: 'Trig Equation Solver', transformations: 'Function Transformations',
             results: count => `${count} ${count === 1 ? 'game' : 'games'} shown`
         }
