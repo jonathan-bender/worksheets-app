@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <!-- Required Notice: Copyright 2026 יוני בנדר
+         SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+         License: ../LICENSE.txt -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Function Analysis Explorer</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #f8fafc; font-family: 'Inter', sans-serif; touch-action: auto;}
+        #canvas-container { position: relative; width: 100%; height: 100%; touch-action: none; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: crosshair;}
+        .step-card { transition: all 0.3s ease; }
+        .step-content { overflow: hidden; transition: max-height 0.3s ease; max-height: 0; }
+        .step-card.active .step-content { max-height: 500px; }
+        .step-card.completed { border-color: #22c55e; background-color: #f0fdf4; }
+        .step-card.completed .step-content { max-height: 0; }
+        
+        body {
+            display: grid;
+            height: 100vh;
+            height: 100dvh;
+            width: 100%;
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-areas: "header" "canvas" "steps";
+        }
+        #game-header {
+            grid-area: header;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 8px 12px;
+            min-width: 0;
+            padding: 12px 16px;
+        }
+        .game-heading { display: contents; }
+        #app-title { font-size: 1.25rem; }
+        #function-display { grid-column: 1 / -1; grid-row: 2; margin: 0; min-width: 0; }
+        #function-display .katex-display { margin: 0; }
+        .game-selectors { grid-column: 2; grid-row: 1; min-width: 0; }
+        .game-selectors select { min-width: 0; max-width: 100%; }
+        #canvas-wrapper { grid-area: canvas; min-width: 0; min-height: 0; }
+        #steps-panel {
+            grid-area: steps;
+            min-width: 0;
+            min-height: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            touch-action: pan-y;
+        }
+        #steps-container { min-width: 0; padding-bottom: 28px; }
+        .step-card { min-width: 0; flex-shrink: 0; overflow-wrap: anywhere; }
+        @media (max-width: 479px) {
+            #game-header { grid-template-columns: minmax(0, 1fr); text-align: center; }
+            .game-selectors { grid-column: 1; grid-row: 3; justify-content: center; }
+        }
+        @media (min-width: 768px) {
+            body {
+                grid-template-columns: minmax(0, 1fr) 384px;
+                grid-template-rows: auto minmax(0, 1fr);
+                grid-template-areas: "canvas header" "canvas steps";
+            }
+            #game-header { grid-template-columns: minmax(0, 1fr); }
+            .game-selectors { grid-column: 1; grid-row: 3; }
+        }
+        @media (min-width: 1024px) {
+            body { grid-template-columns: minmax(0, 1fr) 450px; }
+        }
+
+        /* Custom scrollbar for steps panel */
+        #steps-panel::-webkit-scrollbar { width: 6px; }
+        #steps-panel::-webkit-scrollbar-track { background: transparent; }
+        #steps-panel::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+        
+        .katex { font-size: 1.1em !important; direction: ltr !important; unicode-bidi: isolate; }
+    </style>
+    <link rel="stylesheet" href="../assets/site-notice.css">
+</head>
+<body class="text-slate-800">
+
+    <div id="game-header" class="bg-white border-b border-slate-200 shadow-sm z-20">
+        <div class="game-heading">
+            <h1 id="app-title" class="text-2xl font-bold text-slate-800 tracking-tight">חוקר הפונקציות</h1>
+            <div id="function-display" class="text-lg mt-2 text-blue-600 font-medium"></div>
+        </div>
+        <div class="game-selectors flex gap-2">
+            <select id="lang-selector" class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded focus:ring-blue-500 focus:border-blue-500 block p-2 cursor-pointer shadow-sm">
+                <option value="he">עברית</option>
+                <option value="en">English</option>
+            </select>
+            <select id="level-selector" class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded focus:ring-blue-500 focus:border-blue-500 block p-2 cursor-pointer shadow-sm min-w-24">
+                <!-- Populated by JS -->
+            </select>
+        </div>
+    </div>
+    
+    <!-- Canvas Area -->
+    <div class="flex-1 border-b md:border-b-0 md:border-r border-slate-300 bg-white relative shadow-inner" id="canvas-wrapper">
+        <div id="canvas-container">
+            <canvas id="mathCanvas"></canvas>
+        </div>
+        
+        <!-- Level & Coordinates HUD -->
+        <div class="absolute top-4 left-4 pointer-events-none bg-white/80 px-3 py-1 rounded shadow-sm text-sm font-semibold border border-slate-200">
+            <span id="hud-level-label">שלב</span> <span id="hud-level">1</span>
+        </div>
+        <div class="absolute bottom-4 left-4 pointer-events-none bg-white/80 px-2 py-1 rounded text-xs border border-slate-200" id="hud-coords" dir="ltr">
+            (0, 0)
+        </div>
+    </div>
+
+    <!-- Steps Panel -->
+    <div id="steps-panel" class="bg-slate-50 flex flex-col shadow-xl z-10">
+        <div class="p-4 flex-1 flex flex-col gap-3" id="steps-container">
+            <!-- Steps injected by JS -->
+        </div>
+
+        <div class="p-4 border-t border-slate-200 bg-slate-100 hidden" id="next-level-container">
+            <button id="btn-next-level" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow transition-colors">
+                השלב הבא
+            </button>
+        </div>
+    </div>
+
+<script>
+/**
+ * MATHEMATICAL DEFINITIONS & LEVEL DATA
+ */
+const levels = [
+    {
+        id: 1,
+        equationStr: "f(x) = x(x-2)(x+3)",
+        f: x => x * (x - 2) * (x + 3),
+        roots: [-3, 0, 2],
+        extremaX: [-1.786, 1.119],
+        extremaPoints: [[-1.786, 8.21], [1.119, -4.06]],
+        positiveStr: "-3 < x < 0 \\text{ or } x > 2",
+        isPositive: x => (x > -3 && x < 0) || x > 2,
+        transformEq: "g(x) = f(x-2)",
+        transformF: x => (x - 2) * (x - 4) * (x + 1),
+        view: { minX: -5, maxX: 5, minY: -10, maxY: 15, stepX: 1, stepY: 2 },
+        steps: [
+            { type: 'ROOTS', title: "1. x-Intercepts", desc: "Click on the x-axis to mark all the roots of $f(x)$." },
+            { type: 'EXTREMA', title: "2. Extrema Points", desc: "Click on the x-axis where $f'(x)=0$. (They will snap to their true y-coordinates once found)." },
+            { type: 'SKETCH', title: "3. Sketch $f(x)$", desc: "Draw the function passing through the points. Make sure it's above/below the x-axis appropriately." },
+            { type: 'DOMAIN_POS', title: "4. Positive Domain", desc: "Swipe the x-axis where $f(x) > 0$." },
+            { type: 'TRANSFORM', title: "5. Transformation", desc: "Sketch the transformed function:" }
+        ]
+    },
+    {
+        id: 2,
+        equationStr: "f(x) = x(x+4)^2",
+        f: x => x * Math.pow(x + 4, 2),
+        roots: [-4, 0],
+        extremaX: [-4, -1.333],
+        extremaPoints: [[-4, 0], [-1.333, -9.48]],
+        decStr: "-4 < x < -1.333",
+        isDecreasing: x => x > -4 && x < -1.333, 
+        transformEq: "g(x) = |f(x)|",
+        transformF: x => Math.abs(x * Math.pow(x + 4, 2)),
+        view: { minX: -6, maxX: 3, minY: -12, maxY: 12, stepX: 1, stepY: 2 },
+        steps: [
+            { type: 'ROOTS', title: "1. x-Intercepts", desc: "Click on the x-axis to mark all the roots of $f(x)$." },
+            { type: 'EXTREMA', title: "2. Extrema Points", desc: "Click on the x-axis where $f'(x)=0$. (They will snap to their true y-coordinates once found)." },
+            { type: 'SKETCH', title: "3. Sketch $f(x)$", desc: "Draw the function passing through the points." },
+            { type: 'DOMAIN_DEC', title: "4. Decreasing Domain", desc: "Swipe the x-axis where the function decreases ($f'(x) < 0$)." },
+            { type: 'TRANSFORM', title: "5. Transformation", desc: "Sketch the transformed function:" }
+        ]
+    },
+    {
+        id: 3,
+        equationStr: "f(x) = -x(x-3)^2",
+        f: x => -x * Math.pow(x - 3, 2),
+        roots: [0, 3],
+        extremaX: [1, 3],
+        extremaPoints: [[1, -4], [3, 0]],
+        incStr: "1 < x < 3",
+        isIncreasing: x => x > 1 && x < 3,
+        transformEq: "g(x) = f(x) + 5",
+        transformF: x => -x * Math.pow(x - 3, 2) + 5,
+        view: { minX: -2, maxX: 5, minY: -10, maxY: 10, stepX: 1, stepY: 2 },
+        steps: [
+            { type: 'ROOTS', title: "1. x-Intercepts", desc: "Mark the roots of $f(x)$." },
+            { type: 'EXTREMA', title: "2. Extrema Points", desc: "Mark where $f'(x)=0$." },
+            { type: 'SKETCH', title: "3. Sketch $f(x)$", desc: "Draw the function passing through the points." },
+            { type: 'DOMAIN_INC', title: "4. Increasing Domain", desc: "Swipe the x-axis where the function increases." },
+            { type: 'TRANSFORM', title: "5. Transformation", desc: "Sketch $g(x) = f(x) + 5$:" }
+        ]
+    },
+    {
+        id: 4,
+        equationStr: "f(x) = (x^2 - 4)(x-1)",
+        f: x => (x*x - 4)*(x - 1),
+        roots: [-2, 1, 2],
+        extremaX: [-0.868, 1.535],
+        extremaPoints: [[-0.868, 6.06], [1.535, -0.88]],
+        negStr: "x < -2 \\text{ or } 1 < x < 2",
+        isNegative: x => x < -2 || (x > 1 && x < 2),
+        transformEq: "g(x) = -2f(x)",
+        transformF: x => -2 * (x*x - 4)*(x - 1),
+        view: { minX: -4, maxX: 4, minY: -15, maxY: 15, stepX: 1, stepY: 3 },
+        steps: [
+            { type: 'ROOTS', title: "1. x-Intercepts", desc: "Mark the roots." },
+            { type: 'EXTREMA', title: "2. Extrema Points", desc: "Mark where $f'(x)=0$." },
+            { type: 'SKETCH', title: "3. Sketch $f(x)$", desc: "Draw $f(x)$." },
+            { type: 'DOMAIN_NEG', title: "4. Negative Domain", desc: "Swipe the x-axis where $f(x) < 0$." },
+            { type: 'TRANSFORM', title: "5. Transformation", desc: "Sketch $g(x) = -2f(x)$:" }
+        ]
+    },
+    {
+        id: 5,
+        equationStr: "f(x) = x^2(x-3)",
+        f: x => x * x * (x - 3),
+        roots: [0, 3],
+        extremaX: [0, 2],
+        extremaPoints: [[0, 0], [2, -4]],
+        decStr: "0 < x < 2",
+        isDecreasing: x => x > 0 && x < 2,
+        transformEq: "g(x) = 5f(x)",
+        transformF: x => 5 * x * x * (x - 3),
+        view: { minX: -2, maxX: 4, minY: -25, maxY: 15, stepX: 1, stepY: 5 },
+        steps: [
+            { type: 'ROOTS', title: "1. x-Intercepts", desc: "Mark the roots." },
+            { type: 'EXTREMA', title: "2. Extrema Points", desc: "Mark where $f'(x)=0$." },
+            { type: 'SKETCH', title: "3. Sketch $f(x)$", desc: "Draw $f(x)$." },
+            { type: 'DOMAIN_DEC', title: "4. Decreasing Domain", desc: "Swipe the x-axis where $f(x)$ decreases." },
+            { type: 'TRANSFORM', title: "5. Transformation", desc: "Sketch $g(x) = 5f(x)$:" }
+        ]
+    },
+    {
+        id: 6,
+        equationStr: "f(x) = -(x+1)^2(x-2)^2",
+        f: x => -Math.pow(x + 1, 2) * Math.pow(x - 2, 2),
+        roots: [-1, 2],
+        extremaX: [-1, 0.5, 2],
+        extremaPoints: [[-1, 0], [0.5, -5.06], [2, 0]],
+        incStr: "x < -1 \\text{ or } 0.5 < x < 2",
+        isIncreasing: x => x < -1 || (x > 0.5 && x < 2),
+        transformEq: "g(x) = f(x+2)",
+        transformF: x => -Math.pow(x + 3, 2) * Math.pow(x, 2),
+        view: { minX: -5, maxX: 4, minY: -12, maxY: 4, stepX: 1, stepY: 2 },
+        steps: [
+            { type: 'ROOTS', title: "1. x-Intercepts", desc: "Mark the roots." },
+            { type: 'EXTREMA', title: "2. Extrema Points", desc: "Mark where $f'(x)=0$." },
+            { type: 'SKETCH', title: "3. Sketch $f(x)$", desc: "Draw $f(x)$." },
+            { type: 'DOMAIN_INC', title: "4. Increasing Domain", desc: "Swipe the x-axis where $f(x)$ increases." },
+            { type: 'TRANSFORM', title: "5. Transformation", desc: "Sketch $g(x) = f(x+2)$:" }
+        ]
+    },
+    {
+        id: 7,
+        equationStr: "f(x) = x(x-2)(x+2)",
+        f: x => x * (x - 2) * (x + 2),
+        roots: [-2, 0, 2],
+        extremaX: [-1.15, 1.15],
+        extremaPoints: [[-1.15, 3.08], [1.15, -3.08]],
+        decStr: "-1.15 < x < 1.15",
+        isDecreasing: x => x > -1.15 && x < 1.15,
+        transformEq: "g(x) = -f(x)",
+        transformF: x => -x * (x - 2) * (x + 2),
+        view: { minX: -4, maxX: 4, minY: -8, maxY: 8, stepX: 1, stepY: 2 },
+        steps: [
+            { type: 'ROOTS', title: "1. x-Intercepts", desc: "Mark the roots." },
+            { type: 'EXTREMA', title: "2. Extrema Points", desc: "Mark where $f'(x)=0$." },
+            { type: 'SKETCH', title: "3. Sketch $f(x)$", desc: "Draw $f(x)$." },
+            { type: 'DOMAIN_DEC', title: "4. Decreasing Domain", desc: "Swipe the x-axis where $f(x)$ decreases." },
+            { type: 'TRANSFORM', title: "5. Transformation", desc: "Sketch $g(x) = -f(x)$:" }
+        ]
+    }
+];
+
+// Each new level contains only horizontal-line challenges. Critical points divide
+// these polynomials into strictly monotone branches, allowing exact counts.
+levels.push(
+    {
+        id: 8, equationStr: "f(x) = x^2 - 4", f: x => x*x - 4,
+        horizontal: { criticalX: [0], ends: [Infinity, Infinity], min: -5, max: 5 },
+        view: { minX: -4, maxX: 4, minY: -6, maxY: 7, stepX: 1, stepY: 1 },
+        steps: [2, 1, 0].map((target, i) => ({ type: 'HORIZONTAL', target, example: [0, -4, -5][i] }))
+    },
+    {
+        id: 9, equationStr: "f(x) = x^3 - 3x", f: x => x*x*x - 3*x,
+        horizontal: { criticalX: [-1, 1], ends: [-Infinity, Infinity], min: -4, max: 4 },
+        view: { minX: -3, maxX: 3, minY: -5, maxY: 5, stepX: 1, stepY: 1 },
+        steps: [3, 2, 1].map((target, i) => ({ type: 'HORIZONTAL', target, example: [0, 2, 3][i] }))
+    },
+    {
+        id: 10, equationStr: "f(x) = (x^2 - 4)^2 / 4", f: x => (x*x - 4)**2 / 4,
+        horizontal: { criticalX: [-2, 0, 2], ends: [Infinity, Infinity], min: -1, max: 6 },
+        view: { minX: -4, maxX: 4, minY: -2, maxY: 7, stepX: 1, stepY: 1 },
+        steps: [4, 3, 2, 0].map((target, i) => ({ type: 'HORIZONTAL', target, example: [2, 4, 0, -1][i] }))
+    }
+);
+
+/**
+ * GAME STATE
+ */
+let currentLang = 'he';
+
+const i18n = {
+    'Function Explorer': { en: 'Function Explorer', he: 'חוקר הפונקציות' },
+    'Level': { en: 'Level', he: 'שלב' },
+    'Next Level': { en: 'Next Level', he: 'השלב הבא' },
+    'Check': { en: 'Check', he: 'בדוק' },
+    'Clear': { en: 'Clear', he: 'נקה' },
+    'Skip & Reveal': { en: 'Skip & Reveal', he: 'דלג וגלה' },
+    'You\'ve completed all available levels!': { en: 'You\'ve completed all available levels!', he: 'סיימת את כל השלבים הזמינים!' },
+    'Roots: ': { en: 'Roots: ', he: 'שורשים: ' },
+    'Undefined at: ': { en: 'Undefined at: ', he: 'לא מוגדר ב: ' },
+    'Defined everywhere.': { en: 'Defined everywhere.', he: 'מוגדר לכל x.' },
+    'Extrema: ': { en: 'Extrema: ', he: 'נקודות קיצון: ' },
+    'Exact plot revealed.': { en: 'Exact plot revealed.', he: 'הגרף המדויק נחשף.' },
+    'Domain: ': { en: 'Domain: ', he: 'תחום: ' },
+    'Transformation complete!': { en: 'Transformation complete!', he: 'התמרה הושלמה!' },
+    'y-Intercept: ': { en: 'y-Intercept: ', he: 'חיתוך עם ציר y: ' },
+    'Horizontal Asymptotes: ': { en: 'Horizontal Asymptotes: ', he: 'אסימפטוטות אופקיות: ' },
+    'No horizontal asymptotes.': { en: 'No horizontal asymptotes.', he: 'אין אסימפטוטות אופקיות.' },
+    'Vertical Asymptotes: ': { en: 'Vertical Asymptotes: ', he: 'אסימפטוטות אנכיות: ' },
+    'No vertical asymptotes.': { en: 'No vertical asymptotes.', he: 'אין אסימפטוטות אנכיות.' },
+    'Please mark the roots on the x-axis first.': { en: 'Please mark the roots on the x-axis first.', he: 'אנא סמן את השורשים על ציר ה-x תחילה.' },
+    'One or more roots are incorrect.': { en: 'One or more roots are incorrect.', he: 'אחד או יותר מהשורשים שגויים.' },
+    'Please mark the extrema on the x-axis first.': { en: 'Please mark the extrema on the x-axis first.', he: 'אנא סמן את נקודות הקיצון על ציר ה-x תחילה.' },
+    'One or more extrema points are incorrect.': { en: 'One or more extrema points are incorrect.', he: 'אחת או יותר מנקודות הקיצון שגויות.' },
+    'Please mark the y-intercept on the y-axis first.': { en: 'Please mark the y-intercept on the y-axis first.', he: 'אנא סמן את נקודת החיתוך עם ציר ה-y תחילה.' },
+    'The y-intercept is incorrect.': { en: 'The y-intercept is incorrect.', he: 'נקודת החיתוך עם ציר ה-y שגויה.' },
+    'One or more horizontal asymptotes are incorrect.': { en: 'One or more horizontal asymptotes are incorrect.', he: 'אחת או יותר מהאסימפטוטות האופקיות שגויות.' },
+    'One or more vertical asymptotes are incorrect.': { en: 'One or more vertical asymptotes are incorrect.', he: 'אחת או יותר מהאסימפטוטות האנכיות שגויות.' },
+    'Please draw the function first.': { en: 'Please draw the function first.', he: 'אנא סרטט את הפונקציה תחילה.' },
+    'Please draw a wider portion of the function to show the overall shape.': { en: 'Please draw a wider portion of the function to show the overall shape.', he: 'אנא סרטט חלק רחב יותר של הפונקציה כדי להראות את צורתה הכללית.' },
+    'Your sketch missed one or more important points (roots or extrema).': { en: 'Your sketch missed one or more important points (roots or extrema).', he: 'הסרטוט שלך פספס נקודה חשובה אחת או יותר (שורשים או קיצון).' },
+    'The function is on the wrong side of the x-axis in some regions.': { en: 'The function is on the wrong side of the x-axis in some regions.', he: 'הפונקציה נמצאת בצד הלא נכון של ציר ה-x בחלק מהאזורים.' },
+    'Please highlight the domain on the x-axis.': { en: 'Please highlight the domain on the x-axis.', he: 'אנא סמן את התחום על ציר ה-x.' },
+    'The highlighted domain is incorrect or incomplete. Check your intervals.': { en: 'The highlighted domain is incorrect or incomplete. Check your intervals.', he: 'התחום שסומן שגוי או חלקי. בדוק את המרווחים שלך.' },
+    'One or more points are incorrect.': { en: 'One or more points are incorrect.', he: 'נקודה אחת או יותר שגויות.' },
+    'This function is defined everywhere.': { en: 'This function is defined everywhere.', he: 'פונקציה זו מוגדרת לכל x.' },
+    'There are no horizontal asymptotes for this function.': { en: 'There are no horizontal asymptotes for this function.', he: 'לפונקציה זו אין אסימפטוטות אופקיות.' },
+    'There are no vertical asymptotes for this function.': { en: 'There are no vertical asymptotes for this function.', he: 'לפונקציה זו אין אסימפטוטות אנכיות.' }
+};
+
+const t = (key) => i18n[key] ? i18n[key][currentLang] : key;
+
+function getDynamicError(type, expected, actual) {
+    if (currentLang === 'he') {
+        if (type === 'roots') return `עליך למצוא בדיוק ${expected} שורשים. סימנת ${actual}.`;
+        if (type === 'extrema') return `עליך למצוא בדיוק ${expected} נקודות קיצון. סימנת ${actual}.`;
+        if (type === 'undefined') return `עליך לסמן בדיוק ${expected} נקודות אי-הגדרה.`;
+        if (type === 'interceptY') return `עליך למצוא בדיוק ${expected} חיתוכים עם ציר y. סימנת ${actual}.`;
+        if (type === 'asymH') return `עליך למצוא בדיוק ${expected} אסימפטוטות אופקיות.`;
+        if (type === 'asymV') return `עליך למצוא בדיוק ${expected} אסימפטוטות אנכיות.`;
+        if (type === 'gap') return `עליך להשאיר רווח ב- \u200Ex=${expected}\u200E שבו הפונקציה אינה מוגדרת.`;
+    } else {
+        if (type === 'roots') return `You need to find exactly ${expected} roots. You marked ${actual}.`;
+        if (type === 'extrema') return `You need to find exactly ${expected} extrema points. You marked ${actual}.`;
+        if (type === 'undefined') return `You need exactly ${expected} undefined points.`;
+        if (type === 'interceptY') return `You need exactly ${expected} y-intercepts. You marked ${actual}.`;
+        if (type === 'asymH') return `You need exactly ${expected} horizontal asymptotes.`;
+        if (type === 'asymV') return `You need exactly ${expected} vertical asymptotes.`;
+        if (type === 'gap') return `You must leave a gap at x=${expected} where the function is undefined.`;
+    }
+}
+
+function getStepStrings(step, idx) {
+    const num = idx + 1;
+    if (step.type === 'HORIZONTAL') return {
+        title: currentLang === 'he' ? `${num}. בדיוק ${step.target} נקודות משותפות` : `${num}. Exactly ${step.target} intersection points`,
+        desc: currentLang === 'he'
+            ? `בחר ערך של $k$ כך שלישר $y=k$ ולגרף יהיו בדיוק ${step.target} נקודות משותפות. גם נגיעה נספרת כנקודה אחת. הזז את המחוון, הזן מספר או הקש על הגרף.`
+            : `Choose $k$ so that the line $y=k$ and the graph have exactly ${step.target} intersection points. A touch counts as one point too. Move the slider, enter a number, or tap the graph.`
+    };
+    const dict = {
+        'ROOTS': { t: "x-Intercepts", d: "Click on the x-axis to mark all the roots of $f(x)$." },
+        'EXTREMA': { t: "Extrema Points", d: "Click on the x-axis where $f'(x)=0$." },
+        'SKETCH': { t: "Sketch $f(x)$", d: "Draw the function passing through the points." },
+        'DOMAIN_POS': { t: "Positive Domain", d: "Swipe the x-axis where $f(x) > 0$." },
+        'DOMAIN_NEG': { t: "Negative Domain", d: "Swipe the x-axis where $f(x) < 0$." },
+        'DOMAIN_DEC': { t: "Decreasing Domain", d: "Swipe the x-axis where the function decreases." },
+        'DOMAIN_INC': { t: "Increasing Domain", d: "Swipe the x-axis where the function increases." },
+        'TRANSFORM': { t: "Transformation", d: "Sketch the transformed function:" }
+    };
+    const heDict = {
+        'ROOTS': { t: "חיתוך עם ציר x", d: "לחץ על ציר ה-x כדי לסמן את כל נקודות החיתוך (שורשים)." },
+        'EXTREMA': { t: "נקודות קיצון", d: "לחץ על ציר ה-x בנקודות שבהן $f'(x)=0$." },
+        'SKETCH': { t: "סרטט את $f(x)$", d: "סרטט את הפונקציה כך שתעבור דרך הנקודות." },
+        'DOMAIN_POS': { t: "תחום חיוביות", d: "העבר אצבע על ציר ה-x בתחום שבו $f(x) > 0$." },
+        'DOMAIN_NEG': { t: "תחום שליליות", d: "העבר אצבע על ציר ה-x בתחום שבו $f(x) < 0$." },
+        'DOMAIN_DEC': { t: "תחום ירידה", d: "העבר אצבע על ציר ה-x בתחום שבו הפונקציה יורדת." },
+        'DOMAIN_INC': { t: "תחום עלייה", d: "העבר אצבע על ציר ה-x בתחום שבו הפונקציה עולה." },
+        'TRANSFORM': { t: "התמרה (טרנספורמציה)", d: "סרטט את הפונקציה המותמרת:" }
+    };
+    
+    let enTitle = dict[step.type] ? `${num}. ${dict[step.type].t}` : step.title;
+    let enDesc = dict[step.type] ? dict[step.type].d : step.desc;
+    let heTitle = heDict[step.type] ? `${num}. ${heDict[step.type].t}` : step.title;
+    let heDesc = heDict[step.type] ? heDict[step.type].d : step.desc;
+    
+    return {
+        title: currentLang === 'he' ? heTitle : enTitle,
+        desc: currentLang === 'he' ? heDesc : enDesc
+    };
+}
+
+let currentLevelIdx = 0;
+let currentStepIdx = 0;
+let level = levels[currentLevelIdx];
+let isLevelComplete = false;
+let solvedLevels = new Set(); // Tracks solved levels
+
+// User inputs for current level
+let userRoots = [];
+let userExtrema = [];
+let userSketch = []; 
+let userDomain = []; 
+let userIntersectY = [];
+let userAsymH = [];
+let userAsymV = [];
+let userUndefined = [];
+let currentStroke = [];
+let isDrawing = false;
+let isSwiping = false;
+let swipeStartX = null;
+let horizontalK = null;
+const horizontalAnswers = new Map();
+const horizontalKey = idx => `${level.id}:${idx}`;
+
+function countHorizontalIntersections(targetLevel, k) {
+    const ys = targetLevel.horizontal.criticalX.map(targetLevel.f);
+    const bounds = [targetLevel.horizontal.ends[0], ...ys, targetLevel.horizontal.ends[1]];
+    // Count each touching point once, including equal-height extrema at different x.
+    let count = ys.filter(y => Math.abs(y - k) < 1e-9).length;
+    for (let i = 0; i < bounds.length - 1; i++) {
+        if (k > Math.min(bounds[i], bounds[i+1]) + 1e-9 &&
+            k < Math.max(bounds[i], bounds[i+1]) - 1e-9) count++;
+    }
+    return count;
+}
+
+function setHorizontalK(value) {
+    if (!level.horizontal || isLevelComplete) return;
+    const number = Number(value);
+    horizontalK = value === '' || !Number.isFinite(number) ? null
+        : Math.round(Math.max(level.horizontal.min, Math.min(level.horizontal.max, number)) * 4) / 4;
+    const slider = document.getElementById(`horizontal-slider-${currentStepIdx}`);
+    const input = document.getElementById(`horizontal-number-${currentStepIdx}`);
+    if (slider) slider.value = horizontalK ?? 0;
+    if (input) input.value = horizontalK ?? '';
+    render();
+}
+
+function checkHorizontal() {
+    if (horizontalK === null) {
+        showError(currentLang === 'he' ? 'בחר תחילה ערך של k.' : 'Choose a value of k first.');
+        return;
+    }
+    const count = countHorizontalIntersections(level, horizontalK);
+    if (count !== level.steps[currentStepIdx].target) {
+        showError(currentLang === 'he'
+            ? `בגובה הזה יש ${count} נקודות משותפות. נסה גובה אחר ושים לב לנקודות הקיצון.`
+            : `At this height there are ${count} intersection points. Try another height and consider the turning points.`);
+        return;
+    }
+    horizontalAnswers.set(horizontalKey(currentStepIdx), horizontalK);
+    completeStep();
+}
+
+function drawHorizontalChallenge() {
+    drawExactFunction(level.f, '#2563eb');
+    if (horizontalK === null) return;
+    ctx.save();
+    ctx.strokeStyle = '#9333ea';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 5]);
+    ctx.beginPath();
+    ctx.moveTo(0, mapY(horizontalK));
+    ctx.lineTo(width, mapY(horizontalK));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = 'bold 14px sans-serif';
+    ctx.direction = 'ltr';
+    ctx.textAlign = 'left';
+    const label = `y = ${horizontalK}`;
+    const labelY = Math.max(20, mapY(horizontalK) - 8);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(8, labelY - 15, ctx.measureText(label).width + 12, 21);
+    ctx.fillStyle = '#7e22ce';
+    ctx.fillText(label, 14, labelY);
+    ctx.restore();
+}
+
+/**
+ * CANVAS SETUP & MAPPING
+ */
+const canvas = document.getElementById('mathCanvas');
+const ctx = canvas.getContext('2d');
+const container = document.getElementById('canvas-container');
+const hudCoords = document.getElementById('hud-coords');
+
+let width, height;
+let minX, maxX, minY, maxY;
+let scaleX, scaleY;
+
+function resize() {
+    width = container.clientWidth;
+    height = container.clientHeight;
+    canvas.width = width * window.devicePixelRatio;
+    canvas.height = height * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    updateMapping();
+    render();
+}
+window.addEventListener('resize', resize);
+new ResizeObserver(resize).observe(container);
+
+function updateMapping() {
+    minX = level.view.minX;
+    maxX = level.view.maxX;
+    minY = level.view.minY;
+    maxY = level.view.maxY;
+    scaleX = width / (maxX - minX);
+    scaleY = height / (maxY - minY);
+}
+
+const mapX = x => (x - minX) * scaleX;
+const mapY = y => height - (y - minY) * scaleY;
+const unmapX = cx => (cx / scaleX) + minX;
+const unmapY = cy => maxY - (cy / scaleY);
+
+/**
+ * RENDER PIPELINE
+ */
+function render() {
+    ctx.clearRect(0, 0, width, height);
+    drawGridAndAxes();
+    if (level.horizontal) drawHorizontalChallenge();
+    drawDomains();
+    
+    // Check if SKETCH or TRANSFORM steps have been completed/reached
+    let sketchCompleted = false;
+    let transformCompleted = false;
+    for(let i=0; i<currentStepIdx; i++) {
+        if (level.steps[i].type === 'SKETCH') sketchCompleted = true;
+        if (level.steps[i].type === 'TRANSFORM') transformCompleted = true;
+    }
+    let isCurrentlySketch = level.steps[currentStepIdx] && level.steps[currentStepIdx].type === 'SKETCH';
+    let isCurrentlyTransform = level.steps[currentStepIdx] && level.steps[currentStepIdx].type === 'TRANSFORM';
+
+    // Draw answers for completed sketch steps
+    if (sketchCompleted || (isCurrentlySketch && isStepCompleted(currentStepIdx))) {
+        drawExactFunction(level.f, '#94a3b8'); 
+    }
+    if (transformCompleted || (isCurrentlyTransform && isStepCompleted(currentStepIdx))) {
+        drawExactFunction(level.transformF, '#22c55e');
+    }
+
+    drawUserSketch();
+    drawUndefinedLines();
+    drawAsymptotes();
+    drawPoints();
+    drawSwipingIndicator();
+}
+
+function drawUndefinedLines() {
+    if (!userUndefined || userUndefined.length === 0) return;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = '#9ca3af'; // gray-400
+    userUndefined.forEach(xVal => {
+        ctx.beginPath();
+        ctx.moveTo(mapX(xVal), 0);
+        ctx.lineTo(mapX(xVal), height);
+        ctx.stroke();
+    });
+    ctx.setLineDash([]);
+}
+
+function drawGridAndAxes() {
+    ctx.lineWidth = 1;
+    const stepX = level.view.stepX || 1;
+    const stepY = level.view.stepY || 1;
+    
+    // Grid
+    ctx.strokeStyle = '#f1f5f9';
+    for(let x = Math.ceil(minX / stepX) * stepX; x <= Math.floor(maxX); x += stepX) {
+        let cx = mapX(x);
+        ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, height); ctx.stroke();
+    }
+    for(let y = Math.ceil(minY / stepY) * stepY; y <= Math.floor(maxY); y += stepY) {
+        let cy = mapY(y);
+        ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(width, cy); ctx.stroke();
+    }
+
+    // Axes
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2;
+    const originX = mapX(0);
+    const originY = mapY(0);
+    
+    if (originX >= 0 && originX <= width) {
+        ctx.beginPath(); ctx.moveTo(originX, 0); ctx.lineTo(originX, height); ctx.stroke();
+    }
+    if (originY >= 0 && originY <= height) {
+        ctx.beginPath(); ctx.moveTo(0, originY); ctx.lineTo(width, originY); ctx.stroke();
+    }
+
+    // Ticks & Labels
+    ctx.fillStyle = '#64748b';
+    ctx.font = '12px Inter';
+    ctx.direction = 'ltr';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for(let x = Math.ceil(minX / stepX) * stepX; x <= Math.floor(maxX); x += stepX) {
+        if (x === 0) continue;
+        let cx = mapX(x);
+        ctx.beginPath(); ctx.moveTo(cx, originY - 4); ctx.lineTo(cx, originY + 4); ctx.stroke();
+        ctx.fillText(x, cx, originY + 8);
+    }
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for(let y = Math.ceil(minY / stepY) * stepY; y <= Math.floor(maxY); y += stepY) {
+        if (y === 0) continue;
+        let cy = mapY(y);
+        ctx.beginPath(); ctx.moveTo(originX - 4, cy); ctx.lineTo(originX + 4, cy); ctx.stroke();
+        ctx.fillText(y, originX - 8, cy);
+    }
+}
+
+function drawPoints() {
+    // Roots
+    userRoots.forEach(r => {
+        ctx.beginPath();
+        ctx.arc(mapX(r), mapY(0), 6, 0, Math.PI*2);
+        ctx.fillStyle = '#3b82f6';
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    });
+
+    // Y Intercepts
+    userIntersectY.forEach(yVal => {
+        ctx.beginPath();
+        ctx.arc(mapX(0), mapY(yVal), 6, 0, Math.PI*2);
+        ctx.fillStyle = '#a855f7'; // Purple
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    });
+
+    // Extrema
+    let extremaStepIdx = level.steps.findIndex(s => s.type === 'EXTREMA');
+    let extremaPassed = extremaStepIdx !== -1 && isStepCompleted(extremaStepIdx);
+
+    userExtrema.forEach((eX, idx) => {
+        let yPos = 0; // Default on x-axis
+        if (extremaPassed) { // Check if passed
+            let match = level.extremaPoints.find(p => Math.abs(p[0] - eX) < 0.1);
+            if (match) yPos = match[1];
+        }
+        ctx.beginPath();
+        ctx.arc(mapX(eX), mapY(yPos), 6, 0, Math.PI*2);
+        ctx.fillStyle = '#f59e0b';
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    });
+}
+
+function drawAsymptotes() {
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 8]);
+    
+    // Horizontal
+    ctx.strokeStyle = '#ef4444'; // Red dashed
+    userAsymH.forEach(yVal => {
+        ctx.beginPath();
+        ctx.moveTo(0, mapY(yVal));
+        ctx.lineTo(width, mapY(yVal));
+        ctx.stroke();
+    });
+
+    // Vertical
+    ctx.strokeStyle = '#14b8a6'; // Teal dashed
+    userAsymV.forEach(xVal => {
+        ctx.beginPath();
+        ctx.moveTo(mapX(xVal), 0);
+        ctx.lineTo(mapX(xVal), height);
+        ctx.stroke();
+    });
+
+    ctx.setLineDash([]); // Reset dash
+}
+
+function drawUserSketch() {
+    ctx.lineWidth = 3;
+    let stepType = (level && level.steps[currentStepIdx]) ? level.steps[currentStepIdx].type : null;
+    ctx.strokeStyle = stepType === 'TRANSFORM' ? '#8b5cf6' : '#ec4899';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    [...userSketch, currentStroke].forEach(stroke => {
+        if (!stroke || stroke.length === 0) return;
+        ctx.beginPath();
+        ctx.moveTo(mapX(stroke[0].x), mapY(stroke[0].y));
+        for(let i = 1; i < stroke.length; i++) {
+            ctx.lineTo(mapX(stroke[i].x), mapY(stroke[i].y));
+        }
+        ctx.stroke();
+    });
+}
+
+function drawExactFunction(func, color) {
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    let started = false;
+    for(let px = 0; px <= width; px += 2) {
+        let mx = unmapX(px);
+        let my = func(mx);
+        if (my >= minY - 5 && my <= maxY + 5) {
+            let py = mapY(my);
+            if (!started) { ctx.moveTo(px, py); started = true; }
+            else { ctx.lineTo(px, py); }
+        } else {
+            started = false;
+        }
+    }
+    ctx.stroke();
+}
+
+function drawDomains() {
+    // Current user domain (past domains are removed as requested)
+    drawIntervals(userDomain, 'rgba(59, 130, 246, 0.4)');
+}
+
+function drawIntervals(intervals, color) {
+    intervals.forEach(inv => {
+        let startPx = Math.max(0, mapX(inv.start));
+        let endPx = Math.min(width, mapX(inv.end));
+        let w = endPx - startPx;
+        if (w > 0) {
+            ctx.fillStyle = color;
+            ctx.fillRect(startPx, mapY(0) - 10, w, 20);
+        }
+    });
+}
+
+function drawSwipingIndicator() {
+    if (isSwiping && swipeStartX !== null) {
+        let startPx = mapX(swipeStartX);
+        let currentPx = lastMouseX; // need to track
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.5)';
+        ctx.fillRect(Math.min(startPx, currentPx), mapY(0) - 10, Math.abs(currentPx - startPx), 20);
+    }
+}
+
+/**
+ * INTERACTION LOGIC
+ */
+let lastMouseX = 0;
+
+canvas.addEventListener('pointermove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    lastMouseX = x;
+    
+    let mx = unmapX(x);
+    let my = unmapY(y);
+    hudCoords.innerText = `(${mx.toFixed(1)}, ${my.toFixed(1)})`;
+
+    let stepType = isLevelComplete ? null : level.steps[currentStepIdx].type;
+
+    if (isDrawing && (stepType === 'SKETCH' || stepType === 'TRANSFORM')) {
+        currentStroke.push({x: mx, y: my});
+        render();
+    } else if (isSwiping) {
+        render();
+    }
+});
+
+canvas.addEventListener('pointerdown', (e) => {
+    if (isStepCompleted(currentStepIdx)) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    let mx = unmapX(x);
+    let my = unmapY(y);
+    let stepType = level.steps[currentStepIdx].type;
+
+    if (stepType === 'HORIZONTAL') {
+        setHorizontalK(my);
+    }
+    else if (stepType === 'ROOTS') {
+        if (Math.abs(y - mapY(0)) < 30) {
+            let snappedX = Math.round(mx);
+            let existingIdx = userRoots.findIndex(r => Math.abs(r - snappedX) < 0.1);
+            if (existingIdx >= 0) userRoots.splice(existingIdx, 1);
+            else userRoots.push(snappedX);
+        }
+    } 
+    else if (stepType === 'UNDEFINED_POINTS') {
+        if (Math.abs(y - mapY(0)) < 30) {
+            let snappedX = Math.round(mx);
+            let existingIdx = userUndefined.findIndex(u => Math.abs(u - snappedX) < 0.1);
+            if (existingIdx >= 0) userUndefined.splice(existingIdx, 1);
+            else userUndefined.push(snappedX);
+        }
+    }
+    else if (stepType === 'EXTREMA') {
+        if (Math.abs(y - mapY(0)) < 30) {
+            let snappedX = Math.round(mx);
+            let existingIdx = userExtrema.findIndex(eX => Math.abs(eX - snappedX) < 0.1);
+            if (existingIdx >= 0) userExtrema.splice(existingIdx, 1);
+            else userExtrema.push(snappedX);
+        }
+    }
+    else if (stepType === 'INTERSECT_Y') {
+        if (Math.abs(x - mapX(0)) < 30) {
+            let snappedY = Math.round(my);
+            let existingIdx = userIntersectY.findIndex(r => Math.abs(r - snappedY) < 0.1);
+            if (existingIdx >= 0) userIntersectY.splice(existingIdx, 1);
+            else userIntersectY.push(snappedY);
+        }
+    }
+    else if (stepType === 'ASYMPTOTE_H') {
+        let snappedY = Math.round(my);
+        let existingIdx = userAsymH.findIndex(a => Math.abs(a - snappedY) < 0.1);
+        if (existingIdx >= 0) userAsymH.splice(existingIdx, 1);
+        else userAsymH.push(snappedY);
+    }
+    else if (stepType === 'ASYMPTOTE_V') {
+        let snappedX = Math.round(mx);
+        let existingIdx = userAsymV.findIndex(a => Math.abs(a - snappedX) < 0.1);
+        if (existingIdx >= 0) userAsymV.splice(existingIdx, 1);
+        else userAsymV.push(snappedX);
+    }
+    else if (stepType === 'SKETCH' || stepType === 'TRANSFORM') {
+        isDrawing = true;
+        currentStroke = [{x: mx, y: my}];
+    }
+    else if (stepType.startsWith('DOMAIN_')) {
+        if (Math.abs(y - mapY(0)) < 40) {
+            isSwiping = true;
+            swipeStartX = mx;
+        }
+    }
+    render();
+});
+
+canvas.addEventListener('pointerup', (e) => {
+    endPointerInteraction(e);
+});
+canvas.addEventListener('pointerleave', (e) => {
+    if (isDrawing || isSwiping) endPointerInteraction(e);
+});
+
+function endPointerInteraction(e) {
+    if (isDrawing) {
+        isDrawing = false;
+        if (currentStroke.length > 1) {
+            userSketch.push([...currentStroke]);
+        }
+        currentStroke = [];
+    }
+    if (isSwiping) {
+        isSwiping = false;
+        if (swipeStartX !== null) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            let endX = unmapX(x);
+            let s = Math.min(swipeStartX, endX);
+            let eX = Math.max(swipeStartX, endX);
+            if (eX - s > 0.1) {
+                userDomain.push({start: s, end: eX});
+                mergeDomains();
+            }
+        }
+        swipeStartX = null;
+    }
+    render();
+}
+
+function mergeDomains() {
+    if (userDomain.length === 0) return;
+    userDomain.sort((a,b) => a.start - b.start);
+    let merged = [userDomain[0]];
+    for (let i = 1; i < userDomain.length; i++) {
+        let last = merged[merged.length - 1];
+        let curr = userDomain[i];
+        if (curr.start <= last.end) {
+            last.end = Math.max(last.end, curr.end);
+        } else {
+            merged.push(curr);
+        }
+    }
+    userDomain = merged;
+}
+
+/**
+ * UI & STEP MANAGEMENT
+ */
+function initLevel() {
+    level = levels[currentLevelIdx];
+    currentStepIdx = 0;
+    horizontalK = null;
+    isLevelComplete = false;
+    userRoots = [];
+    userExtrema = [];
+    userSketch = [];
+    userDomain = [];
+    userIntersectY = [];
+    userAsymH = [];
+    userAsymV = [];
+    userUndefined = [];
+    
+    document.getElementById('hud-level').innerText = level.id;
+    document.getElementById('level-selector').value = currentLevelIdx;
+    document.getElementById('function-display').innerText = `$$${level.equationStr}$$`;
+    document.getElementById('next-level-container').classList.add('hidden');
+    
+    buildStepsUI();
+
+    // Check if level was already solved
+    if (solvedLevels.has(currentLevelIdx)) {
+        isLevelComplete = true;
+        currentStepIdx = level.steps.length;
+        if (level.horizontal) horizontalK = horizontalAnswers.get(horizontalKey(currentStepIdx - 1)) ?? null;
+        
+        // Auto-fill exact coordinates to render properly on the canvas
+        userRoots = [...(level.roots || [])];
+        userExtrema = [...(level.extremaX || [])];
+        userIntersectY = [...(level.intersectY || [])];
+        userAsymH = [...(level.asymH || [])];
+        userAsymV = [...(level.asymV || [])];
+        userUndefined = [...(level.undefinedX || [])];
+        
+        // Render answer text for all steps
+        for(let i = 0; i < level.steps.length; i++) {
+            setStepAnswerText(i);
+        }
+        
+        updateStepCardsUI();
+        document.getElementById('next-level-container').classList.remove('hidden');
+    }
+    
+    updateMapping();
+    renderMathInElement(document.body, { delimiters: [{left: "$$", right: "$$", display: true}, {left: "$", right: "$", display: false}] });
+    render();
+}
+
+function buildStepsUI() {
+    const container = document.getElementById('steps-container');
+    container.innerHTML = '';
+    
+    level.steps.forEach((stepDesc, idx) => {
+        const stepStrings = getStepStrings(stepDesc, idx);
+        
+        const card = document.createElement('div');
+        card.className = `step-card bg-white border border-slate-200 rounded-lg shadow-sm ${idx === 0 ? 'active border-blue-500' : 'opacity-60 pointer-events-none'}`;
+        card.id = `step-card-${idx}`;
+        
+        let extraContent = '';
+        let buttons = '';
+        let checkFunc = '';
+
+        if (stepDesc.type === 'HORIZONTAL') checkFunc = 'checkHorizontal()';
+        else if (stepDesc.type === 'ROOTS') checkFunc = 'checkRoots()';
+        else if (stepDesc.type === 'UNDEFINED_POINTS') checkFunc = 'checkUndefined()';
+        else if (stepDesc.type === 'EXTREMA') checkFunc = 'checkExtrema()';
+        else if (stepDesc.type === 'INTERSECT_Y') checkFunc = 'checkIntersectY()';
+        else if (stepDesc.type === 'ASYMPTOTE_H') checkFunc = 'checkAsymH()';
+        else if (stepDesc.type === 'ASYMPTOTE_V') checkFunc = 'checkAsymV()';
+        else if (stepDesc.type === 'SKETCH' || stepDesc.type === 'TRANSFORM') checkFunc = 'checkSketch()';
+        else if (stepDesc.type.startsWith('DOMAIN_')) checkFunc = 'checkDomain()';
+
+        if (stepDesc.type === 'HORIZONTAL') {
+            const value = idx === currentStepIdx ? horizontalK : null;
+            extraContent = `<div class="mt-3" dir="ltr">
+                <label for="horizontal-number-${idx}" class="font-semibold">k = </label>
+                <input id="horizontal-number-${idx}" type="number" min="${level.horizontal.min}" max="${level.horizontal.max}" step="0.25" value="${value ?? ''}" onchange="setHorizontalK(this.value)" class="border rounded p-2 w-24 bg-white text-slate-800">
+                <input id="horizontal-slider-${idx}" aria-label="${currentLang === 'he' ? 'גובה הישר k' : 'Line height k'}" type="range" min="${level.horizontal.min}" max="${level.horizontal.max}" step="0.25" value="${value ?? 0}" oninput="setHorizontalK(this.value)" style="width:100%;height:44px;touch-action:pan-x;accent-color:#9333ea">
+                <div class="flex justify-between text-xs"><span>${level.horizontal.min}</span><span>${level.horizontal.max}</span></div>
+            </div>`;
+        }
+        if (stepDesc.type === 'TRANSFORM') {
+            extraContent = `<div class="font-semibold text-center my-2">$$${level.transformEq}$$</div>`;
+        }
+
+        buttons = `
+            <div class="flex gap-2 mt-3">
+                <button onclick="${checkFunc}" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-sm font-semibold">${t('Check')}</button>
+                <button onclick="clearCanvas()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 py-2 rounded text-sm font-semibold">${t('Clear')}</button>
+            </div>
+            <div class="text-center"><button onclick="skipStep()" class="text-sm text-slate-500 hover:text-slate-700 underline mt-2">${t('Skip & Reveal')}</button></div>
+        `;
+
+        card.innerHTML = `
+            <div class="p-4 cursor-pointer font-semibold flex justify-between items-center" id="step-header-${idx}">
+                <span>${stepStrings.title}</span>
+                <span class="status-icon text-slate-400"></span>
+            </div>
+            <div class="step-content px-4 pb-4 text-sm text-slate-600">
+                <p>${stepStrings.desc}</p>
+                ${extraContent}
+                <div id="step-error-${idx}" class="text-red-500 font-medium mt-2 hidden text-xs bg-red-50 p-2 rounded border border-red-100"></div>
+                <div id="step-controls-${idx}">
+                    ${buttons}
+                </div>
+            </div>
+            <div id="step-answer-${idx}" class="hidden px-4 pb-4 text-sm font-medium text-green-700"></div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function isStepCompleted(idx) {
+    return idx < currentStepIdx || isLevelComplete;
+}
+
+function updateStepCardsUI() {
+    for (let i = 0; i < level.steps.length; i++) {
+        const card = document.getElementById(`step-card-${i}`);
+        const answerDiv = document.getElementById(`step-answer-${i}`);
+        const controlsDiv = document.getElementById(`step-controls-${i}`);
+        const icon = card.querySelector('.status-icon');
+        
+        card.classList.remove('active', 'border-blue-500', 'opacity-60', 'pointer-events-none', 'completed');
+        
+        if (i < currentStepIdx) {
+            card.classList.add('completed');
+            icon.innerHTML = '✓';
+            icon.classList.replace('text-slate-400', 'text-green-500');
+            answerDiv.classList.remove('hidden');
+            if(controlsDiv) controlsDiv.classList.add('hidden');
+        } else if (i === currentStepIdx && !isLevelComplete) {
+            card.classList.add('active', 'border-blue-500');
+            icon.innerHTML = '✎';
+            icon.classList.replace('text-slate-400', 'text-blue-500');
+            answerDiv.classList.add('hidden');
+            if(controlsDiv) controlsDiv.classList.remove('hidden');
+        } else {
+            card.classList.add('opacity-60', 'pointer-events-none');
+            icon.innerHTML = '';
+        }
+    }
+}
+
+function showError(msg) {
+    const errDiv = document.getElementById(`step-error-${currentStepIdx}`);
+    if (errDiv) {
+        errDiv.innerText = msg;
+        errDiv.classList.remove('hidden');
+        setTimeout(() => { errDiv.classList.add('hidden'); }, 4000);
+    }
+}
+
+function clearCanvas() {
+    let stepType = level.steps[currentStepIdx].type;
+    if (stepType === 'HORIZONTAL') setHorizontalK('');
+    else if (stepType === 'ROOTS') userRoots = [];
+    else if (stepType === 'UNDEFINED_POINTS') userUndefined = [];
+    else if (stepType === 'EXTREMA') userExtrema = [];
+    else if (stepType === 'INTERSECT_Y') userIntersectY = [];
+    else if (stepType === 'ASYMPTOTE_H') userAsymH = [];
+    else if (stepType === 'ASYMPTOTE_V') userAsymV = [];
+    else if (stepType === 'SKETCH' || stepType === 'TRANSFORM') userSketch = [];
+    else if (stepType.startsWith('DOMAIN_')) userDomain = [];
+    render();
+}
+
+function skipStep() {
+    let stepType = level.steps[currentStepIdx].type;
+    if (stepType === 'HORIZONTAL') {
+        horizontalK = level.steps[currentStepIdx].example;
+        horizontalAnswers.set(horizontalKey(currentStepIdx), horizontalK);
+    }
+    else if (stepType === 'ROOTS') userRoots = [...level.roots];
+    else if (stepType === 'UNDEFINED_POINTS') userUndefined = [...level.undefinedX];
+    else if (stepType === 'EXTREMA') userExtrema = [...level.extremaX];
+    else if (stepType === 'INTERSECT_Y') userIntersectY = [...level.intersectY];
+    else if (stepType === 'ASYMPTOTE_H') userAsymH = [...level.asymH];
+    else if (stepType === 'ASYMPTOTE_V') userAsymV = [...level.asymV];
+    
+    completeStep();
+}
+
+function setStepAnswerText(idx) {
+    const ansDiv = document.getElementById(`step-answer-${idx}`);
+    if (!ansDiv) return;
+    const stepType = level.steps[idx].type;
+    
+    // Set Answer Text
+    if (stepType === 'HORIZONTAL') {
+        const k = horizontalAnswers.get(horizontalKey(idx));
+        const count = level.steps[idx].target;
+        ansDiv.innerHTML = `<span dir="ltr">k = ${k}</span> · ${currentLang === 'he' ? `${count} נקודות משותפות` : `${count} intersection points`}`;
+    } else if (stepType === 'ROOTS') {
+        ansDiv.innerHTML = `${t('Roots: ')}<span dir="ltr" class="inline-block">${level.roots.map(r => `(${r}, 0)`).join(', ')}</span>`;
+    } else if (stepType === 'UNDEFINED_POINTS') {
+        ansDiv.innerHTML = level.undefinedX?.length ? `${t('Undefined at: ')}<span dir="ltr" class="inline-block">${level.undefinedX.map(x => `x = ${x}`).join(', ')}</span>` : t('Defined everywhere.');
+    } else if (stepType === 'EXTREMA') {
+        ansDiv.innerHTML = `${t('Extrema: ')}<span dir="ltr" class="inline-block">${level.extremaPoints.map(p => `(${p[0].toFixed(2)}, ${p[1].toFixed(2)})`).join(', ')}</span>`;
+    } else if (stepType === 'SKETCH') {
+        ansDiv.innerText = t('Exact plot revealed.');
+    } else if (stepType === 'DOMAIN_POS') {
+        ansDiv.innerHTML = `${t('Domain: ')}<span dir="ltr" class="inline-block">$$${level.positiveStr}$$</span>`;
+    } else if (stepType === 'DOMAIN_NEG') {
+        ansDiv.innerHTML = `${t('Domain: ')}<span dir="ltr" class="inline-block">$$${level.negStr}$$</span>`;
+    } else if (stepType === 'DOMAIN_DEC') {
+        ansDiv.innerHTML = `${t('Domain: ')}<span dir="ltr" class="inline-block">$$${level.decStr}$$</span>`;
+    } else if (stepType === 'DOMAIN_CONVEX') {
+        ansDiv.innerHTML = `${t('Domain: ')}<span dir="ltr" class="inline-block">$$${level.convexStr}$$</span>`;
+    } else if (stepType === 'TRANSFORM') {
+        ansDiv.innerText = t('Transformation complete!');
+    } else if (stepType === 'DOMAIN_FUNC') {
+        ansDiv.innerHTML = `${t('Domain: ')}<span dir="ltr" class="inline-block">$$${level.definedStr}$$</span>`;
+    } else if (stepType === 'DOMAIN_INC') {
+        ansDiv.innerHTML = `${t('Domain: ')}<span dir="ltr" class="inline-block">$$${level.incStr}$$</span>`;
+    } else if (stepType === 'INTERSECT_Y') {
+        ansDiv.innerHTML = `${t('y-Intercept: ')}<span dir="ltr" class="inline-block">${level.intersectY.map(y => `(0, ${y})`).join(', ')}</span>`;
+    } else if (stepType === 'ASYMPTOTE_H') {
+        ansDiv.innerHTML = level.asymH?.length ? `${t('Horizontal Asymptotes: ')}<span dir="ltr" class="inline-block">${level.asymH.map(y => `y = ${y}`).join(', ')}</span>` : t('No horizontal asymptotes.');
+    } else if (stepType === 'ASYMPTOTE_V') {
+        ansDiv.innerHTML = level.asymV?.length ? `${t('Vertical Asymptotes: ')}<span dir="ltr" class="inline-block">${level.asymV.map(x => `x = ${x}`).join(', ')}</span>` : t('No vertical asymptotes.');
+    }
+
+    renderMathInElement(ansDiv, { delimiters: [{left: "$$", right: "$$", display: true}, {left: "$", right: "$", display: false}] });
+}
+
+function completeStep() {
+    setStepAnswerText(currentStepIdx);
+
+    currentStepIdx++;
+    if (level.horizontal && currentStepIdx < level.steps.length) horizontalK = null;
+    if (currentStepIdx >= level.steps.length) {
+        isLevelComplete = true;
+        solvedLevels.add(currentLevelIdx); // Mark level as solved
+        updateLevelSelectorUI(); // Add checkmark to dropdown
+        document.getElementById('next-level-container').classList.remove('hidden');
+    }
+    
+    // Reset inputs for next step
+    userSketch = [];
+    userDomain = [];
+    
+    updateStepCardsUI();
+    render();
+    
+    // Scroll to current step safely without jumping the entire page
+    if(currentStepIdx < level.steps.length) {
+        const nextCard = document.getElementById(`step-card-${currentStepIdx}`);
+        const panel = document.getElementById('steps-panel');
+        if (nextCard && panel) {
+            const headerHeight = level.horizontal ? 0 : 100;
+            const topPos = nextCard.getBoundingClientRect().top + panel.scrollTop - panel.getBoundingClientRect().top;
+            panel.scrollTo({
+                top: topPos - headerHeight,
+                behavior: 'smooth'
+            });
+        }
+    }
+}
+
+/**
+ * VALIDATION HEURISTICS
+ */
+function checkRoots() {
+    if (userRoots.length === 0) {
+        showError(t('Please mark the roots on the x-axis first.')); return;
+    }
+    if (userRoots.length !== level.roots.length) {
+        showError(getDynamicError('roots', level.roots.length, userRoots.length)); return;
+    }
+    
+    // Check if every true root is within ~0.8 units of a user-marked whole number
+    let allCorrect = level.roots.every(trueRoot => userRoots.some(ur => Math.abs(ur - trueRoot) < 0.8));
+    if (!allCorrect) {
+        showError(t('One or more roots are incorrect.')); return;
+    }
+    
+    // Replace user approximations with exact math coordinates for snapping effect
+    userRoots = [...level.roots]; 
+    completeStep();
+}
+
+function checkUndefined() {
+    if (userUndefined.length !== level.undefinedX.length) {
+        showError(level.undefinedX.length === 0 ? t('This function is defined everywhere.') : getDynamicError('undefined', level.undefinedX.length, userUndefined.length)); 
+        return;
+    }
+    if (level.undefinedX.length > 0) {
+        let allCorrect = level.undefinedX.every(trueU => userUndefined.some(uu => Math.abs(uu - trueU) < 0.8));
+        if (!allCorrect) {
+            showError(t('One or more points are incorrect.')); return;
+        }
+    }
+    userUndefined = [...level.undefinedX];
+    completeStep();
+}
+
+function checkExtrema() {
+    if (userExtrema.length === 0) {
+        showError(t('Please mark the extrema on the x-axis first.')); return;
+    }
+    if (userExtrema.length !== level.extremaX.length) {
+        showError(getDynamicError('extrema', level.extremaX.length, userExtrema.length)); return;
+    }
+    
+    let allCorrect = level.extremaX.every(trueExt => userExtrema.some(ue => Math.abs(ue - trueExt) < 0.9));
+    if (!allCorrect) {
+        showError(t('One or more extrema points are incorrect.')); return;
+    }
+    
+    userExtrema = [...level.extremaX]; 
+    completeStep();
+}
+
+function checkIntersectY() {
+    if (userIntersectY.length === 0) {
+        showError(t('Please mark the y-intercept on the y-axis first.')); return;
+    }
+    if (userIntersectY.length !== level.intersectY.length) {
+        showError(getDynamicError('interceptY', level.intersectY.length, userIntersectY.length)); return;
+    }
+    let allCorrect = level.intersectY.every(trueY => userIntersectY.some(uy => Math.abs(uy - trueY) < 0.8));
+    if (!allCorrect) {
+        showError(t('The y-intercept is incorrect.')); return;
+    }
+    userIntersectY = [...level.intersectY];
+    completeStep();
+}
+
+function checkAsymH() {
+    if (userAsymH.length !== level.asymH.length) {
+        showError(level.asymH.length === 0 ? t('There are no horizontal asymptotes for this function.') : getDynamicError('asymH', level.asymH.length, userAsymH.length)); 
+        return;
+    }
+    if (level.asymH.length > 0) {
+        let allCorrect = level.asymH.every(trueA => userAsymH.some(ua => Math.abs(ua - trueA) < 0.8));
+        if (!allCorrect) {
+            showError(t('One or more horizontal asymptotes are incorrect.')); return;
+        }
+    }
+    userAsymH = [...level.asymH];
+    completeStep();
+}
+
+function checkAsymV() {
+    if (userAsymV.length !== level.asymV.length) {
+        showError(level.asymV.length === 0 ? t('There are no vertical asymptotes for this function.') : getDynamicError('asymV', level.asymV.length, userAsymV.length)); 
+        return;
+    }
+    if (level.asymV.length > 0) {
+        let allCorrect = level.asymV.every(trueA => userAsymV.some(ua => Math.abs(ua - trueA) < 0.8));
+        if (!allCorrect) {
+            showError(t('One or more vertical asymptotes are incorrect.')); return;
+        }
+    }
+    userAsymV = [...level.asymV];
+    completeStep();
+}
+
+function checkSketch() {
+    if (userSketch.length === 0) {
+        showError(t('Please draw the function first.')); return;
+    }
+    
+    let stepType = level.steps[currentStepIdx].type;
+    const func = stepType === 'SKETCH' ? level.f : level.transformF;
+
+    // Flatten sketch points
+    const flatPoints = [];
+    userSketch.forEach(s => s.forEach(p => flatPoints.push(p)));
+    
+    // Check coverage
+    let minSketchX = Math.min(...flatPoints.map(p => p.x));
+    let maxSketchX = Math.max(...flatPoints.map(p => p.x));
+    if (maxSketchX - minSketchX < 3) {
+        showError(t('Please draw a wider portion of the function to show the overall shape.'));
+        return;
+    }
+
+    // Check passing through roots & extrema (only for SKETCH)
+    if (stepType === 'SKETCH') {
+        const requiredPoints = [...level.roots.map(r => [r, 0]), ...level.extremaPoints];
+        for (let rp of requiredPoints) {
+            let hit = flatPoints.some(p => Math.hypot(p.x - rp[0], p.y - rp[1]) < 0.8);
+            if (!hit) {
+                showError(t('Your sketch missed one or more important points (roots or extrema).'));
+                return;
+            }
+        }
+    }
+
+    // Sign validation & general shape
+    let wrongSigns = 0;
+    let samples = 0;
+    
+    for (let i=0; i<flatPoints.length; i+=Math.floor(flatPoints.length/20) + 1) {
+        let p = flatPoints[i];
+        let trueY = func(p.x);
+        
+        // Don't penalize too close to x-axis
+        if (Math.abs(trueY) > 0.5 && Math.abs(p.y) > 0.5) {
+            samples++;
+            if (Math.sign(trueY) !== Math.sign(p.y)) {
+                wrongSigns++;
+            }
+        }
+    }
+    
+    if (samples > 0 && wrongSigns / samples > 0.15) {
+        showError(t('The function is on the wrong side of the x-axis in some regions.'));
+        return;
+    }
+
+    completeStep();
+}
+
+function checkDomain() {
+    if (userDomain.length === 0) {
+        showError(t('Please highlight the domain on the x-axis.')); return;
+    }
+
+    let stepType = level.steps[currentStepIdx].type;
+    const testFunc = 
+        stepType === 'DOMAIN_POS' ? level.isPositive : 
+        stepType === 'DOMAIN_NEG' ? level.isNegative : 
+        stepType === 'DOMAIN_DEC' ? level.isDecreasing :
+        stepType === 'DOMAIN_CONVEX' ? level.isConvex : 
+        stepType === 'DOMAIN_FUNC' ? level.isDefined : 
+        level.isIncreasing;
+
+    // Extra rigorous check for DOMAIN_FUNC to ensure they left gaps at undefined spots
+    if (stepType === 'DOMAIN_FUNC' && level.undefinedX) {
+        for (let ux of level.undefinedX) {
+            let isCovered = userDomain.some(d => ux >= d.start - 0.2 && ux <= d.end + 0.2);
+            if (isCovered) {
+                showError(getDynamicError('gap', ux));
+                return;
+            }
+        }
+    }
+    
+    let totalSamples = 0;
+    let correctSamples = 0;
+
+    for (let x = Math.max(minX, -20); x <= Math.min(maxX, 20); x += 0.2) {
+        let isTrue = testFunc(x);
+        let isUserMarked = userDomain.some(d => x >= d.start && x <= d.end);
+        totalSamples++;
+        if (isTrue === isUserMarked) {
+            correctSamples++;
+        }
+    }
+
+    let accuracy = correctSamples / totalSamples;
+    if (accuracy < 0.85) {
+        showError(t('The highlighted domain is incorrect or incomplete. Check your intervals.'));
+        return;
+    }
+
+    completeStep();
+}
+
+function getTrueIntervals(boolFunc) {
+    let intervals = [];
+    let inInterval = false;
+    let start = 0;
+    for (let x = Math.max(minX, -20); x <= Math.min(maxX, 20); x += 0.1) {
+        let isTrue = boolFunc(x);
+        if (isTrue && !inInterval) {
+            inInterval = true;
+            start = x;
+        } else if (!isTrue && inInterval) {
+            inInterval = false;
+            intervals.push({start: start, end: x});
+        }
+    }
+    if (inInterval) intervals.push({start: start, end: maxX});
+    return intervals;
+}
+
+/**
+ * INITIALIZATION
+ */
+function initLevelSelector() {
+    const selector = document.getElementById('level-selector');
+    selector.innerHTML = '';
+    levels.forEach((lvl, idx) => {
+        let opt = document.createElement('option');
+        opt.value = idx;
+        selector.appendChild(opt);
+    });
+    updateLevelSelectorUI();
+    
+    selector.addEventListener('change', (e) => {
+        currentLevelIdx = parseInt(e.target.value);
+        initLevel();
+    });
+
+    document.getElementById('lang-selector').addEventListener('change', (e) => {
+        currentLang = e.target.value;
+        document.documentElement.lang = currentLang;
+        document.documentElement.dir = currentLang === 'he' ? 'rtl' : 'ltr';
+        
+        document.getElementById('app-title').innerText = t('Function Explorer');
+        document.getElementById('hud-level-label').innerText = t('Level');
+        document.getElementById('btn-next-level').innerText = t('Next Level');
+        
+        updateLevelSelectorUI();
+        
+        if (level) {
+            buildStepsUI();
+            updateStepCardsUI();
+            for(let i=0; i<level.steps.length; i++) {
+                if (isStepCompleted(i)) setStepAnswerText(i);
+            }
+            renderMathInElement(document.getElementById('steps-container'), { delimiters: [{left: "$$", right: "$$", display: true}, {left: "$", right: "$", display: false}] });
+        }
+    });
+}
+
+function updateLevelSelectorUI() {
+    const selector = document.getElementById('level-selector');
+    for(let i = 0; i < levels.length; i++) {
+        selector.options[i].innerText = `${t('Level')} ${levels[i].id}${levels[i].horizontal ? (currentLang === 'he' ? ' — ישר אופקי' : ' — Horizontal line') : ''}${solvedLevels.has(i) ? ' ✅' : ''}`;
+    }
+}
+
+document.getElementById('btn-next-level').addEventListener('click', () => {
+    currentLevelIdx++;
+    if (currentLevelIdx >= levels.length) {
+        alert(t("You've completed all available levels!"));
+        currentLevelIdx = 0; // loop back
+    }
+    initLevel();
+});
+
+// Start game
+setTimeout(() => {
+    resize();
+    initLevelSelector();
+    initLevel();
+}, 100);
+
+</script>
+    <footer class="site-copyright site-copyright--compact">
+        <span class="notice-he" lang="he" dir="rtl"><a href="../license.html">רישיון ותנאי שימוש</a></span>
+        <span class="notice-en" lang="en" dir="ltr"><a href="../license.html">License &amp; terms</a></span>
+        <span class="notice-ar" lang="ar" dir="rtl"><a href="../license.html">الترخيص وشروط الاستخدام</a></span>
+    </footer>
+</body>
+</html>
