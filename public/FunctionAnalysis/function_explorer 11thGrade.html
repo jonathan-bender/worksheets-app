@@ -229,6 +229,181 @@ const levels = [
     }
 ];
 
+
+// Focused graph-reading lessons; the original four investigations stay above.
+levels.push(
+    {
+        id: 5, concavityPractice: true,
+        lessonName: { he: 'קיצון ופיתול', en: 'Turning and inflection' },
+        equationStr: 'f(x) = x^3 - 3x', f: x => x*x*x - 3*x,
+        secondDerivativeStr: "f''(x) = 6x", secondDerivative: x => 6*x,
+        secondZeros: [0], inflectionX: [0], inflectionPoints: [[0, 0]],
+        roots: [], undefinedX: [], extremaX: [-1, 1], extremaPoints: [[-1, 2], [1, -2]],
+        convexStr: 'x > 0', isConvex: x => x > 0,
+        concaveStr: 'x < 0', isConcave: x => x < 0,
+        view: { minX: -3, maxX: 3, minY: -6, maxY: 6, stepX: 1, stepY: 1 },
+        steps: ['EXTREMA', 'SECOND_ZEROS', 'DOMAIN_CONCAVE', 'DOMAIN_CONVEX', 'INFLECTION', 'REASON'].map(type => ({ type })),
+        reasonPrompt: { he: 'מדוע יש פיתול ב־$x=0$, אך לא ב־$x=-1$ או ב־$x=1$?', en: 'Why is there an inflection at $x=0$, but not at $x=-1$ or $x=1$?' },
+        reasonChoices: [
+            { he: 'כל נקודת קיצון היא גם נקודת פיתול.', en: 'Every turning point is also an inflection point.' },
+            { he: 'הקמירות מתחלפת ב־$x=0$. בנקודות הקיצון היא אינה מתחלפת.', en: 'Concavity changes at $x=0$. It does not change at the turning points.' },
+            { he: 'כל חיתוך עם ציר x הוא נקודת פיתול.', en: 'Every x-intercept is an inflection point.' }
+        ], correctReason: 1,
+        explanation: { he: "ב־$x=0$ הנגזרת השנייה מחליפה סימן משלילי לחיובי. לכן $(0,0)$ היא נקודת פיתול. שינוי בעלייה ובירידה לבדו אינו מספיק.", en: "At $x=0$, the second derivative changes from negative to positive, so $(0,0)$ is an inflection point. A change between increasing and decreasing is not enough." }
+    },
+    {
+        id: 6, concavityPractice: true,
+        lessonName: { he: 'אסימפטוטה או פיתול?', en: 'Asymptote or inflection?' },
+        equationStr: 'f(x) = \\frac{x^2}{x+5}', f: x => x*x/(x+5),
+        secondDerivativeStr: "f''(x) = \\frac{50}{(x+5)^3}", secondDerivative: x => 50/(x+5)**3,
+        secondZeros: [], inflectionX: [], inflectionPoints: [],
+        roots: [], undefinedX: [-5], asymV: [-5],
+        convexStr: 'x > -5', isConvex: x => x > -5,
+        concaveStr: 'x < -5', isConcave: x => x < -5,
+        view: { minX: -15, maxX: 5, minY: -30, maxY: 10, stepX: 5, stepY: 5 },
+        steps: ['UNDEFINED_POINTS', 'DOMAIN_CONCAVE', 'DOMAIN_CONVEX', 'INFLECTION', 'REASON'].map(type => ({ type })),
+        reasonPrompt: { he: 'הקמירות שונה משני צדי $x=-5$. האם יש שם נקודת פיתול?', en: 'Concavity differs on either side of $x=-5$. Is there an inflection point there?' },
+        reasonChoices: [
+            { he: 'לא. הפונקציה אינה מוגדרת ב־$x=-5$, ולכן אין שם נקודה על הגרף.', en: 'No. The function is undefined at $x=-5$, so there is no point on the graph there.' },
+            { he: 'כן. כל שינוי בסימן הנגזרת השנייה יוצר נקודת פיתול.', en: 'Yes. Every change in the sign of the second derivative creates an inflection point.' },
+            { he: 'כן. כל אסימפטוטה אנכית היא גם נקודת פיתול.', en: 'Yes. Every vertical asymptote is also an inflection point.' }
+        ], correctReason: 0,
+        explanation: { he: 'נקודת פיתול חייבת להיות נקודה על הגרף שבה הקמירות מתחלפת. ב־$x=-5$ הפונקציה אינה מוגדרת. לפונקציה זו אין נקודות פיתול.', en: 'An inflection point must be a point on the curve where concavity changes. The function is undefined at $x=-5$, so this function has no inflection points.' }
+    },
+    {
+        id: 7, concavityPractice: true,
+        lessonName: { he: 'אפס בנגזרת השנייה', en: 'A zero of the second derivative' },
+        equationStr: 'f(x) = \\frac{x^5}{20} - \\frac{x^4}{4}', f: x => x**5/20-x**4/4,
+        secondDerivativeStr: "f''(x) = x^2(x-3)", secondDerivative: x => x*x*(x-3),
+        secondZeros: [0, 3], inflectionX: [3], inflectionPoints: [[3, -8.1]],
+        roots: [], undefinedX: [],
+        convexStr: 'x > 3', isConvex: x => x > 3,
+        // The isolated zero at x=0 does not split the concave-down interval.
+        concaveStr: 'x < 3', isConcave: x => x < 3,
+        view: { minX: -2, maxX: 6, minY: -15, maxY: 5, stepX: 1, stepY: 5 },
+        steps: ['SECOND_ZEROS', 'DOMAIN_CONCAVE', 'DOMAIN_CONVEX', 'INFLECTION', 'REASON'].map(type => ({ type })),
+        reasonPrompt: { he: 'הנגזרת השנייה מתאפסת ב־$x=0$ וב־$x=3$. מדוע רק אחד מהם נותן פיתול?', en: 'The second derivative is zero at $x=0$ and $x=3$. Why does only one give an inflection?' },
+        reasonChoices: [
+            { he: 'שניהם נותנים פיתול כי הנגזרת השנייה מתאפסת.', en: 'Both give inflections because the second derivative is zero.' },
+            { he: 'רק $x=0$ נותן פיתול כי הוא על ציר y.', en: 'Only $x=0$ gives an inflection because it is on the y-axis.' },
+            { he: 'רק ב־$x=3$ יש החלפת סימן. ליד $x=0$ הסימן שלילי משני הצדדים.', en: 'Only $x=3$ has a sign change. Near $x=0$, the sign is negative on both sides.' }
+        ], correctReason: 2,
+        explanation: { he: 'התנאי $f\'\'(x)=0$ לבדו אינו מספיק: צריך שינוי בקמירות. הגרף נשאר קעור כלפי מטה דרך $x=0$, ומחליף קמירות ב־$(3,-8.1)$.', en: "The condition $f''(x)=0$ alone is not enough: concavity must change. The graph stays concave down through $x=0$ and changes concavity at $(3,-8.1)$." }
+    }
+);
+
+// In these lessons only a derivative graph is supplied. Answers about f are
+// x-values and intervals; no vertical coordinates of f can be inferred.
+levels.push(
+    {
+        id: 8, lessonName: { he: 'קריאת גרף הנגזרת השנייה', en: 'Reading the second derivative' },
+        derivativeGraph: { order: 2, curve: x => (x-1)*(x-3)**2*(x-5)/2 },
+        view: { minX: 0, maxX: 6, minY: -3, maxY: 4, stepX: 1, stepY: 1 },
+        steps: [
+            {
+                type: 'DERIVATIVE_MARK', targets: [1, 3, 5],
+                title: { he: 'האפסים של הנגזרת השנייה', en: 'Zeros of the second derivative' },
+                desc: { he: 'סמן על ציר x היכן הגרף הנתון פוגש את ציר x. אלה מועמדים לפיתול של $f$.', en: 'Mark where the displayed graph meets the x-axis. These are candidates for inflection points of $f$.' },
+                hint: { he: 'גם חצייה וגם נגיעה נותנות $f\'\'(x)=0$.', en: "Both crossing and touching give $f''(x)=0$." },
+                answer: { he: 'כעת בדוק את הסימן משני צדי כל מועמד.', en: 'Next, inspect the sign on either side of each candidate.' }
+            },
+            {
+                type: 'DERIVATIVE_INTERVAL', intervals: [[0,1],[5,6]],
+                title: { he: 'היכן f קמורה כלפי מעלה? ∪', en: 'Where is f concave up? ∪' },
+                desc: { he: 'בתחום המוצג, סמן על ציר x את התחומים שבהם $f$ קמורה כלפי מעלה.', en: 'In the displayed interval, swipe the x-intervals where $f$ is concave up.' },
+                hint: { he: 'חפש היכן $f\'\'$ מעל ציר x. גובה הגרף הנתון קובע את הקמירות של $f$.', en: "Look where $f''$ is above the x-axis. Its height determines the concavity of $f$." },
+                answer: { he: 'שם הנגזרת השנייה חיובית, ולכן f קמורה כלפי מעלה.', en: 'The second derivative is positive there, so f is concave up.' }
+            },
+            {
+                type: 'DERIVATIVE_INTERVAL', intervals: [[1,5]],
+                title: { he: 'היכן f קעורה כלפי מטה? ∩', en: 'Where is f concave down? ∩' },
+                desc: { he: 'סמן את התחום שבו $f$ קעורה כלפי מטה. בדוק אם הנגיעה ב־$x=3$ משנה את הקמירות.', en: 'Swipe where $f$ is concave down. Consider whether the touch at $x=3$ changes its concavity.' },
+                hint: { he: 'בדוק את הסימן לפני $x=3$ ואחריו. אפס בודד אינו בהכרח מפצל תחום קעירות.', en: 'Compare the signs before and after $x=3$. An isolated zero need not split a concavity interval.' },
+                answer: { he: 'הגרף נשאר מתחת לציר משני צדי 3. תחום הקעירות הוא כולו בין 1 ל־5.', en: 'The graph stays below the axis on both sides of 3. The concave-down interval extends from 1 to 5.' }
+            },
+            {
+                type: 'DERIVATIVE_MARK', targets: [1,5],
+                title: { he: 'ערכי x של נקודות הפיתול של f', en: 'Inflection x-values of f' },
+                desc: { he: 'סמן רק את ערכי x שבהם הקמירות של $f$ מתחלפת.', en: 'Mark only the x-values where the concavity of $f$ changes.' },
+                hint: { he: 'חפש החלפת סימן של $f\'\'$. נגיעה בציר ללא החלפת סימן אינה מספיקה.', en: "Look for a sign change of $f''$. Touching the axis without changing sign is not enough." },
+                answer: { he: 'בשני הערכים הנגזרת השנייה מחליפה סימן. ב־3 אין החלפת סימן.', en: 'At both values the second derivative changes sign. At 3 there is no sign change.' }
+            },
+            { type: 'REASON' }
+        ],
+        reasonPrompt: { he: 'מדוע $x=3$ אינו ערך x של נקודת פיתול של $f$?', en: 'Why is $x=3$ not an inflection x-value of $f$?' },
+        reasonChoices: [
+            { he: 'כי הגרף של f אינו נתון.', en: 'Because the graph of f is not given.' },
+            { he: 'כי הנגזרת השנייה שלילית משני הצדדים.', en: 'Because the second derivative is negative on both sides.' },
+            { he: 'כי כל אפס של הנגזרת השנייה הוא נקודת קיצון של f.', en: 'Because every zero of the second derivative is a turning point of f.' }
+        ], correctReason: 1,
+        explanation: { he: 'הגרף הנתון הוא של $f\'\'$. ב־$x=3$ הוא נוגע בציר ונשאר שלילי משני הצדדים. לכן הקמירות של $f$ אינה משתנה שם.', en: "The displayed graph is $f''$. At $x=3$ it touches the axis and stays negative on both sides, so the concavity of $f$ does not change there." }
+    },
+    {
+        id: 9, lessonName: { he: 'קריאת גרף הנגזרת הראשונה', en: 'Reading the first derivative' },
+        derivativeGraph: { order: 1, curve: x => (x+1)*(x-2)**2/2 },
+        view: { minX: -2, maxX: 4, minY: -3, maxY: 4, stepX: 1, stepY: 1 },
+        steps: [
+            {
+                type: 'DERIVATIVE_MARK', targets: [-1,2],
+                title: { he: 'האפסים של הנגזרת הראשונה', en: 'Zeros of the first derivative' },
+                desc: { he: 'סמן היכן $f\'(x)=0$. אלה מועמדים לקיצון של $f$.', en: "Mark where $f'(x)=0$. These are candidates for turning points of $f$." },
+                hint: { he: 'סמן גם חצייה וגם נגיעה של הגרף הנתון בציר x.', en: 'Mark both crossings and touches of the displayed graph with the x-axis.' },
+                answer: { he: 'צריך לבדוק החלפת סימן לפני שקובעים שיש קיצון של f.', en: 'Check for a sign change before deciding that f has a turning point.' }
+            },
+            {
+                type: 'DERIVATIVE_INTERVAL', intervals: [[-1,4]],
+                title: { he: 'היכן f עולה?', en: 'Where is f increasing?' },
+                desc: { he: 'בתחום המוצג, סמן היכן $f$ עולה. התבונן בסימן של $f\'$.', en: "In the displayed interval, swipe where $f$ is increasing. Look at the sign of $f'$." },
+                hint: { he: 'מעל ציר x הנגזרת חיובית. האפס הבודד ב־2 אינו מחליף את מגמת העלייה.', en: 'Above the x-axis the derivative is positive. The isolated zero at 2 does not change the increasing trend.' },
+                answer: { he: 'f עולה לכל אורך התחום הזה, גם דרך הנקודה שבה הנגזרת מתאפסת ב־2.', en: 'f increases throughout this interval, including through the isolated zero of its derivative at 2.' }
+            },
+            {
+                type: 'DERIVATIVE_MARK', targets: [-1],
+                title: { he: 'המינימום של f', en: 'Local minima of f' },
+                desc: { he: 'סמן את ערכי x שבהם ל־$f$ יש מינימום פנימי בתחום המוצג.', en: 'Mark the x-values of local minima of $f$ inside the displayed interval.' },
+                hint: { he: 'מינימום של f מתקבל כשהנגזרת מחליפה סימן משלילי לחיובי.', en: 'A minimum of f occurs where its derivative changes from negative to positive.' },
+                answer: { he: 'הנגזרת עוברת משלילית לחיובית, ולכן f עוברת מירידה לעלייה.', en: 'The derivative changes from negative to positive, so f changes from decreasing to increasing.' }
+            },
+            {
+                type: 'DERIVATIVE_MARK', targets: [],
+                title: { he: 'המקסימום של f', en: 'Local maxima of f' },
+                desc: { he: 'סמן מקסימום פנימי של $f$ בתחום המוצג, או בחר שאין. בדוק גם את $x=2$.', en: 'Mark local maxima of $f$ inside the displayed interval, or select none. Consider $x=2$ too.' },
+                hint: { he: 'דרושה החלפת סימן מחיובי לשלילי. נגיעה בלבד אינה מספיקה.', en: 'The derivative must change from positive to negative. A touch alone is not enough.' },
+                answer: { he: 'אין מעבר מחיובי לשלילי. הנגיעה ב־2 אינה מקסימום של f.', en: 'There is no change from positive to negative. The touch at 2 is not a maximum of f.' }
+            },
+            {
+                type: 'DERIVATIVE_MARK', targets: [0,2],
+                title: { he: 'נקודות הפיתול של f', en: 'Inflection x-values of f' },
+                desc: { he: 'סמן היכן $f\'$ מחליפה בין עלייה לירידה. אלה ערכי x של נקודות הפיתול של $f$.', en: "Mark where $f'$ switches between increasing and decreasing. These are inflection x-values of $f$." },
+                hint: { he: 'חפש שיא ועמק בגרף הנתון, ולא חיתוכים עם ציר x.', en: 'Look for a peak and a valley in the displayed graph, rather than its x-intercepts.' },
+                answer: { he: 'בקיצון של הנגזרת הראשונה היא משנה מגמת עלייה או ירידה. לכן הקמירות של f מתחלפת.', en: 'At the turning points of the first derivative, it switches between increasing and decreasing. The concavity of f changes there.' }
+            },
+            {
+                type: 'DERIVATIVE_INTERVAL', intervals: [[-2,0],[2,4]],
+                title: { he: 'היכן f קמורה כלפי מעלה? ∪', en: 'Where is f concave up? ∪' },
+                desc: { he: 'סמן את התחומים שבהם $f$ קמורה כלפי מעלה.', en: 'Swipe the intervals where $f$ is concave up.' },
+                hint: { he: 'f קמורה כלפי מעלה כשהנגזרת הראשונה עולה — גם אם היא מתחת לציר x.', en: 'f is concave up when its first derivative is increasing, even below the x-axis.' },
+                answer: { he: 'בתחומים אלה הנגזרת הראשונה עולה, ולכן הנגזרת השנייה חיובית.', en: 'The first derivative increases on these intervals, so the second derivative is positive.' }
+            },
+            {
+                type: 'DERIVATIVE_INTERVAL', intervals: [[0,2]],
+                title: { he: 'היכן f קעורה כלפי מטה? ∩', en: 'Where is f concave down? ∩' },
+                desc: { he: 'סמן את התחום שבו $f$ קעורה כלפי מטה.', en: 'Swipe the interval where $f$ is concave down.' },
+                hint: { he: 'חפש היכן הנגזרת הראשונה יורדת. הגובה שלה אינו קובע את הקמירות.', en: 'Look where the first derivative decreases. Its height does not determine concavity.' },
+                answer: { he: 'כאן הנגזרת הראשונה יורדת אף שהיא חיובית: f עולה וקעורה כלפי מטה בו־זמנית.', en: 'Here the first derivative decreases while positive: f is increasing and concave down at the same time.' }
+            },
+            { type: 'REASON' }
+        ],
+        reasonPrompt: { he: 'מה קורה ל־$f$ ב־$x=2$?', en: 'What happens to $f$ at $x=2$?' },
+        reasonChoices: [
+            { he: 'יש מינימום, כי הגרף הנתון נמצא בעמק.', en: "A minimum of $f$, because $f' $ has a valley." },
+            { he: 'אין קיצון ואין פיתול, כי הנגזרת אינה מחליפה סימן.', en: "Neither: $f'$ does not change sign." },
+            { he: 'יש פיתול אך אין קיצון: הנגזרת נשארת חיובית משני הצדדים, אך עוברת מירידה לעלייה.', en: "An inflection, but no turning point: $f'$ stays positive and switches from decreasing to increasing." }
+        ], correctReason: 2,
+        explanation: { he: 'העמק שייך ל־$f\'$, לא ל־$f$. הנגזרת נשארת חיובית משני צדי 2, ולכן f ממשיכה לעלות. שינוי המגמה של הנגזרת יוצר פיתול של f.', en: "The valley belongs to $f'$, not $f$. Its derivative stays positive on both sides of 2, so f keeps increasing. The derivative's change of trend creates an inflection of f." }
+    }
+);
+
 /**
  * GAME STATE
  */
@@ -299,6 +474,34 @@ function getDynamicError(type, expected, actual) {
 
 function getStepStrings(step, idx) {
     const num = idx + 1;
+    if (step.type.startsWith('DERIVATIVE_')) {
+        return { title: `${num}. ${step.title[currentLang]}`, desc: step.desc[currentLang] };
+    }
+    const custom = {
+        SECOND_ZEROS: {
+            he: ['מועמדים לפיתול', "סמן על ציר x את כל המקומות שבהם $f''(x)=0$. האם כולם יהיו נקודות פיתול?"],
+            en: ['Inflection candidates', "Mark every x-value where $f''(x)=0$ on the x-axis. Will they all be inflection points?"]
+        },
+        INFLECTION: {
+            he: ['נקודות פיתול', 'סמן על ציר x את כל ערכי x שבהם יש פיתול. אם אין נקודות פיתול, בחר באפשרות המתאימה.'],
+            en: ['Inflection points', 'Mark all x-values of inflection points on the x-axis. If there are none, select the option below.']
+        },
+        REASON: { he: ['מה הסיבה?', level.reasonPrompt?.he], en: ['Explain your answer', level.reasonPrompt?.en] }
+    };
+    if (level.concavityPractice) {
+        custom.DOMAIN_CONVEX = {
+            he: ['קמירות כלפי מעלה ∪', 'העבר אצבע על ציר x בכל התחומים שבהם הגרף מתעקל כלפי מעלה.'],
+            en: ['Concave up (convex) ∪', 'Swipe all x-intervals where the curve bends upward.']
+        };
+        custom.DOMAIN_CONCAVE = {
+            he: ['קעירות כלפי מטה ∩', 'העבר אצבע על ציר x בכל התחומים שבהם הגרף מתעקל כלפי מטה.'],
+            en: ['Concave down ∩', 'Swipe all x-intervals where the curve bends downward.']
+        };
+    }
+    if (custom[step.type]) {
+        const [title, desc] = custom[step.type][currentLang];
+        return { title: `${num}. ${title}`, desc };
+    }
     const dict = {
         'ROOTS': { t: "x-Intercepts", d: "Click on the x-axis to mark all the roots of $f(x)$." },
         'EXTREMA': { t: "Extrema Points", d: "Click on the x-axis where $f'(x)=0$." },
@@ -348,6 +551,12 @@ let isLevelComplete = false;
 let solvedLevels = new Set(); // Tracks solved levels
 
 // User inputs for current level
+let userDerivativePoints = [];
+let noDerivativePoints = false;
+let userSecondZeros = [];
+let userInflections = [];
+let noInflections = false;
+let userReason = null;
 let userRoots = [];
 let userExtrema = [];
 let userSketch = []; 
@@ -406,6 +615,8 @@ function render() {
     ctx.clearRect(0, 0, width, height);
     drawGridAndAxes();
     drawDomains();
+    if (level.derivativeGraph) drawDerivativeGraph();
+    else if (level.concavityPractice) drawExactFunction(level.f, '#2563eb');
     
     // Check if SKETCH or TRANSFORM steps have been completed/reached
     let sketchCompleted = false;
@@ -429,7 +640,135 @@ function render() {
     drawUndefinedLines();
     drawAsymptotes();
     drawPoints();
+    drawConcavityPoints();
     drawSwipingIndicator();
+}
+
+function updateFunctionDisplay() {
+    const display = document.getElementById('function-display');
+    if (level.derivativeGraph) {
+        const symbol = level.derivativeGraph.order === 2 ? "f''(x)" : "f'(x)";
+        display.innerHTML = `<div>${currentLang === 'he' ? 'הגרף הנתון:' : 'Given graph:'} <span dir="ltr">$${symbol}$</span></div>
+            <div class="text-xs font-normal text-slate-600">${currentLang === 'he' ? 'הסיקו מסקנות על f בתחום המוצג' : 'Deduce properties of f in the displayed interval'}</div>`;
+    } else {
+        display.textContent = `$$${level.equationStr}$$`;
+    }
+    renderMathInElement(display, { delimiters: [{left: "$$", right: "$$", display: true}, {left: "$", right: "$", display: false}] });
+}
+
+function drawDerivativeGraph() {
+    drawExactFunction(level.derivativeGraph.curve, '#2563eb');
+    ctx.save();
+    ctx.direction = 'ltr';
+    ctx.textAlign = 'right';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillStyle = '#2563eb';
+    ctx.fillText(level.derivativeGraph.order === 2 ? 'f″(x)' : 'f′(x)', width - 12, 25);
+    // These marks record x-values only: the vertical coordinates of f are unknown.
+    ctx.fillStyle = '#9333ea';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    for (const x of userDerivativePoints) {
+        ctx.beginPath(); ctx.arc(mapX(x), mapY(0), 7, 0, 2*Math.PI); ctx.fill(); ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function setNoDerivativePoints(checked) {
+    noDerivativePoints = checked;
+    if (checked) userDerivativePoints = [];
+    render();
+}
+
+function checkDerivativePoints() {
+    const targets = level.steps[currentStepIdx].targets;
+    const correct = targets.length === 0 ? noDerivativePoints && userDerivativePoints.length === 0
+        : !noDerivativePoints && targets.length === userDerivativePoints.length && targets.every(x => userDerivativePoints.includes(x));
+    if (!correct) {
+        showError(currentLang === 'he' ? 'בדוק אילו ערכי x מתאימים לשאלה. אפשר להיעזר ברמז.' : 'Check which x-values answer this question. You can use the hint.');
+        return;
+    }
+    completeStep();
+}
+
+function checkDerivativeIntervals() {
+    const expected = level.steps[currentStepIdx].intervals;
+    const tolerance = Math.min(0.25, 12 / scaleX);
+    const marked = userDomain.map(d => ({ start: Math.max(minX, d.start), end: Math.min(maxX, d.end) }))
+        .filter(d => d.end > d.start).sort((a,b) => a.start-b.start);
+    const merged = [];
+    for (const interval of marked) {
+        const last = merged[merged.length-1];
+        if (last && interval.start <= last.end + tolerance) last.end = Math.max(last.end, interval.end);
+        else merged.push({...interval});
+    }
+    const correct = merged.length === expected.length && expected.every(([a,b],i) =>
+        Math.abs(merged[i].start-a) <= tolerance && Math.abs(merged[i].end-b) <= tolerance);
+    if (!correct) {
+        showError(currentLang === 'he' ? 'בדוק שסימנת את כל התחומים הנדרשים, עד לגבולות המוצגים. אפשר להיעזר ברמז.' : 'Check that you marked every required interval, up to the displayed boundaries. You can use the hint.');
+        return;
+    }
+    completeStep();
+}
+
+function drawConcavityPoints() {
+    if (!level.concavityPractice) return;
+    const inflectionStep = level.steps.findIndex(s => s.type === 'INFLECTION');
+    const revealed = inflectionStep >= 0 && isStepCompleted(inflectionStep);
+    const marks = level.steps[currentStepIdx]?.type === 'SECOND_ZEROS'
+        ? userSecondZeros.map(x => [x, 0, '#9333ea'])
+        : userInflections.map(x => [x, revealed ? level.f(x) : 0, '#059669']);
+    ctx.save();
+    for (const [x, y, color] of marks) {
+        if (!Number.isFinite(y)) continue;
+        ctx.beginPath();
+        ctx.arc(mapX(x), mapY(y), 7, 0, 2*Math.PI);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function setNoInflections(checked) {
+    noInflections = checked;
+    if (checked) userInflections = [];
+    render();
+}
+
+function checkSecondZeros() {
+    const correct = userSecondZeros.length === level.secondZeros.length &&
+        level.secondZeros.every(x => userSecondZeros.includes(x));
+    if (!correct) {
+        showError(currentLang === 'he' ? 'בדוק שוב היכן הנגזרת השנייה מתאפסת.' : 'Check where the second derivative is zero.');
+        return;
+    }
+    completeStep();
+}
+
+function checkInflections() {
+    const correct = level.inflectionX.length === 0 ? noInflections && userInflections.length === 0
+        : !noInflections && userInflections.length === level.inflectionX.length &&
+          level.inflectionX.every(x => userInflections.includes(x));
+    if (!correct) {
+        showError(currentLang === 'he'
+            ? 'בדוק שהנקודה נמצאת על הגרף ושהקמירות מתחלפת משני צדדיה.'
+            : 'Check that each point is on the curve and that concavity changes across it.');
+        return;
+    }
+    completeStep();
+}
+
+function checkReason() {
+    if (userReason !== level.correctReason) {
+        showError(level.derivativeGraph
+            ? (currentLang === 'he' ? 'בדוק: האם השאלה תלויה בסימן הנגזרת או בעלייה ובירידה שלה?' : 'Check: does the question depend on the derivative’s sign or on whether it increases or decreases?')
+            : (currentLang === 'he' ? 'בחר הסבר שמתייחס לתחום ההגדרה ולשינוי בקמירות.' : 'Choose an explanation that considers the domain and the change in concavity.'));
+        return;
+    }
+    completeStep();
 }
 
 function drawUndefinedLines() {
@@ -663,7 +1002,28 @@ canvas.addEventListener('pointerdown', (e) => {
     let my = unmapY(y);
     let stepType = level.steps[currentStepIdx].type;
 
-    if (stepType === 'ROOTS') {
+    if (stepType === 'DERIVATIVE_MARK') {
+        if (Math.abs(y - mapY(0)) < 35) {
+            const snappedX = Math.round(mx);
+            const index = userDerivativePoints.indexOf(snappedX);
+            if (index >= 0) userDerivativePoints.splice(index,1); else userDerivativePoints.push(snappedX);
+            noDerivativePoints = false;
+            document.getElementById(`no-derivative-points-${currentStepIdx}`).checked = false;
+        }
+    }
+    else if (stepType === 'SECOND_ZEROS' || stepType === 'INFLECTION') {
+        if (Math.abs(y - mapY(0)) < 35) {
+            const snappedX = Math.round(mx);
+            const marks = stepType === 'SECOND_ZEROS' ? userSecondZeros : userInflections;
+            const index = marks.indexOf(snappedX);
+            if (index >= 0) marks.splice(index, 1); else marks.push(snappedX);
+            if (stepType === 'INFLECTION') {
+                noInflections = false;
+                document.getElementById('no-inflections').checked = false;
+            }
+        }
+    }
+    else if (stepType === 'ROOTS') {
         if (Math.abs(y - mapY(0)) < 30) {
             let snappedX = Math.round(mx);
             let existingIdx = userRoots.findIndex(r => Math.abs(r - snappedX) < 0.1);
@@ -711,7 +1071,7 @@ canvas.addEventListener('pointerdown', (e) => {
         isDrawing = true;
         currentStroke = [{x: mx, y: my}];
     }
-    else if (stepType.startsWith('DOMAIN_')) {
+    else if (stepType.startsWith('DOMAIN_') || stepType === 'DERIVATIVE_INTERVAL') {
         if (Math.abs(y - mapY(0)) < 40) {
             isSwiping = true;
             swipeStartX = mx;
@@ -802,6 +1162,12 @@ function initLevel() {
     level = levels[currentLevelIdx];
     currentStepIdx = 0;
     isLevelComplete = false;
+    userDerivativePoints = [];
+    noDerivativePoints = false;
+    userSecondZeros = [];
+    userInflections = [];
+    noInflections = false;
+    userReason = null;
     userRoots = [];
     userExtrema = [];
     userSketch = [];
@@ -813,7 +1179,7 @@ function initLevel() {
     
     document.getElementById('hud-level').innerText = level.id;
     document.getElementById('level-selector').value = currentLevelIdx;
-    document.getElementById('function-display').innerText = `$$${level.equationStr}$$`;
+    updateFunctionDisplay();
     document.getElementById('next-level-container').classList.add('hidden');
     
     buildStepsUI();
@@ -823,6 +1189,10 @@ function initLevel() {
         isLevelComplete = true;
         currentStepIdx = level.steps.length;
         
+        userSecondZeros = [...(level.secondZeros || [])];
+        userInflections = [...(level.inflectionX || [])];
+        noInflections = level.inflectionX?.length === 0;
+        userReason = level.correctReason ?? null;
         // Auto-fill exact coordinates to render properly on the canvas
         userRoots = [...(level.roots || [])];
         userExtrema = [...(level.extremaX || [])];
@@ -861,7 +1231,12 @@ function buildStepsUI() {
         let buttons = '';
         let checkFunc = '';
 
-        if (stepDesc.type === 'ROOTS') checkFunc = 'checkRoots()';
+        if (stepDesc.type === 'DERIVATIVE_MARK') checkFunc = 'checkDerivativePoints()';
+        else if (stepDesc.type === 'DERIVATIVE_INTERVAL') checkFunc = 'checkDerivativeIntervals()';
+        else if (stepDesc.type === 'SECOND_ZEROS') checkFunc = 'checkSecondZeros()';
+        else if (stepDesc.type === 'INFLECTION') checkFunc = 'checkInflections()';
+        else if (stepDesc.type === 'REASON') checkFunc = 'checkReason()';
+        else if (stepDesc.type === 'ROOTS') checkFunc = 'checkRoots()';
         else if (stepDesc.type === 'UNDEFINED_POINTS') checkFunc = 'checkUndefined()';
         else if (stepDesc.type === 'EXTREMA') checkFunc = 'checkExtrema()';
         else if (stepDesc.type === 'INTERSECT_Y') checkFunc = 'checkIntersectY()';
@@ -870,6 +1245,34 @@ function buildStepsUI() {
         else if (stepDesc.type === 'SKETCH' || stepDesc.type === 'TRANSFORM') checkFunc = 'checkSketch()';
         else if (stepDesc.type.startsWith('DOMAIN_')) checkFunc = 'checkDomain()';
 
+        if (stepDesc.type.startsWith('DERIVATIVE_')) {
+            if (stepDesc.type === 'DERIVATIVE_MARK') {
+                extraContent += `<label class="flex items-center gap-2 my-2 p-2 rounded border border-slate-200 bg-slate-50">
+                    <input id="no-derivative-points-${idx}" type="checkbox" ${idx === currentStepIdx && noDerivativePoints ? 'checked' : ''} onchange="setNoDerivativePoints(this.checked)">
+                    <span>${currentLang === 'he' ? 'אין בתחום המוצג' : 'None in the displayed interval'}</span>
+                </label>`;
+            }
+            extraContent += `<details class="my-2 rounded bg-blue-50 p-2" ontoggle="if(this.closest('.step-card').classList.contains('active')) scheduleStepView()">
+                <summary class="cursor-pointer font-semibold text-blue-800">${currentLang === 'he' ? 'רמז' : 'Hint'}</summary>
+                <p class="mt-2">${stepDesc.hint[currentLang]}</p>
+            </details>`;
+        }
+        if (level.concavityPractice && ['SECOND_ZEROS', 'DOMAIN_CONVEX', 'DOMAIN_CONCAVE'].includes(stepDesc.type)) {
+            extraContent = `<div class="my-2 text-center">$$${level.secondDerivativeStr}$$</div>`;
+        }
+        if (stepDesc.type === 'INFLECTION') {
+            extraContent = `<label class="flex items-center gap-2 my-3 p-2 rounded border border-slate-200 bg-slate-50">
+                <input id="no-inflections" type="checkbox" ${noInflections ? 'checked' : ''} onchange="setNoInflections(this.checked)">
+                <span>${currentLang === 'he' ? 'אין נקודות פיתול' : 'No inflection points'}</span>
+            </label>`;
+        }
+        if (stepDesc.type === 'REASON') {
+            extraContent = `<fieldset class="mt-3"><legend class="sr-only">${currentLang === 'he' ? 'בחר הסבר' : 'Choose an explanation'}</legend>` + level.reasonChoices.map((choice, i) => `
+                <label class="flex items-start gap-2 p-2 my-1 rounded border border-slate-200 bg-slate-50 cursor-pointer">
+                    <input class="mt-1 shrink-0" type="radio" name="reason" value="${i}" ${userReason === i ? 'checked' : ''} onchange="userReason=Number(this.value)">
+                    <span>${choice[currentLang]}</span>
+                </label>`).join('') + '</fieldset>';
+        }
         if (stepDesc.type === 'TRANSFORM') {
             extraContent = `<div class="font-semibold text-center my-2">$$${level.transformEq}$$</div>`;
         }
@@ -938,13 +1341,30 @@ function showError(msg) {
     if (errDiv) {
         errDiv.innerText = msg;
         errDiv.classList.remove('hidden');
-        setTimeout(() => { errDiv.classList.add('hidden'); }, 4000);
+        scheduleStepView();
+        setTimeout(() => {
+            if (errDiv.isConnected && errDiv === document.getElementById(`step-error-${currentStepIdx}`)) {
+                errDiv.classList.add('hidden'); scheduleStepView();
+            }
+        }, 4000);
     }
 }
 
 function clearCanvas() {
     let stepType = level.steps[currentStepIdx].type;
-    if (stepType === 'ROOTS') userRoots = [];
+    if (stepType === 'DERIVATIVE_MARK') {
+        userDerivativePoints = []; noDerivativePoints = false;
+        document.getElementById(`no-derivative-points-${currentStepIdx}`).checked = false;
+    } else if (stepType === 'DERIVATIVE_INTERVAL') userDomain = [];
+    else if (stepType === 'SECOND_ZEROS') userSecondZeros = [];
+    else if (stepType === 'INFLECTION') {
+        userInflections = []; noInflections = false;
+        document.getElementById('no-inflections').checked = false;
+    } else if (stepType === 'REASON') {
+        userReason = null;
+        document.querySelectorAll('input[name="reason"]').forEach(input => { input.checked = false; });
+    }
+    else if (stepType === 'ROOTS') userRoots = [];
     else if (stepType === 'UNDEFINED_POINTS') userUndefined = [];
     else if (stepType === 'EXTREMA') userExtrema = [];
     else if (stepType === 'INTERSECT_Y') userIntersectY = [];
@@ -957,7 +1377,15 @@ function clearCanvas() {
 
 function skipStep() {
     let stepType = level.steps[currentStepIdx].type;
-    if (stepType === 'ROOTS') userRoots = [...level.roots];
+    if (stepType === 'DERIVATIVE_MARK') {
+        userDerivativePoints = [...level.steps[currentStepIdx].targets];
+        noDerivativePoints = userDerivativePoints.length === 0;
+    }
+    else if (stepType === 'SECOND_ZEROS') userSecondZeros = [...level.secondZeros];
+    else if (stepType === 'INFLECTION') {
+        userInflections = [...level.inflectionX]; noInflections = userInflections.length === 0;
+    } else if (stepType === 'REASON') userReason = level.correctReason;
+    else if (stepType === 'ROOTS') userRoots = [...level.roots];
     else if (stepType === 'UNDEFINED_POINTS') userUndefined = [...level.undefinedX];
     else if (stepType === 'EXTREMA') userExtrema = [...level.extremaX];
     else if (stepType === 'INTERSECT_Y') userIntersectY = [...level.intersectY];
@@ -973,7 +1401,23 @@ function setStepAnswerText(idx) {
     const stepType = level.steps[idx].type;
     
     // Set Answer Text
-    if (stepType === 'ROOTS') {
+    if (stepType.startsWith('DERIVATIVE_')) {
+        const step = level.steps[idx];
+        const result = step.type === 'DERIVATIVE_MARK'
+            ? (step.targets.length ? `<span dir="ltr">x = ${step.targets.join(', ')}</span>` : (currentLang === 'he' ? 'אין בתחום המוצג.' : 'None in the displayed interval.'))
+            : `<span dir="ltr">${step.intervals.map(([a,b]) => `${a} &lt; x &lt; ${b}`).join(' ∪ ')}</span>`;
+        ansDiv.innerHTML = `${result}<p class="mt-1">${step.answer[currentLang]}</p>`;
+    } else if (stepType === 'SECOND_ZEROS') {
+        ansDiv.innerHTML = `<span dir="ltr">x = ${level.secondZeros.join(', ')}</span>`;
+    } else if (stepType === 'INFLECTION') {
+        ansDiv.innerHTML = level.inflectionPoints.length
+            ? `<span dir="ltr">${level.inflectionPoints.map(([x,y]) => `(${x}, ${y})`).join(', ')}</span>`
+            : (currentLang === 'he' ? 'אין נקודות פיתול.' : 'No inflection points.');
+    } else if (stepType === 'REASON') {
+        ansDiv.innerText = level.explanation[currentLang];
+    } else if (stepType === 'DOMAIN_CONCAVE') {
+        ansDiv.innerHTML = `<span dir="ltr">$$${level.concaveStr}$$</span>`;
+    } else if (stepType === 'ROOTS') {
         ansDiv.innerHTML = level.roots.length === 0 ? t('No x-intercepts.') : `${t('Roots: ')}<span dir="ltr" class="inline-block">${level.roots.map(r => `(${r}, 0)`).join(', ')}</span>`;
     } else if (stepType === 'UNDEFINED_POINTS') {
         ansDiv.innerHTML = level.undefinedX?.length ? `${t('Undefined at: ')}<span dir="ltr" class="inline-block">${level.undefinedX.map(x => `x = ${x}`).join(', ')}</span>` : t('Defined everywhere.');
@@ -1018,6 +1462,8 @@ function completeStep() {
     }
     
     // Reset inputs for next step
+    userDerivativePoints = [];
+    noDerivativePoints = false;
     userSketch = [];
     userDomain = [];
     
@@ -1193,7 +1639,8 @@ function checkDomain() {
         stepType === 'DOMAIN_POS' ? level.isPositive : 
         stepType === 'DOMAIN_NEG' ? level.isNegative : 
         stepType === 'DOMAIN_DEC' ? level.isDecreasing :
-        stepType === 'DOMAIN_CONVEX' ? level.isConvex : 
+        stepType === 'DOMAIN_CONVEX' ? level.isConvex :
+        stepType === 'DOMAIN_CONCAVE' ? level.isConcave :
         stepType === 'DOMAIN_FUNC' ? level.isDefined : 
         level.isIncreasing;
 
@@ -1272,6 +1719,7 @@ function initLevelSelector() {
         
         document.getElementById('app-title').innerText = t('Function Explorer');
         document.title = t('Function Explorer');
+        updateFunctionDisplay();
         document.getElementById('hud-level-label').innerText = t('Level');
         document.getElementById('btn-next-level').innerText = t('Next Level');
         
@@ -1292,7 +1740,7 @@ function initLevelSelector() {
 function updateLevelSelectorUI() {
     const selector = document.getElementById('level-selector');
     for(let i = 0; i < levels.length; i++) {
-        selector.options[i].innerText = `${t('Level')} ${levels[i].id}${solvedLevels.has(i) ? ' ✅' : ''}`;
+        selector.options[i].innerText = `${t('Level')} ${levels[i].id}${levels[i].lessonName ? ' — ' + levels[i].lessonName[currentLang] : ''}${solvedLevels.has(i) ? ' ✅' : ''}`;
     }
 }
 
